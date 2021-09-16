@@ -190,8 +190,6 @@ def test_tell_helm_options():
     _, options = run_under_click_context(
         with_extra_values_file,
     )
-    assert options.pop(-1) == './chart/values.yaml'
-    options.pop(-1)
     extra_values_file_name = basename(options.pop(-1))
     assert extra_values_file_name.startswith('values-extra')
     assert extra_values_file_name.endswith('.yaml')

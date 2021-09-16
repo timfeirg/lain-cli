@@ -1,3 +1,5 @@
+from os.path import join
+
 import pytest
 from marshmallow import ValidationError
 
@@ -12,6 +14,7 @@ from lain_cli.utils import (
 )
 from tests.conftest import (
     BUILD_TREASURE_NAME,
+    CHART_DIR_NAME,
     DUMMY_APPNAME,
     DUMMY_VALUES_PATH,
     RANDOM_STRING,
@@ -57,6 +60,9 @@ def test_values():
         }
     )
     yadu(values, DUMMY_VALUES_PATH)
+    fake_registry = 'registry.fake'
+    cluster_values = {'registry': fake_registry}
+    yadu(cluster_values, join(CHART_DIR_NAME, f'values-{TEST_CLUSTER}.yaml'))
     k8s_specs = render_k8s_specs()
     ingresses = [spec for spec in k8s_specs if spec['kind'] == 'Ingress']
     domain = TEST_CLUSTER_CONFIG['domain']
@@ -96,7 +102,12 @@ def test_values():
     )
     container_spec = deployment['spec']['template']['spec']
     assert container_spec['hostNetwork'] is True
-    assert container_spec['containers'][0]['workingDir'] == RANDOM_STRING
+    containers = container_spec['containers'][0]
+    assert containers['workingDir'] == RANDOM_STRING
+    assert (
+        containers['image']
+        == f'{fake_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
+    )
     env_dic = {}
     for pair in container_spec['containers'][0]['env']:
         env_dic[pair['name']] = pair['value']

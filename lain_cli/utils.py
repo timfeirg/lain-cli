@@ -873,7 +873,6 @@ def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
         canary_values_file = create_canary_values()
         options.extend(['-f', canary_values_file])
 
-    options.extend(['-f', f'./{CHART_DIR_NAME}/values.yaml'])
     return options
 
 
