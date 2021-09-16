@@ -1,0 +1,14 @@
+.DS_Store
+*.pyc
+**/build
+**/dist
+**/*.egg-info
+**/.ropeproject/
+.pytest_cache
+.envrc
+.vscode
+passwords.txt
+kubeconfig-*
+docker-image/config.json
+.cache
+public

@@ -1,0 +1,63 @@
+repos:
+
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
+  - repo: https://github.com.cnpmjs.org/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-yaml
+        exclude: lain_cli/chart_template
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com.cnpmjs.org/psf/black
+    rev: 21.7b0
+    hooks:
+      - id: black
+        args: ['--skip-string-normalization']
+
+  - repo: https://github.com.cnpmjs.org/jendrikseipp/vulture
+    rev: v2.3
+    hooks:
+      - id: vulture
+        types: [python]
+        args:
+          - lain_cli
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-pytest-style
+          - flake8-bugbear
+          - flake8-logging-format
+
+  - repo: https://github.com.cnpmjs.org/PyCQA/bandit
+    rev: 1.7.0
+    hooks:
+      - id: bandit
+        args: ["-ll", "-c", ".bandit.yml"]
+
+  - repo: https://github.com.cnpmjs.org/jorisroovers/gitlint
+    rev: v0.15.1
+    hooks:
+      - id: gitlint
+
+  - repo: https://github.com.cnpmjs.org/PyCQA/pylint
+    rev: v2.9.5
+    hooks:
+      - id: pylint
+        name: pylint
+        types: [python]
+        entry: python -m pylint.__main__
+        language: system
+        args:
+          [
+            "-rn",
+            "-sn",
+            "--rcfile=pylintrc",
+          ]

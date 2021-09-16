@@ -1,0 +1,5 @@
+[tool.vulture]
+ignore_decorators = ["@*.command"]
+exclude = [".ropeproject/"]
+ignore_names = ["_"]
+min_confidence = 80

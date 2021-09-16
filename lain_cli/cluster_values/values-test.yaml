@@ -1,0 +1,35 @@
+# lain_cli/cluster_values/values-test.yaml
+
+# k8s namespace
+namespace: default
+# lain 每次运行前都会检查是否最新版, 在这里配置对应的 pypi 地址
+# 这里用的是 gitlab pypi registry, 你可以换成你自己喜欢的, 例如 devpi-server
+pypi_index: https://gitlab.example.com/api/v4/projects/[PORJECT_ID]/packages/pypi/simple
+pypi_extra_index: https://mirrors.cloud.tencent.com/pypi/simple/
+# 镜像仓库
+registry: registry.example.com
+# lain 整合了一系列 gitlab 相关功能, 在这里配置 gitlab 地址
+gitlab: http://gitlab.example.com
+# 内网域名写在这里, 至于公网地址, 就不写在这里了, lain 要求公网域名完整声明在 values 里 (更加显式)
+domain: test.example.com
+secrets_env:
+  # 调用 PaaS 接口的 ak, sk
+  access_key_id: AK
+  access_key_secret: SK
+extra_docs: |
+  在这里书写额外的欢迎信息
+# 比如 TKE 需要将 kube-apiserver 的地址写到 hosts 里, lain 会根据以下配置, 提醒用户添加相应记录到 /etc/hosts
+# 同时, 同样的配置还会进入 Kubernetes manifests, 因此容器里也能解析这些域名
+clusterHostAliases:
+- ip: "0.0.0.0"
+  hostnames:
+    - "kube-apiserver"
+
+# 内外网的服务使用不同的 ingressClass
+# 这样一来, 外部人士就没办法通过内网域名, 直接经由公网流量入口, 访问内部服务了
+# 这些配置当然也可以写在应用级别的 chart/values-[CLUSTER].yaml 下
+# 但这样一来, 每一个应用都需要重复一遍, 因此抽出放在 cluster_values 里, 加强复用
+ingressClass: lain-internal
+externalIngressClass: lain-external
+# 这是 cert-manager 配置, 同样出于复用的考虑, 放在 cluster_values 下, 开发者可没精力维护这种基础设施配置
+clusterIssuer: cert-manager-webhook-dnspod-cluster-issuer

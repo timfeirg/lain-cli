@@ -1,0 +1,65 @@
+{{- range $ingress := .Values.externalIngresses }}
+---
+apiVersion: {{ template "ingress.apiVersion" $ }}
+kind: Ingress
+metadata:
+  name: {{ $ingress.host | replace "." "-" }}-{{ $.Release.Name }}-{{ $ingress.deployName }}
+  annotations:
+    {{- if hasKey $.Values "clusterIssuer" }}
+    cert-manager.io/cluster-issuer: {{ $.Values.clusterIssuer }}
+    {{- end }}
+    {{- if hasKey $.Values "externalIngressClass" }}
+    kubernetes.io/ingress.class: {{ default $.Values.externalIngressClass $ingress.ingressClass }}
+    {{- end }}
+    {{- with $.Values.externalIngressAnnotations }}
+    {{- range $k, $v := $.Values.externalIngressAnnotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- end }}
+    {{- with $ingress.annotations }}
+    {{- range $k, $v := $ingress.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- end }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  {{- if hasKey $.Values "externalIngressTLSSecretName" }}
+  tls:
+    - secretName: {{ $.Values.externalIngressTLSSecretName }}
+  {{- end }}
+  {{- if hasKey $.Values "clusterIssuer" }}
+  tls:
+    - hosts:
+      {{- if regexMatch "^[^\\.]+\\.[^\\.]+$" $ingress.host }}
+      - {{ $ingress.host }}
+      - '*.{{ $ingress.host }}'
+      secretName: {{ $ingress.host | replace "." "-" }}
+      {{- else }}
+      - '*.{{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" }}'
+      - '{{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" }}'
+      secretName: {{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" | replace "." "-" }}
+      {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $ingress.host }}
+      http:
+        paths:
+        {{- range $ingress.paths }}
+          - path: {{ . }}
+            {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+            pathType: Prefix
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $.Release.Name }}-{{ $ingress.deployName }}
+                port:
+                  number: {{ default 80 (index $.Values.deployments $ingress.deployName "nodePort") }}
+              {{- else }}
+              serviceName: {{ $.Release.Name }}-{{ $ingress.deployName }}
+              servicePort: {{ default 80 (index $.Values.deployments $ingress.deployName "nodePort") }}
+              {{- end }}
+        {{- end }}
+
+{{- end }}

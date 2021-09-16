@@ -1,0 +1,353 @@
+# 应用名称, 如果不是有意要 hack, 绝对不要修改, 每一个 Kubernetes 资源的名称都通过这个 appname 计算而来
+appname: {{ appname }}
+# releaseName 就是 helm release name, 如果你想要把 app 部署两份, 则在其他 values 文件里超载该字段
+# releaseName: {{ appname }}
+
+# # publish_to 用来控制以 --publish 参数上传镜像的范围
+# # 以下边的写法为例, lain push --publish 只会上传镜像至 cluster1, cluster2
+# # 而不是上传至所有集群
+# publish_to:
+#   - cluster1
+#   - cluster2
+
+# # 上线以后发送通知到指定的 webhook
+# webhook:
+#   # 目前仅支持 feishu, 需要先添加 webhook 机器人才行:
+#   # https://www.feishu.cn/hc/zh-CN/articles/360024984973
+#   url: https://open.feishu.cn/open-apis/bot/v2/hook/c057c484-9fd9-4ed9-83db-63e4b271de76
+#   # 可选, 不写则默认所有集群上线都发送通知
+#   clusters:
+#     - yashi
+
+# # 通用的环境变量写在这里
+# env:
+#   AUTH_TYPE: "basic"
+#   BASIC_AUTH_USER: "admin"
+# # 包含敏感信息的内容则由 lain env 命令来管理, 详见 lain env --help
+
+# volumeMounts 负责定义配置文件的挂在路径: subPath 是需要挂载的文件名称, 而 mountPath 就是你希望挂载到容器里的路径啦
+# 书写这部分配置前, 需要先把配置文件上传到 Kubernetes, 详见 lain secret --help
+volumeMounts:
+  - mountPath: /lain/app/deploy/topsecret.txt
+    subPath: topsecret.txt
+
+# 如果你的应用除了 lain secret file, 还需要挂载其他文件或者目录
+# 那么你需要在 volumeMounts / volumes 里额外声明一个项目
+# 以 jfs 为例, 一般会像下方示范这么写
+# volumes:
+#   - name: jfs-backup-dir
+#     hostPath:
+#       path: "/jfs/backup/{{ appname }}/"
+#       type: Directory  # 如果要挂载文件, 则写成 File
+# 因为要挂载 jfs, 所以 volumeMounts 里额外增加了一个项目
+# volumeMounts:
+#   - mountPath: /lain/app/deploy/topsecret.txt
+#     subPath: topsecret.txt
+#   - name: jfs-backup-dir
+#     mountPath: /jfs/backup/{{ appname }}/
+# 注意, 如果你决定照抄这段配置, 记得把上方多余的 volumeMounts 清理掉, 有些人直接在 values.yaml 里写两次 volumeMounts, 好呆
+
+# deployments 描述了你的应用有哪些进程 (lain 的世界里叫做 proc), 以及这些进程如何启动, 需要占用多少资源
+deployments:
+  web:
+    env:
+      FOO: BAR
+    # 如果你真的需要, 当然也可以在 proc 级别定义 volumeMounts, 但一般而言为了方便管理, 请尽量都放在 global level
+    # volumeMounts:
+    #   - mountPath: /lain/app/deploy/topsecret.txt
+    #     subPath: topsecret.txt
+    # 开发阶段建议设置为单实例, 等顺利上线了, 做生产化梳理的时候, 再视需求进行扩容
+    replicaCount: 1
+    # hpa 用来自动扩缩容, 也就是 HorizontalPodAutoscaler, 详见:
+    # https://unofficial-kubernetes.readthedocs.io/en/latest/tasks/run-application/horizontal-pod-autoscale-walkthrough/
+    # hpa:
+    #   # 默认 minReplicas 就是 replicaCount
+    #   maxReplicas: 10
+    #   # 默认的扩容规则是 80% 的 cpu 用量
+    #   # 以下属于高级定制, 不需要的话就省略
+    #   metrics: []  # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#metricspec-v2beta2-autoscaling
+    #   behavior: {}  # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#horizontalpodautoscalerbehavior-v2beta2-autoscaling
+    # 以 hard-code 方式指定 image, 而不是用 lain build 构建出镜像
+    # image: kibana:7.5.0
+    # 以 hard-code 方式指定 imageTag, 相当于还是在用该应用的镜像, 只是固定了版本
+    # imageTag: specific-version
+    # 部署应用的时候拉取镜像的策略, 默认为 IfNotPresent, 但如果你有覆盖镜像 tag 的打算, 记得写成 Always
+    # imagePullPolicy: IfNotPresent
+    # lain 默认用 1001 这个低权限用户来运行你的应用, 如需切换成其他身份, 可以在 podSecurityContext 下声明 runAsUser
+    # 比如用 root:
+    # podSecurityContext: {'runAsUser': 0}
+    podSecurityContext: {}
+    # serviceAccountName: default
+    # 优雅退出时间默认 30 秒
+    # terminationGracePeriodSeconds: 30
+    # resources 用于声明资源的预期用量, 以及最大用量
+    # 如果你不熟悉你的应用的资源使用表现, 可以先拍脑袋 requests 和 limits 写成一样
+    # 运行一段时间以后, lain lint 会依靠监控数据, 计算给出修改建议
+    resources:
+      limits:
+        # 1000m 相当于 1 核
+        # ref: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
+        cpu: 1000m
+        # memory 千万不要写小 m 啊, m 是一个小的要死的单位, 写上去一定会突破容器的最低内存导致无法启动, 要写 M, Mi, G, Gi 这种才好
+        # ref: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
+        memory: 80M
+      requests:
+        cpu: 10m
+        memory: 80M
+    # 仅支持 exec 写法, 如果你用一个 shell 脚本作为执行入口, 可以搜索 bash, 这份模板下方会有示范
+    command: ["/lain/app/run.py"]
+    # 默认的工作目录是 /lain/app, 允许超载
+    # workingDir: /lain/app
+    # web 容器肯定要暴露端口, 对外提供服务
+    # 这里为了书写方便, 和照顾大多数应用的习惯, 默认应用最多只需要暴露一个 TCP 端口
+    containerPort: 5000
+    # 如果该容器暴露了 prometheus metrics 接口的话, 则需要用 podAnnotations 来声明
+    # 当然啦, 前提是集群里已经支持了 prometheus
+    # podAnnotations:
+    #   prometheus.io/scrape: 'true'
+    #   prometheus.io/port: '9540'
+    # 如果你的应用不走统一流量入口, 而是需要从上层 LB 别的端口走流量转发, 那么你需要:
+    # * 声明 nodePort, 注意, 需要在 30000-32767 以内, Kubernetes 默认只让用大端口
+    # * (可选地)声明 containerPort, 留空则与 nodePort 相同
+    # * 需要联系 sa, 为这个端口特地设置一下流量转发
+    # nodePort: 32001
+    # protocol: TCP
+    # 一些特殊应用可能需要使用 host network, 你就不要乱改了
+    # hostNetwork: false
+    # 对于需要暴露端口提供服务的容器, 一定要声明健康检查, 不会写的话请参考文档
+    # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-http-request
+    # readinessProbe:
+    #   httpGet:
+    #     path: /my-healthcheck-api
+    #     port: 5000
+    #   initialDelaySeconds: 25
+    #   periodSeconds: 2
+    #   failureThreshold: 1
+    # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-command
+    # livenessProbe:
+    #   exec:
+    #     command:
+    #     - cat
+    #     - /tmp/healthy
+    #   initialDelaySeconds: 5
+    #   periodSeconds: 5
+    # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes
+    # startupProbe:
+    #   httpGet:
+    #     path: /healthz
+    #     port: liveness-port
+    #   failureThreshold: 30
+    #   periodSeconds: 10
+    # 部署策略, 一般人当然用不到, 但若你的应用需要部署上百容器, 滚动升级的时候可能就需要微调, 否则容易产生上线拥堵, 压垮节点
+    # https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+    # minReadySeconds: 10
+    # strategy:
+    #   type: RollingUpdate
+    #   rollingUpdate:
+    #     maxSurge: 25%
+    #     maxUnavailable: 25%
+    # 配置节点亲和性: 如果声明了 nodes, 则该进程的容器仅会在指定的节点上运行
+    # 这个字段由于是集群相关, 所以最好拆分到 values-[CLUSTER].yaml 里, 而不是直接写在 values.yaml
+    # 具体节点名叫什么, 你需要用 kubectl get nodes 查看, 或者咨询 sa
+    # nodes:
+    # - node-1
+    # - node-2
+    # 除了节点亲和性之外, 如果还有其他的亲和性需求, 可以在这里声明自行书写
+    # 参考: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+    # affinity: {}
+
+# # statefulSets 的大部分配置同 deployments, 此处仅列出有区别的部分
+# statefulSets:
+#   worker:
+#     # sts 的部署策略写法与 deploy 略有不同
+#     # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+#     updateStrategy:
+#       rollingUpdate:
+#         partition: 0
+#       type: RollingUpdate
+
+# # jobs 会随着 lain deploy 一起创建执行
+# # 各种诸如 env, resources 之类的字段都支持, 如果需要的话也可以单独超载
+# jobs:
+#   migration:
+#     ttlSecondsAfterFinished: 86400  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
+#     activeDeadlineSeconds: 3600  # 超时时间, https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
+#     backoffLimit: 0  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
+#     # 以下 annotation 能保证 helm 在 upgrade 之前运行该 job, 不成功不继续进行 deploy
+#     annotations:
+#       "helm.sh/hook": pre-upgrade
+#       "helm.sh/hook-delete-policy": before-hook-creation
+#     command:
+#       - 'bash'
+#       - '-c'
+#       - |
+#         set -e
+#         # 下方以数据库 migration 为例, 变更表结构之前, 先做数据库备份
+#         # 如果需要用 jfs, 则需要在上方的 volumes / volumeMounts 里声明, 才能使用
+#         mysqldump --default-character-set=utf8mb4 --single-transaction --set-gtid-purged=OFF -h$MYSQL_HOST -p$MYSQL_PASSWORD -u$MYSQL_USER $MYSQL_DB | gzip -c > /jfs/backup/{{ appname }}/$MYSQL_DB-backup.sql.gz
+#         alembic upgrade heads
+
+# 上线多了, 人喜欢 deploy 完了以后看都不看一眼就溜走, 导致线上挂了无法立刻获知
+# 如果定义了 tests, 那么在 lain deploy 过后, 会自动执行 helm test, 失败的话立刻就能看见
+# 如果啥 tests 都没写, lain deploy 过后会直接进入 lain status, 你也可以肉眼看到 url 和容器状态绿灯以后, 再结束上线任务
+# tests:
+#   simple-test:
+#     image: ccr.ccs.tencentyun.com/yashi/lain:latest
+#     command:
+#       - bash
+#       - -ec
+#       - |
+#         lain -v wait dummy
+
+# cronjob 则是 Kubernetes 管理 job 的机制, 如果你的应用需要做定时任务, 则照着这里的示范声明出来
+# 上线成功了以后, 你肯定很想试跑一次进行测试, 这个简单:
+# kubectl create job --from=cronjob/{{ appname }}-[CRONJOB_NAME] test-{{ appname }}-[CRONJOB_NAME]
+# 如果你不确定创建出来的 cronjob 名称叫啥, 你也可以 lain version 罗列出所有的 deployment / cronjob
+# cronjobs:
+#   daily-stats-dag:
+#     ttlSecondsAfterFinished: 86400  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
+#     activeDeadlineSeconds: 3600  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
+#     # 书写 schedule 的时候注意时区, 不同集群采用的时区可能不一样
+#     # 如果你不确定自己面对的集群是什么时区, 可以登录到机器上, 用 date +"%Z %z" 打印一下
+#     schedule: "0 17 * * *"
+#     # 默认的定时任务调度策略是 Replace, 这意味着如果上一个任务还没执行完, 下一次 job 就开始了的话,
+#     # 则用新的 job 来替代当前运行的 job.
+#     # 声明 cronjob 的时候, 一定要注意合理配置资源分配和调度策略, 避免拖垮集群资源
+#     # ref: https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy
+#     concurrencyPolicy: Replace
+#     # 重试次数, 默认不做任何重试, 如果你的应用能保证不因为资源问题失败, 可以加上宽容的重试
+#     backoffLimit: 0
+#     resources:
+#       limits:
+#         cpu: 1000m
+#         memory: 1Gi
+#       requests:
+#         cpu: 1000m
+#         memory: 1Gi
+#     command: ["python3", "manage.py", "process_daily_stats_dag"]
+
+# ingress 是 Kubernetes 的世界里负责描述域名转发规则的东西
+# 一个 ingress rule 描述了一个域名要转发到哪个 Kubernetes service 下边
+# 但是在 values.yaml 中, 已经贴心的帮你把生成 service 的细节写到 templates/service.yaml 这个模板里了
+# 如果你想更进一步了解 service 是什么, 可以参看模板里的注释, 以及相应的 Kubernetes 文档:
+# https://kubernetes.io/docs/concepts/services-networking/service/#motivation
+
+# ingresses 用来声明内网域名
+ingresses:
+  # host 这个字段, 既可以写 subdomain (一般 appname), 在模板里会帮你展开成对应的集群内网域名
+  # 也可以写完整的域名, 总之, 如果 host 里边发现了句点, 则作为完整域名处理
+  - host: {{ appname }}
+    # # 可以这样为该 ingress 定制 annotations
+    # annotations:
+    # 你想把这个域名的流量打到哪个 proc 上, 就在这里写哪个 proc 的名称
+    deployName: web
+    paths:
+      - /
+
+# externalIngresses 用来声明公网域名, 但是这个字段建议你写到 {{ chart_name }}/values-[CLUSTER].yaml 里, 毕竟这属于集群特定的配置
+# externalIngresses:
+#   # 这里需要写成完整的域名, 因为每个集群的公网域名都不一样, 模板不好帮你做补全
+#   - host: [DOMAIN]
+#     # 可以这样为该 ingress 定制 annotations
+#     annotations:
+#     deployName: web
+#     paths:
+#       - /
+
+# 添加自定义 labels
+labels: {}
+
+# 一般没有人需要写这里的, 但本着模板精神, 还是放一个入口
+# serviceAnnotations: {}
+
+# ingressAnnotations / externalIngressAnnotations 里可以声明一些额外的 nginx 配置
+# 具体可以配置的项目见 https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#annotations
+# ingressAnnotations:
+#   nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: 1
+#   nginx.ingress.kubernetes.io/proxy-next-upstream-tries: 1
+# externalIngressAnnotations:
+#   nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: 1
+#   nginx.ingress.kubernetes.io/proxy-next-upstream-tries: 1
+
+# # 如果你需要用到金丝雀, 则需要自己定义好金丝雀组
+# # 详见 https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#canary
+# canaryGroups:
+#   internal:
+#     # 内部分组, 当请求传入 canary: always 的时候, 便会把流量打到金丝雀版本
+#     nginx.ingress.kubernetes.io/canary-by-header-value: canary
+#   small:
+#     # 第二组赋予金丝雀版本 10% 的流量
+#     nginx.ingress.kubernetes.io/canary-weight: '10'
+#   big:
+#     nginx.ingress.kubernetes.io/canary-weight: '30'
+
+# 如果你的应用不需要外网访问, 则 ingresses 这一块留空即可, 删了也没问题啦
+# 别的应用如果需要在集群内访问 {{ appname }}, 可以直接通过 {{ appname }}-{{ deployName }} 来访问
+# 只要你在 deployment 里声明了 containerPort, chart 模板就会帮你创建出免费的 service, 作为集群的内部访问域名
+
+# 注入 /etc/hosts, 需要就写
+hostAliases:
+  - ip: "127.0.0.1"
+    hostnames:
+      - "dead.end"
+
+# 变态设计, 一个应用可以给自己指定额外的 envFrom, 以引用别的应用的环境变量, 一般人用不到的
+# extraEnvFrom:
+#   - secretRef:
+#       name: another-env
+
+build:
+  base: ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest
+  # # 这里也可以声明 env, 会转化为 Dockerfile 里的 ENV clause, 这样一来, 镜像本身就会携带这些 ENV
+  # env:
+  #   PATH: "/lain/app/node_modules/.bin:${PATH}"
+  prepare:
+    # env:
+    #   PATH: "/lain/app/node_modules/.bin:${PATH}"
+    # prepare 完成以后, 会删除 working directory 下所有的文件, 如果你有舍不得的东西, 记得在 keep 下声明, 才能保留下来
+    # 比如前段项目, 一般会保留 node_modules
+    keep:
+    - treasure.txt
+    script:
+    - pip3 install -r requirements.txt
+    - echo "treasure" > treasure.txt
+  script:
+  - pip3 install -r requirements.txt
+
+# # 如果你的构建和运行环境希望分离, 可以用 release 步骤来转移构建产物
+# # 一般是前端项目需要用到该功能, 因为构建镜像庞大, 构建产物(也就是静态文件)却很小
+# release:
+#   # env:
+#   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
+#   dest_base: ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest
+#   copy:
+#     - src: /etc/nginx
+#     - src: /path
+#       dest: /another
+
+# # 如果你是一个敏感应用, 不希望被别的容器访问, 或者你希望限制你的应用做外部访问, 那么可以用 network policy 进行限制
+# # ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+# networkPolicy:
+#   # network policy 作为一项高级功能, 直接暴露完整的 network policy spec, 未做任何封装
+#   spec:
+#     ingress:
+#     # 默认的规则, 允许 ingress controller 访问, 这样你的应用才能将服务暴露到集群外
+#     - from:
+#       - namespaceSelector: {}
+#         podSelector:
+#           matchLabels:
+#             # SA 注意, 这里的 labels 可能需要根据你集群的情况进行定制
+#             app.kubernetes.io/name: ingress-nginx
+#     podSelector:
+#       matchLabels:
+#         app.kubernetes.io/name: {{ appname }}
+#     policyTypes:
+#     - Ingress
+
+
+# 以下字段由 lain deploy 的时候进行超载, 你就不要瞎改了
+registry: registry.fake
+imageTag: overridden-during-deploy
+domain: domain.fake
+ingressClass: lain-internal
+externalIngressClass: lain-external

@@ -1,0 +1,38 @@
+{{- range $deployName, $deployment := .Values.deployments  }}
+{{- if or $deployment.containerPort $deployment.nodePort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-{{ $deployName }}
+  annotations:
+    {{- with $.Values.serviceAnnotations }}
+    {{- range $k, $v := $.Values.serviceAnnotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- end }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  {{- if $deployment.nodePort }}
+  type: NodePort
+  {{- else }}
+  type: ClusterIP
+  {{- end }}
+  ports:
+    # 你知道, service 解析出来就是一个 vip, 至于用哪个端口进行监听, 这就要靠你来声明 port 字段了
+    # 但是大家都是写写 web server, 所以模板里就直接写死了80, 不会有人有意见的
+    - port: {{ default 80 $deployment.nodePort }}
+      # targetPort, 顾名思义, 就是说流量将会转发到 pod 的哪个端口
+      targetPort: {{ default $deployment.nodePort $deployment.containerPort }}
+      protocol: {{ default "TCP" $deployment.protocol }}
+      {{- if $deployment.nodePort }}
+      nodePort: {{ $deployment.nodePort }}
+      {{- end }}
+  # selector 定义了这个 service 应该转发到哪些 pod 上
+  # 比如在 deployment spec 里, 就渲染了一样的 selector 配置, 因此我这个 service 才能找到对应的 pod
+  selector:
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $deployName }}
+    {{- include "chart.selectorLabels" $ | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,13 @@
+canary version has been deployed.
+{% if values.canaryGroups %}
+use the following commands to feed traffic
+{% for canary_group in values.canaryGroups %}
+    lain set-canary-group {{ canary_group }}
+{%- endfor %}
+{% else %}
+values.canaryGroups is undefined, you should declare them in values.yaml
+{% endif %}
+to abort canary deploy:
+    lain set-canary-group --abort
+to accept canary version:
+    lain set-canary-group --final

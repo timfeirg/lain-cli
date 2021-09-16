@@ -1,0 +1,14 @@
+# helm 的世界里, chart 是需要上传, 分享, 以及版本管理的
+# 但是我们公司内部仅仅把 helm 当做一个模板生成工具, 和一个 Kubernetes 资源管理的 cli 来使用
+# 因此原本用来做 chart 管理的 Chart.yaml, 在这里仅仅是一份多余的文件
+# 放着就行哈
+apiVersion: v2
+name: {{ chart_name }}
+description: "I got this, baby"
+type: application
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+version: {{ chart_version }}
+# We won't be using this field
+# The actual imageTag is defined in values.yaml
+appVersion: no-use

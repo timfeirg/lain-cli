@@ -1,0 +1,194 @@
+{{- range $stsName, $sts := .Values.statefulSets  }}
+---
+apiVersion: {{ template "statefulSet.apiVersion" $ }}
+kind: StatefulSet
+metadata:
+  name: {{ $.Release.Name }}-{{ $stsName }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ $sts.replicaCount }}
+  {{- with $sts.updateStrategy }}
+  updateStrategy:
+    {{- toYaml $sts.updateStrategy | nindent 4 }}
+  {{- end}}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $stsName }}
+  serviceName: {{ $.Release.Name }}-{{ $stsName }}
+  template:
+    metadata:
+    {{- if $sts.podAnnotations }}
+      annotations:
+      {{- range $key, $value := $sts.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+    {{- end }}
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $stsName }}
+        {{- include "chart.labels" $ | nindent 8 }}
+    spec:
+      {{- if or $sts.nodes $sts.affinity }}
+      affinity:
+        {{- if hasKey $sts "affinity" }}
+{{ toYaml $sts.affinity | indent 8 }}
+        {{- end }}
+        {{- if $sts.nodes }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ $.Release.Name }}-{{ $stsName }}
+                operator: In
+                values:
+                - 'true'
+        {{- end }}
+      {{- end }}
+      {{- if hasKey $sts "hostNetwork" }}
+      hostNetwork: {{ $sts.hostNetwork }}
+      {{- end }}
+      serviceAccountName: {{ default "default" $sts.serviceAccountName }}
+      {{- with $sts.podSecurityContext }}
+      securityContext:
+        {{- toYaml $sts.podSecurityContext | nindent 8 }}
+      {{- end }}
+      {{- include "hostAliases" $ | nindent 6 }}
+      terminationGracePeriodSeconds: {{ default 30 $sts.terminationGracePeriodSeconds }}
+      {{- if hasKey $sts "initContainers" }}
+      initContainers:
+        {{- range $initJobName, $initJob := $sts.initContainers  }}
+        - name: {{ $initJob.name }}
+          command:
+            {{- toYaml $initJob.command | nindent 12 }}
+          {{- if hasKey $initJob "image" }}
+          {{- if hasKey $initJob "workingDir" }}
+          workingDir: {{ $initJob.workingDir }}
+          {{- end }}
+          image: {{ $initJob.image }}
+          {{- else if hasKey $initJob "imageTag" }}
+          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $initJob.imageTag }}
+          {{- else }}
+          image: {{ include "chart.image" $ }}
+          {{- end }}
+          {{- if hasKey $initJob "imagePullPolicy" }}
+          imagePullPolicy: {{ $initJob.imagePullPolicy }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.appname }}-env
+            {{- with $.Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "defaultEnv" $ | nindent 12 }}
+            {{- if hasKey $initJob "env" }}
+            {{- range $index, $element := $initJob.env }}
+            - name: {{ $index | quote }}
+              value: {{ $element | quote }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            {{- range $volumeMount := $.Values.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range $volumeMount := $initJob.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+          resources:
+          {{- if hasKey $initJob "resources" }}
+            {{- toYaml $initJob.resources | nindent 12 }}
+          {{- else }}
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ $stsName }}
+          {{- with $sts.command }}
+          command:
+            {{- toYaml $sts.command | nindent 12 }}
+          {{- end }}
+          {{- if hasKey $sts "workingDir" }}
+          workingDir: {{ $sts.workingDir }}
+          {{- end }}
+          {{- if hasKey $sts "image" }}
+          image: {{ $sts.image }}
+          {{- else if hasKey $sts "imageTag" }}
+          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $sts.imageTag }}
+          {{- else }}
+          image: {{ include "chart.image" $ }}
+          {{- end }}
+          {{- if hasKey $sts "imagePullPolicy" }}
+          imagePullPolicy: {{ $sts.imagePullPolicy }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.appname }}-env
+            {{- with $.Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "defaultEnv" $ | nindent 12 }}
+            {{- if hasKey $sts "env" }}
+            {{- range $index, $element := $sts.env }}
+            - name: {{ $index | quote }}
+              value: {{ $element | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with $sts.containerPort }}
+          ports:
+            - containerPort: {{ $sts.containerPort }}
+              protocol: TCP
+          {{- end }}
+          {{- with $sts.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $sts.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $sts.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml $sts.resources | nindent 12 }}
+          volumeMounts:
+            {{- range $volumeMount := $.Values.volumeMounts  }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range $volumeMount := $sts.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- with $.Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: secret
+          secret:
+            secretName: {{ $.Values.appname }}-secret
+
+{{- end }}

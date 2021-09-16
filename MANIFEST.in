@@ -1,0 +1,9 @@
+graft lain_cli/chart_template
+graft lain_cli/templates
+graft lain_cli/cluster_values
+
+global-exclude __pycache__
+global-exclude *.py[co]
+
+exclude tests
+exclude opensource

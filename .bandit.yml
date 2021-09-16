@@ -1,0 +1,5 @@
+skips:
+  - B108  # download file into /tmp
+  - B303  # md5
+  - B604  # run shell command
+  - B701  # jinja2 is used to render dockerfile

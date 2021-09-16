@@ -1,0 +1,48 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ job_name }}
+  labels:
+    helm.sh/chart: {% if values is defined %}{{ values.releaseName | default(appname) }}{% else %}{{ appname }}{% endif %}
+
+    app.kubernetes.io/name: {{ appname }}
+    app.kubernetes.io/managed-by: Helm
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: {{ timeout | default(86400) }}
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ job_name }}
+        app.kubernetes.io/name: {{ appname }}
+    spec:
+      containers:
+        - name: {{ job_name }}
+          image: {{ image }}
+{% if appname != 'lain' %}
+          envFrom:
+            - secretRef:
+                name: {{ appname }}-env
+{% endif %}
+          env:
+            {{ env | default([]) | to_yaml | indent(12) }}
+          volumeMounts:
+            {{ volumeMounts | default([]) | to_yaml | indent(12) }}
+          resources:
+            limits:
+              cpu: 4000m
+              memory: 8Gi
+            requests:
+              cpu: 1
+              memory: 1Gi
+          command:
+            {{ command | to_yaml | indent(12) }}
+      volumes:
+        {{ volumes | default([]) | to_yaml | indent(8) }}
+      hostAliases:
+{% if hostAliases is defined %}
+        {{ hostAliases | to_yaml | indent(8) }}
+{% endif %}
+      restartPolicy: Never

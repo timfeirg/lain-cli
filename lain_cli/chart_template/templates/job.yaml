@@ -1,0 +1,154 @@
+{{- range $jobName, $job := .Values.jobs  }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $.Release.Name }}-{{ $jobName }}
+  {{- if hasKey $job "annotations" }}
+  annotations:
+    {{- with $job.annotations }}
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  backoffLimit: {{ default 0 $job.backoffLimit }}
+  activeDeadlineSeconds: {{ default 3600 $job.activeDeadlineSeconds }}
+  {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.GitVersion }}
+  ttlSecondsAfterFinished: {{ default 86400 $job.ttlSecondsAfterFinished }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $jobName }}
+        {{- include "chart.labels" $ | nindent 8 }}
+    spec:
+      {{- include "hostAliases" $ | nindent 6 }}
+      {{- if hasKey $job "initContainers" }}
+      initContainers:
+        {{- range $initJobName, $initJob := $job.initContainers  }}
+        - name: {{ $initJob.name }}
+          command:
+            {{- toYaml $initJob.command | nindent 12 }}
+          {{- if hasKey $initJob "workingDir" }}
+          workingDir: {{ $initJob.workingDir }}
+          {{- end }}
+          {{- if hasKey $initJob "image" }}
+          image: {{ $initJob.image }}
+          {{- else if hasKey $initJob "imageTag" }}
+          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $initJob.imageTag }}
+          {{- else }}
+          image: {{ include "chart.image" $ }}
+          {{- end }}
+          {{- if hasKey $initJob "imagePullPolicy" }}
+          imagePullPolicy: {{ default "IfNotPresent" $initJob.imagePullPolicy }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.appname }}-env
+            {{- with $.Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "defaultEnv" $ | nindent 12 }}
+            {{- if hasKey $initJob "env" }}
+            {{- range $index, $element := $initJob.env }}
+            - name: {{ $index | quote }}
+              value: {{ $element | quote }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            {{- range $volumeMount := $.Values.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range $volumeMount := $initJob.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+          resources:
+          {{- if hasKey $initJob "resources" }}
+            {{- toYaml $initJob.resources | nindent 12 }}
+          {{- else }}
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ $jobName }}
+          command:
+            {{- toYaml $job.command | nindent 12 }}
+          {{- if hasKey $job "workingDir" }}
+          workingDir: {{ $job.workingDir }}
+          {{- end }}
+          {{- if hasKey $job "image" }}
+          image: {{ $job.image }}
+          {{- else if hasKey $job "imageTag" }}
+          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $job.imageTag }}
+          {{- else }}
+          image: {{ include "chart.image" $ }}
+          {{- end }}
+          {{- if hasKey $job "imagePullPolicy" }}
+          imagePullPolicy: {{ default "IfNotPresent" $job.imagePullPolicy }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.appname }}-env
+            {{- with $.Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "defaultEnv" $ | nindent 12 }}
+            {{- if hasKey $job "env" }}
+            {{- range $index, $element := $job.env }}
+            - name: {{ $index | quote }}
+              value: {{ $element | quote }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            {{- range $volumeMount := $.Values.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range $volumeMount := $job.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+          resources:
+          {{- if hasKey $job "resources" }}
+            {{- toYaml $job.resources | nindent 12 }}
+          {{- else }}
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          {{- end }}
+      volumes:
+        {{- with $.Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: secret
+          secret:
+            secretName: {{ $.Values.appname }}-secret
+      restartPolicy: Never
+{{- end }}

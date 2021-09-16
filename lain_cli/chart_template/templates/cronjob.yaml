@@ -1,0 +1,158 @@
+{{- range $cronjobName, $cronjob := .Values.cronjobs  }}
+---
+apiVersion: {{ template "cronjob.apiVersion" $ }}
+kind: CronJob
+metadata:
+  name: {{ $.Release.Name }}-{{ $cronjobName }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  schedule: {{ $cronjob.schedule | quote }}
+  concurrencyPolicy: {{ default "Replace" $cronjob.concurrencyPolicy }}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $cronjobName }}
+        {{- include "chart.labels" $ | nindent 8 }}
+    spec:
+      backoffLimit: {{ default 0 $cronjob.backoffLimit }}
+      activeDeadlineSeconds: {{ default 3600 $cronjob.activeDeadlineSeconds }}
+      {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.GitVersion }}
+      ttlSecondsAfterFinished: {{ default 86400 $cronjob.ttlSecondsAfterFinished }}
+      {{- end }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $cronjobName }}
+            {{- include "chart.labels" $ | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ default "default" $cronjob.serviceAccountName }}
+          {{- with $cronjob.podSecurityContext }}
+          securityContext:
+            {{- toYaml $cronjob.podSecurityContext | nindent 12 }}
+          {{- end }}
+          {{- include "hostAliases" $ | nindent 10 }}
+          terminationGracePeriodSeconds: {{ default 30 $cronjob.terminationGracePeriodSeconds }}
+          {{- if hasKey $cronjob "initContainers" }}
+          initContainers:
+            {{- range $initJobName, $initJob := $cronjob.initContainers  }}
+            - name: {{ $initJob.name }}
+              command:
+                {{- toYaml $initJob.command | nindent 12 }}
+              {{- if hasKey $initJob "workingDir" }}
+              workingDir: {{ $initJob.workingDir }}
+              {{- end }}
+              envFrom:
+                - secretRef:
+                    name: {{ $.Values.appname }}-env
+                {{- with $.Values.extraEnvFrom }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              env:
+                {{- include "defaultEnv" $ | nindent 16 }}
+                {{- if hasKey $initJob "env" }}
+                {{- range $index, $element := $initJob.env }}
+                - name: {{ $index | quote }}
+                  value: {{ $element | quote }}
+                {{- end }}
+                {{- end }}
+              {{- if hasKey $initJob "image" }}
+              image: {{ $initJob.image }}
+              {{- else if hasKey $initJob "imageTag" }}
+              image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $initJob.imageTag }}
+              {{- else }}
+              image: {{ include "chart.image" $ }}
+              {{- end }}
+              {{- if hasKey $initJob "imagePullPolicy" }}
+              imagePullPolicy: {{ $initJob.imagePullPolicy }}
+              {{- end }}
+              volumeMounts:
+                {{- range $volumeMount := $.Values.volumeMounts }}
+                - name: {{ default "secret" $volumeMount.name }}
+                  mountPath: {{ $volumeMount.mountPath }}
+                  {{- if hasKey $volumeMount "subPath" }}
+                  subPath: {{ $volumeMount.subPath }}
+                  {{- end }}
+                {{- end }}
+                {{- range $volumeMount := $initJob.volumeMounts }}
+                - name: {{ default "secret" $volumeMount.name }}
+                  mountPath: {{ $volumeMount.mountPath }}
+                  {{- if hasKey $volumeMount "subPath" }}
+                  subPath: {{ $volumeMount.subPath }}
+                  {{- end }}
+                {{- end }}
+              resources:
+              {{- if hasKey $initJob "resources" }}
+                {{- toYaml $initJob.resources | nindent 12 }}
+              {{- else }}
+                limits:
+                  cpu: 2000m
+                  memory: 2Gi
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          containers:
+            - name: {{ $cronjobName }}
+              {{- with $cronjob.command }}
+              command:
+                {{- toYaml $cronjob.command | nindent 16 }}
+              {{- end }}
+              {{- if hasKey $cronjob "workingDir" }}
+              workingDir: {{ $cronjob.workingDir }}
+              {{- end }}
+              envFrom:
+                - secretRef:
+                    name: {{ $.Values.appname }}-env
+                {{- with $.Values.extraEnvFrom }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              env:
+                {{- include "defaultEnv" $ | nindent 16 }}
+                {{- if hasKey $cronjob "env" }}
+                {{- range $index, $element := $cronjob.env }}
+                - name: {{ $index | quote }}
+                  value: {{ $element | quote }}
+                {{- end }}
+                {{- end }}
+              {{- if hasKey $cronjob "image" }}
+              image: {{ $cronjob.image }}
+              {{- else if hasKey $cronjob "imageTag" }}
+              image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $cronjob.imageTag }}
+              {{- else }}
+              image: {{ include "chart.image" $ }}
+              {{- end }}
+              {{- if hasKey $cronjob "imagePullPolicy" }}
+              imagePullPolicy: {{ $cronjob.imagePullPolicy }}
+              {{- end }}
+              resources:
+                {{- toYaml $cronjob.resources | nindent 16 }}
+              volumeMounts:
+                {{- range $volumeMount := $.Values.volumeMounts  }}
+                - name: {{ default "secret" $volumeMount.name }}
+                  mountPath: {{ $volumeMount.mountPath }}
+                  {{- if hasKey $volumeMount "subPath" }}
+                  subPath: {{ $volumeMount.subPath }}
+                  {{- end }}
+                {{- end }}
+                {{- range $volumeMount := $cronjob.volumeMounts }}
+                - name: {{ default "secret" $volumeMount.name }}
+                  mountPath: {{ $volumeMount.mountPath }}
+                  {{- if hasKey $volumeMount "subPath" }}
+                  subPath: {{ $volumeMount.subPath }}
+                  {{- end }}
+                {{- end }}
+          volumes:
+            {{- with $.Values.volumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: secret
+              secret:
+                secretName: {{ $.Values.appname }}-secret
+{{- end }}

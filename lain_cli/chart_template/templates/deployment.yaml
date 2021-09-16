@@ -1,0 +1,227 @@
+{{- range $deployName, $deployment := .Values.deployments  }}
+---
+apiVersion: {{ template "deployment.apiVersion" $ }}
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}-{{ $deployName }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ $deployment.replicaCount }}
+  minReadySeconds: {{ default 0 $deployment.minReadySeconds }}
+  {{- with $deployment.strategy }}
+  strategy:
+    {{- toYaml $deployment.strategy | nindent 4 }}
+  {{- end}}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $deployName }}
+  template:
+    metadata:
+    {{- if $deployment.podAnnotations }}
+      annotations:
+      {{- range $key, $value := $deployment.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+    {{- end }}
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $deployName }}
+        {{- include "chart.labels" $ | nindent 8 }}
+    spec:
+      {{- if or $deployment.nodes $deployment.affinity }}
+      affinity:
+        {{- if hasKey $deployment "affinity" }}
+{{ toYaml $deployment.affinity | indent 8 }}
+        {{- end }}
+        {{- if $deployment.nodes }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ $.Release.Name }}-{{ $deployName }}
+                operator: In
+                values:
+                - 'true'
+        {{- end }}
+      {{- end }}
+      {{- if hasKey $deployment "hostNetwork" }}
+      hostNetwork: {{ $deployment.hostNetwork }}
+      {{- end }}
+      serviceAccountName: {{ default "default" $deployment.serviceAccountName }}
+      {{- with $deployment.podSecurityContext }}
+      securityContext:
+        {{- toYaml $deployment.podSecurityContext | nindent 8 }}
+      {{- end }}
+      {{- include "hostAliases" $ | nindent 6 }}
+      terminationGracePeriodSeconds: {{ default 30 $deployment.terminationGracePeriodSeconds }}
+      {{- if hasKey $deployment "initContainers" }}
+      initContainers:
+        {{- range $initJobName, $initJob := $deployment.initContainers  }}
+        - name: {{ $initJob.name }}
+          command:
+            {{- toYaml $initJob.command | nindent 12 }}
+          {{- if hasKey $initJob "image" }}
+          {{- if hasKey $initJob "workingDir" }}
+          workingDir: {{ $initJob.workingDir }}
+          {{- end }}
+          image: {{ $initJob.image }}
+          {{- else if hasKey $initJob "imageTag" }}
+          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $initJob.imageTag }}
+          {{- else }}
+          image: {{ include "chart.image" $ }}
+          {{- end }}
+          {{- if hasKey $initJob "imagePullPolicy" }}
+          imagePullPolicy: {{ $initJob.imagePullPolicy }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.appname }}-env
+            {{- with $.Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "defaultEnv" $ | nindent 12 }}
+            {{- if hasKey $initJob "env" }}
+            {{- range $index, $element := $initJob.env }}
+            - name: {{ $index | quote }}
+              value: {{ $element | quote }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            {{- range $volumeMount := $.Values.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range $volumeMount := $initJob.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+          resources:
+          {{- if hasKey $initJob "resources" }}
+            {{- toYaml $initJob.resources | nindent 12 }}
+          {{- else }}
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ $deployName }}
+          {{- with $deployment.command }}
+          command:
+            {{- toYaml $deployment.command | nindent 12 }}
+          {{- end }}
+          {{- if hasKey $deployment "workingDir" }}
+          workingDir: {{ $deployment.workingDir }}
+          {{- end }}
+          {{- if hasKey $deployment "image" }}
+          image: {{ $deployment.image }}
+          {{- else if hasKey $deployment "imageTag" }}
+          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $deployment.imageTag }}
+          {{- else }}
+          image: {{ include "chart.image" $ }}
+          {{- end }}
+          {{- if hasKey $deployment "imagePullPolicy" }}
+          imagePullPolicy: {{ $deployment.imagePullPolicy }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ $.Values.appname }}-env
+            {{- with $.Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "defaultEnv" $ | nindent 12 }}
+            {{- if hasKey $deployment "env" }}
+            {{- range $index, $element := $deployment.env }}
+            - name: {{ $index | quote }}
+              value: {{ $element | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with $deployment.containerPort }}
+          ports:
+            - containerPort: {{ $deployment.containerPort }}
+              protocol: TCP
+          {{- end }}
+          {{- with $deployment.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $deployment.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $deployment.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml $deployment.resources | nindent 12 }}
+          volumeMounts:
+            {{- range $volumeMount := $.Values.volumeMounts  }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range $volumeMount := $deployment.volumeMounts }}
+            - name: {{ default "secret" $volumeMount.name }}
+              mountPath: {{ $volumeMount.mountPath }}
+              {{- if hasKey $volumeMount "subPath" }}
+              subPath: {{ $volumeMount.subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- with $.Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: secret
+          secret:
+            secretName: {{ $.Values.appname }}-secret
+
+{{- if $deployment.hpa }}
+---
+# ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#horizontalpodautoscaler-v1-autoscaling
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $.Values.appname }}-{{ $deployName }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $.Values.appname }}-{{ $deployName }}
+  minReplicas: {{ $deployment.replicaCount }}
+  maxReplicas: {{ $deployment.hpa.maxReplicas }}
+  {{- if $deployment.hpa.metrics }}
+  metrics:
+    {{- with $deployment.hpa.metrics }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion }}
+  behavior:
+    {{- if $deployment.hpa.behavior }}
+    {{- with $deployment.hpa.behavior }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- else }}
+    scaleUp:
+      stabilizationWindowSeconds: 120
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- end }}

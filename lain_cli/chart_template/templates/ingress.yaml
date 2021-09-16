@@ -1,0 +1,73 @@
+{{- range $ingress := .Values.ingresses }}
+---
+apiVersion: {{ template "ingress.apiVersion" $ }}
+kind: Ingress
+metadata:
+  {{- if contains "." $ingress.host }}
+  name: {{ $ingress.host | replace "." "-" }}-{{ $.Release.Name }}-{{ $ingress.deployName }}
+  {{- else }}
+  name: {{ $ingress.host | replace "." "-" }}-{{ $.Values.domain | replace "." "-" }}-{{ $.Release.Name }}-{{ $ingress.deployName }}
+  {{- end }}
+  annotations:
+    {{- if hasKey $.Values "clusterIssuer" }}
+    cert-manager.io/cluster-issuer: {{ $.Values.clusterIssuer }}
+    {{- end }}
+    {{- if hasKey $.Values "ingressClass" }}
+    kubernetes.io/ingress.class: {{ default $.Values.ingressClass $ingress.ingressClass }}
+    {{- end }}
+    {{- with $.Values.ingressAnnotations }}
+    {{- range $k, $v := $.Values.ingressAnnotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- end }}
+    {{- with $ingress.annotations }}
+    {{- range $k, $v := $ingress.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- end }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+spec:
+  {{- if hasKey $.Values "ingressTLSSecretName" }}
+  tls:
+    - secretName: {{ $.Values.ingressTLSSecretName }}
+  {{- end }}
+  {{- if hasKey $.Values "clusterIssuer" }}
+  tls:
+    - hosts:
+      {{- if contains "." $ingress.host }}
+      - '*.{{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" }}'
+      - '{{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" }}'
+      secretName: {{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" | replace "." "-" }}
+      {{- else }}
+      - "*.{{ $.Values.domain }}"
+      - "{{ $.Values.domain }}"
+      secretName: {{ $.Values.domain | replace "." "-" }}
+      {{- end }}
+  {{- end }}
+  rules:
+    {{- if contains "." $ingress.host }}
+    - host: {{ $ingress.host }}
+    {{- else }}
+    - host: {{ $ingress.host }}.{{ $.Values.domain }}
+    {{- end }}
+      http:
+        paths:
+        {{- range $ingress.paths }}
+          - path: {{ . }}
+            {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+            pathType: Prefix
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $.Release.Name }}-{{ $ingress.deployName }}
+                port:
+                  number: {{ default 80 (index $.Values.deployments $ingress.deployName "nodePort") }}
+              {{- else }}
+              serviceName: {{ $.Release.Name }}-{{ $ingress.deployName }}
+              servicePort: {{ default 80 (index $.Values.deployments $ingress.deployName "nodePort") }}
+              {{- end }}
+        {{- end }}
+
+{{- end }}

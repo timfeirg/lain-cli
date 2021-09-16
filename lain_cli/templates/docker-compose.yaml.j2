@@ -1,0 +1,44 @@
+# ref: https://github.com/compose-spec/compose-spec/blob/master/spec.md
+version: '3'
+services:
+  {% for proc_name, proc in values.deployments.items() %}
+
+  {{ proc_name }}:
+    {% if proc.image %}
+    image: {{ proc.image }}
+    {% elif proc.imageTag %}
+    image: {{ cluster_config['registry'] }}/{{ appname }}:{{ proc.imageTag }}
+    {% else %}
+    # lain push will overwrite the latest tag every time
+    image: {{ cluster_config['registry'] }}/{{ appname }}:latest
+    pull_policy: always
+    {% endif %}
+    command:
+      {{ proc.command | to_yaml | indent(6) }}
+    volumes:
+      - .:{{ proc.working_dir | default('/lain/app') }}
+    {% if values.env or proc.env %}
+    environment:
+      {% if values.env %}
+      {{ values.env | to_yaml | indent(6) }}
+      {%- endif %}
+      {% if proc.env %}
+      {{ proc.env | to_yaml | indent(6) }}
+      {%- endif %}
+    {%- endif %}
+    working_dir: {{ proc.working_dir | default('lain/app') }}
+    # depends_on:
+    #   - redis
+    #   - mysql
+  {% endfor %}
+
+  # redis:
+  #   image: "redis:3.2.7"
+  #   command: --databases 64
+
+  # mysql:
+  #   image: "mysql:8"
+  #   command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #     MYSQL_DATABASE: {{ appname }}

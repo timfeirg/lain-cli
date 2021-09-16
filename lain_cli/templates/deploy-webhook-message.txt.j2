@@ -1,0 +1,14 @@
+{% if rollback_revision %}
+app rollback to revision: {{ rollback_revision }}
+{% endif %}
+{% if stderr %}
+status: failed!
+{% endif %}
+cluster: {{ cluster }}
+release_name: {{ release_name | default(appname) }}
+executor: {{ executor }}
+version: {{ image_tag }}
+commit message: {{ commit_msg }}
+{% if stderr %}
+stderr: {{ stderr }}
+{% endif %}

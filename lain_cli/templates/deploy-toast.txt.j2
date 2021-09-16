@@ -1,0 +1,41 @@
+your pods have all been created, you can see them using:
+    lain status
+{%- if urls %}
+
+to access your app through internal domain:
+    {% for url in urls %}
+    {{ url }}
+    {%- endfor %}
+{% endif %}
+
+to tail logs:
+    {% for deploy_name in values.deployments %}
+    lain logs {{ deploy_name }}
+    kubectl logs -f --tail 10 -l app.kubernetes.io/instance={{ values.releaseName | default(appname) }}-{{ deploy_name }}
+    {% if loop.index >= 1 %}
+    ...
+    {%- break %}
+    {%- endif %}
+    {%- endfor %}
+
+{%- if 'cronjobs' in values and values.cronjobs %}
+to test your cronjob:
+    {%- for job_name in values.cronjobs.keys() %}
+    kubectl create job --from=cronjob/{{ appname }}-{{ job_name }} {{ appname }}-{{ job_name }}-test
+    {% if loop.index >= 2 %}
+    ...
+    {% break %}
+    {% endif %}
+    {%- endfor %}
+{%- endif %}
+
+{%- if grafana_url %}
+
+use grafana for monitoring:
+    {{ grafana_url }}
+{%- endif %}
+{%- if kibana %}
+
+kibana, for log output and analysing:
+    {{ kibana_url }}
+{%- endif %}

@@ -1,0 +1,80 @@
+{{- range $testName, $test_job := .Values.tests  }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $.Release.Name }}-{{ $testName }}
+  labels:
+    {{- include "chart.labels" $ | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  hostAliases:
+    {{- include "hostAliases" $ | nindent 4 }}
+  containers:
+    - name: {{ $testName }}
+      command:
+        {{- toYaml $test_job.command | nindent 8 }}
+      {{- if hasKey $test_job "workingDir" }}
+      workingDir: {{ $test_job.workingDir }}
+      {{- end }}
+      {{- if hasKey $test_job "image" }}
+      image: {{ $test_job.image }}
+      {{- else if hasKey $test_job "imageTag" }}
+      image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $test_job.imageTag }}
+      {{- else }}
+      image: {{ include "chart.image" $ }}
+      {{- end }}
+      {{- if hasKey $test_job "imagePullPolicy" }}
+      imagePullPolicy: {{ default "IfNotPresent" $test_job.imagePullPolicy }}
+      {{- end }}
+      envFrom:
+        - secretRef:
+            name: {{ $.Values.appname }}-env
+        {{- with $.Values.extraEnvFrom }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      env:
+        {{- include "defaultEnv" $ | nindent 8 }}
+        {{- if hasKey $test_job "env" }}
+        {{- range $index, $element := $test_job.env }}
+        - name: {{ $index | quote }}
+          value: {{ $element | quote }}
+        {{- end }}
+        {{- end }}
+      volumeMounts:
+        {{- range $volumeMount := $.Values.volumeMounts }}
+        - name: {{ default "secret" $volumeMount.name }}
+          mountPath: {{ $volumeMount.mountPath }}
+          {{- if hasKey $volumeMount "subPath" }}
+          subPath: {{ $volumeMount.subPath }}
+          {{- end }}
+        {{- end }}
+        {{- range $volumeMount := $test_job.volumeMounts }}
+        - name: {{ default "secret" $volumeMount.name }}
+          mountPath: {{ $volumeMount.mountPath }}
+          {{- if hasKey $volumeMount "subPath" }}
+          subPath: {{ $volumeMount.subPath }}
+          {{- end }}
+        {{- end }}
+      resources:
+      {{- if hasKey $test_job "resources" }}
+        {{- toYaml $test_job.resources | nindent 8 }}
+      {{- else }}
+        limits:
+          cpu: 2000m
+          memory: 2Gi
+        requests:
+          cpu: 500m
+          memory: 1Gi
+      {{- end }}
+  volumes:
+    {{- with $.Values.volumes }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    - name: secret
+      secret:
+        secretName: {{ $.Values.appname }}-secret
+  restartPolicy: Never
+{{- end }}
