@@ -61,13 +61,13 @@ spec:
         - name: {{ $initJob.name }}
           command:
             {{- toYaml $initJob.command | nindent 12 }}
-          {{- if hasKey $initJob "image" }}
           {{- if hasKey $initJob "workingDir" }}
           workingDir: {{ $initJob.workingDir }}
           {{- end }}
+          {{- if hasKey $initJob "image" }}
           image: {{ $initJob.image }}
           {{- else if hasKey $initJob "imageTag" }}
-          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $initJob.imageTag }}
+          image: {{ include "chart.registry" $ }}/{{ printf "%s:%s" $.Values.appname $initJob.imageTag }}
           {{- else }}
           image: {{ include "chart.image" $ }}
           {{- end }}
@@ -128,7 +128,7 @@ spec:
           {{- if hasKey $deployment "image" }}
           image: {{ $deployment.image }}
           {{- else if hasKey $deployment "imageTag" }}
-          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $deployment.imageTag }}
+          image: {{ include "chart.registry" $ }}/{{ printf "%s:%s" $.Values.appname $deployment.imageTag }}
           {{- else }}
           image: {{ include "chart.image" $ }}
           {{- end }}

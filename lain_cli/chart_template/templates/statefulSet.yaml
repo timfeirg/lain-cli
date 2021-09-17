@@ -67,7 +67,7 @@ spec:
           {{- end }}
           image: {{ $initJob.image }}
           {{- else if hasKey $initJob "imageTag" }}
-          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $initJob.imageTag }}
+          image: {{ include "chart.registry" $ }}/{{ printf "%s:%s" $.Values.appname $sts.imageTag }}
           {{- else }}
           image: {{ include "chart.image" $ }}
           {{- end }}
@@ -128,7 +128,7 @@ spec:
           {{- if hasKey $sts "image" }}
           image: {{ $sts.image }}
           {{- else if hasKey $sts "imageTag" }}
-          image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $sts.imageTag }}
+          image: {{ include "chart.registry" $ }}/{{ printf "%s:%s" $.Values.appname $sts.imageTag }}
           {{- else }}
           image: {{ include "chart.image" $ }}
           {{- end }}

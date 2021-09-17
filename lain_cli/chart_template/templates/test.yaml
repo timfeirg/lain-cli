@@ -22,7 +22,7 @@ spec:
       {{- if hasKey $test_job "image" }}
       image: {{ $test_job.image }}
       {{- else if hasKey $test_job "imageTag" }}
-      image: {{ printf "%s/%s:%s" $.Values.registry $.Values.appname $test_job.imageTag }}
+      image: {{ include "chart.registry" $ }}/{{ printf "%s:%s" $.Values.appname $test_job.imageTag }}
       {{- else }}
       image: {{ include "chart.image" $ }}
       {{- end }}

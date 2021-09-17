@@ -825,9 +825,6 @@ def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
     cluster = ctx.obj['cluster']
     cc = tell_cluster_config(cluster)
     kvdic['cluster'] = cluster
-    if 'registry' not in kvdic:
-        kvdic['registry'] = cc.get('internalRegistry') or cc['registry']
-
     kvdic['user'] = tell_executor()
     image_tag = kvdic.get('imageTag')
     if deduce_image:
@@ -837,20 +834,6 @@ def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
         kvdic['imageTag'] = ctx.obj['image_tag'] = image_tag
         if LAIN_META_PATTERN.match(image_tag):
             ctx.obj['git_revision'] = image_tag.split('-')[-1]
-
-    def populate_from_cc(field, dest=None, default=None):
-        if not dest:
-            dest = field
-
-        if field in cc:
-            kvdic[dest] = cc[field]
-        elif default is not None:
-            kvdic[dest] = default
-        else:
-            raise ValueError(f'cannot populate {field} from cluster config: {cc}')
-
-    populate_from_cc('namespace', 'k8s_namespace', default='default')
-    populate_from_cc('domain')
 
     set_clause = ','.join(f'{k}={v}' for k, v in kvdic.items())
     if isinstance(extra, str):

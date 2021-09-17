@@ -8,6 +8,8 @@ pypi_index: https://gitlab.example.com/api/v4/projects/[PORJECT_ID]/packages/pyp
 pypi_extra_index: https://mirrors.cloud.tencent.com/pypi/simple/
 # 镜像仓库
 registry: registry.example.com
+# 有一些 PaaS 提供内网镜像加速, 集群内外用的镜像 tag 不一样
+internalRegistry: registry.in.example.com
 # lain 整合了一系列 gitlab 相关功能, 在这里配置 gitlab 地址
 gitlab: http://gitlab.example.com
 # 内网域名写在这里, 至于公网地址, 就不写在这里了, lain 要求公网域名完整声明在 values 里 (更加显式)

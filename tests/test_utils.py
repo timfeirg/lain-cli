@@ -150,10 +150,7 @@ def test_tell_helm_options():
     internal_values_file = join(CLUSTER_VALUES_DIR, f'values-{TEST_CLUSTER}.yaml')
     assert internal_values_file in set(options)
     set_values = parse_helm_set_clause_from_options(options)
-    assert set_values['registry'] == TEST_CLUSTER_CONFIG['registry']
     assert set_values['cluster'] == 'test'
-    assert set_values['k8s_namespace'] == TEST_CLUSTER_CONFIG['namespace']
-    assert set_values['domain'] == TEST_CLUSTER_CONFIG['domain']
     assert set_values.get('imageTag')
 
     def no_build_and_override_registry():
@@ -166,12 +163,11 @@ def test_tell_helm_options():
     _, options = run_under_click_context(
         no_build_and_override_registry,
     )
-    set_values_ = parse_helm_set_clause_from_options(options)
-    assert 'imageTag' not in set_values_
+    set_values_again = parse_helm_set_clause_from_options(options)
+    assert 'imageTag' not in set_values_again
     del set_values['imageTag']
-    assert set_values_.pop('registry', None) == RANDOM_STRING
-    del set_values['registry']
-    assert set_values_ == set_values
+    assert set_values_again.pop('registry', None) == RANDOM_STRING
+    assert set_values_again == set_values
 
     def with_extra_values_file():
         obj = context().obj

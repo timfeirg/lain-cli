@@ -60,9 +60,6 @@ def test_values():
         }
     )
     yadu(values, DUMMY_VALUES_PATH)
-    fake_registry = 'registry.fake'
-    cluster_values = {'registry': fake_registry}
-    yadu(cluster_values, join(CHART_DIR_NAME, f'values-{TEST_CLUSTER}.yaml'))
     k8s_specs = render_k8s_specs()
     ingresses = [spec for spec in k8s_specs if spec['kind'] == 'Ingress']
     domain = TEST_CLUSTER_CONFIG['domain']
@@ -104,10 +101,6 @@ def test_values():
     assert container_spec['hostNetwork'] is True
     containers = container_spec['containers'][0]
     assert containers['workingDir'] == RANDOM_STRING
-    assert (
-        containers['image']
-        == f'{fake_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
-    )
     env_dic = {}
     for pair in container_spec['containers'][0]['env']:
         env_dic[pair['name']] = pair['value']
@@ -131,6 +124,34 @@ def test_values():
     port = service_spec['ports'][0]
     assert port['nodePort'] == port['port'] == nodePort
     assert port['targetPort'] == 5000
+
+
+def tell_deployment_image(deployment):
+    container_spec = deployment['spec']['template']['spec']
+    containers = container_spec['containers'][0]
+    return containers['image']
+
+
+def render_with_override_values(dic):
+    yadu(dic, join(CHART_DIR_NAME, f'values-{TEST_CLUSTER}.yaml'))
+    k8s_specs = render_k8s_specs()
+    return k8s_specs
+
+
+@pytest.mark.usefixtures('dummy_helm_chart')
+def test_values_override():
+    fake_registry = 'registry.fake'
+    cluster_values = {'registry': fake_registry}
+    k8s_specs = render_with_override_values(cluster_values)
+    deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
+    image = tell_deployment_image(deployment)
+    assert image == f'{fake_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
+    internal_registry = 'registry.in.fake'
+    cluster_values = {'internalRegistry': internal_registry}
+    k8s_specs = render_with_override_values(cluster_values)
+    deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
+    image = tell_deployment_image(deployment)
+    assert image == f'{internal_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
 
 
 @pytest.mark.usefixtures('dummy_helm_chart')

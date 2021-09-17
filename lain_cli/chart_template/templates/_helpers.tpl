@@ -1,7 +1,12 @@
 {{/* vim: set filetype=mustache: */}}
 
 {{- define "chart.image" -}}
-{{- printf "%s/%s:%s" .Values.registry .Values.appname .Values.imageTag}}
+{{ $reg := default .Values.registry .Values.internalRegistry }}
+{{- printf "%s/%s:%s" $reg .Values.appname .Values.imageTag}}
+{{- end -}}
+
+{{- define "chart.registry" -}}
+{{ default .Values.registry .Values.internalRegistry }}
 {{- end -}}
 
 {{/*
