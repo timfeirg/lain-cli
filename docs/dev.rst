@@ -13,7 +13,7 @@
 * Kubernetes 集群, Apiserver 服务向内网暴露, kubeconfig 发布给所有团队成员
 * Docker Registry, 云原生时代, 这应该是每一家互联网公司必不可少的基础设施, lain 目前支持一系列 Registry: Harbor, 阿里云, 腾讯云, 以及原生的 Docker Registry.
 * [可选] 你熟悉 Python, 有能力维护 lain 的内部分支. lain 是一个内部性很强的软件, 有很多定制开发的可能性.
-* [可选] PyPI, 或者类 PyPI 的 Package Registry, 比如 `GitLab Package Registry <https://docs.gitlab.com/ee/user/packages/pypi_repository/>`_, lain 的代码里实现了检查新版, 自动提示升级. 如果你们是一个快节奏的开发团队, lain 的使用必定会遇到各种需要维护的情况, 因此应该尽量有一个内网 Package Index.
+* [可选] 打包发版, 这就需要有内部 PyPI, 比如 `GitLab Package Registry <https://docs.gitlab.com/ee/user/packages/pypi_repository/>`_, lain 的代码里实现了检查新版, 自动提示升级. 如果你们是一个快节奏的开发团队, lain 的使用必定会遇到各种需要维护的情况, 因此应该尽量有一个内网 Package Index.
 * [可选] Prometheus, Grafana, Kibana, 这些将会给 lain 提供强大的周边服务, 具体有什么用? 那就任君想象了, 云平台和监控/日志系统整合以后, 能做的事情那可太多了.
 * [可选] 你的团队使用 GitLab 和 GitLab CI, 以我们内部现状, 大部分 DevOps 都基于 GitLab CI + lain, 如果你也恰好如此, 那便有很多工作可以分享.
 * [可选] 你的团队对 Kubernetes + Helm 有着基本的了解, 明白 Kubernetes 的基本架构, 以及 Pod / Deploy / Service / Ingress / Ingress Controller 的基本概念.
@@ -30,10 +30,14 @@
 .. literalinclude:: ../lain_cli/cluster_values/values-test.yaml
    :language: yaml
 
+我们推荐把集群配置一起打包进 Python Package, 随包发布. 但如果你愿意, 也可以超载 :code:`CLUSTER_VALUES_DIR` 来定制集群配置的目录, 这样就能直接引用本地的任意集群配置了.
+
 集群配置写好了, 本地也测通各项功能正常使用, 那就想办法发布给你的团队们用了.
 
 打包发版
 ^^^^^^^^
+
+这是一个可选(但推荐)的步骤, 打包到内部 PyPI 上, 意味着你可以把 :ref:`集群配置 <cluster-values>` 和代码一起打包, 随包发布, 这样一来, 大家就无需在自己本地维护集群配置了.
 
 打包有很多种方式, 既可以上传私有 PyPI 仓库, 也可以把代码库打包, 直接上传到任意能 HTTP 下载的地方, 简单分享下我们曾经用过的打包方案:
 

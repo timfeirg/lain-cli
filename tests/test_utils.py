@@ -10,7 +10,7 @@ from lain_cli.aliyun import AliyunRegistry
 from lain_cli.harbor import HarborRegistry
 from lain_cli.utils import (
     DOCKERIGNORE_NAME,
-    INTERNAL_CLUSTER_VALUES_DIR,
+    CLUSTER_VALUES_DIR,
     banyun,
     change_dir,
     context,
@@ -147,9 +147,7 @@ def test_tell_helm_options():
     _, options = run_under_click_context(
         tell_helm_options,
     )
-    internal_values_file = join(
-        INTERNAL_CLUSTER_VALUES_DIR, f'values-{TEST_CLUSTER}.yaml'
-    )
+    internal_values_file = join(CLUSTER_VALUES_DIR, f'values-{TEST_CLUSTER}.yaml')
     assert internal_values_file in set(options)
     set_values = parse_helm_set_clause_from_options(options)
     assert set_values['registry'] == TEST_CLUSTER_CONFIG['registry']
@@ -303,9 +301,7 @@ def test_tell_all_clusters(mocker):
     another_cluster_name = 'another'
     another_cluster_values_file = f'values-{another_cluster_name}.yaml'
     tempd = TemporaryDirectory()
-    test_cluster_values_path = join(
-        INTERNAL_CLUSTER_VALUES_DIR, test_cluster_values_file
-    )
+    test_cluster_values_path = join(CLUSTER_VALUES_DIR, test_cluster_values_file)
     test_cluster_values = yalo(test_cluster_values_path)
     test_cluster_values['registry'] = 'another.example.com'
     shutil.copyfile(
@@ -313,7 +309,7 @@ def test_tell_all_clusters(mocker):
     )
     yadu(test_cluster_values, join(tempd.name, another_cluster_values_file))
     mocker.patch('lain_cli.utils.KUBECONFIG_DIR', tempd.name)
-    mocker.patch('lain_cli.utils.INTERNAL_CLUSTER_VALUES_DIR', tempd.name)
+    mocker.patch('lain_cli.utils.CLUSTER_VALUES_DIR', tempd.name)
     # touch kubeconfig-another
     Path(join(tempd.name, f'kubeconfig-{another_cluster_name}')).write_text('')
     Path(join(tempd.name, f'kubeconfig-{TEST_CLUSTER}')).write_text('')

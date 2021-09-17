@@ -57,13 +57,17 @@ from ruamel.yaml.scalarstring import LiteralScalarString
 
 from lain_cli import __version__
 
+
 yaml = YAML()
+ENV = os.environ.copy()
 # safe to delete when release is in this state
 HELM_STUCK_STATE = {'pending-install', 'pending-upgrade', 'uninstalling'}
 CLI_DIR = dirname(abspath(__file__))
 TEMPLATE_DIR = join(CLI_DIR, 'templates')
 CHART_TEMPLATE_DIR = join(CLI_DIR, 'chart_template')
-INTERNAL_CLUSTER_VALUES_DIR = join(CLI_DIR, 'cluster_values')
+CLUSTER_VALUES_DIR = ENV.get('LAIN_CLUSTER_VALUES_DIR') or join(
+    CLI_DIR, 'cluster_values'
+)
 template_env = Environment(
     trim_blocks=True,
     lstrip_blocks=True,
@@ -72,7 +76,6 @@ template_env = Environment(
 )
 CHART_DIR_NAME = 'chart'
 CHART_VERSION = version.parse('0.1.10')
-ENV = os.environ.copy()
 LOOKOUT_ENV = {'http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY'}
 LAIN_EXBIN_PREFIX = ENV.get('LAIN_EXBIN_PREFIX') or '/usr/local/bin'
 KUBECONFIG_DIR = expanduser('~/.kube')
@@ -2538,7 +2541,7 @@ def tell_cluster_values_file(cluster=None, internal=False):
     if not cluster:
         cluster = tell_cluster()
 
-    d = INTERNAL_CLUSTER_VALUES_DIR if internal else CHART_DIR_NAME
+    d = CLUSTER_VALUES_DIR if internal else CHART_DIR_NAME
     values_file = join(d, f'values-{cluster}.yaml')
     if isfile(values_file):
         return values_file
@@ -2553,9 +2556,7 @@ def tell_cluster_config(cluster=None):
 
     values_file = tell_cluster_values_file(cluster=cluster, internal=True)
     if not values_file:
-        warn(
-            f'cluster values not found for {cluster}, you should prolly delete its kubeconfig'
-        )
+        warn(f'cluster values not found for {cluster} inside {CLUSTER_VALUES_DIR}')
         return
 
     data = yalo(open(values_file))
@@ -2603,6 +2604,9 @@ def tell_all_clusters():
         if not cc:
             continue
         ccs[cluster_name] = cc
+
+    if not ccs:
+        error('no cluster values found at all, you should first set things up')
 
     return ccs
 
