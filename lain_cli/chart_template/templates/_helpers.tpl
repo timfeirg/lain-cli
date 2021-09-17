@@ -98,7 +98,7 @@ Return the default env
 - name: LAIN_CLUSTER
   value: {{ default "UNKNOWN" $.Values.cluster }}
 - name: K8S_NAMESPACE
-  value: {{ default "default" $.Values.k8s_namespace }}
+  value: {{ default "default" $.Values.namespace }}
 - name: IMAGE_TAG
   value: {{ default "UNKNOWN" $.Values.imageTag }}
 {{- if hasKey $.Values "env" }}

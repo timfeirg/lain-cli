@@ -107,7 +107,7 @@ def test_values():
 
     assert env_dic == {
         'LAIN_CLUSTER': TEST_CLUSTER,
-        'K8S_NAMESPACE': TEST_CLUSTER_CONFIG['namespace'],
+        'K8S_NAMESPACE': TEST_CLUSTER_CONFIG.get('namespace', 'default'),
         'IMAGE_TAG': 'overridden-during-deploy',
         'SOMETHING': 'ELSE',
         'FOO': 'BAR',
