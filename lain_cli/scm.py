@@ -6,7 +6,10 @@ import gitlab
 from lain_cli.utils import error, must_get_env, tell_cluster_config
 
 CWD = cwd()
-REVIEWER_GEX = re.compile(r'(review|reviewer|reviewers):(.+)', flags=re.IGNORECASE)
+REVIEWER_GEX = re.compile(
+    r'(review:|reviewer:|reviewers:|\/assign_reviewer|\/assign)(.+)',
+    flags=re.IGNORECASE,
+)
 
 
 def parse_reviewers(s):
@@ -18,10 +21,12 @@ def parse_reviewers(s):
     ... Reviewer:d,e
     ... Reviewer:f g
     ... Reviewer:@h @i j;k,l
+    ... /assign @m,n
+    ... /assign_reviewer @o;p
     ... '''
     >>> rvs = parse_reviewers(messages)
     >>> sorted(list(rvs))
-    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p']
     """
     reviewers = set()
     for _, rvs in re.findall(REVIEWER_GEX, s):
