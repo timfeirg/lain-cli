@@ -13,17 +13,17 @@ from lain_cli.utils import (
 )
 
 
-def tell_webhook_client():
+def tell_webhook_client(hook_url=None):
     ctx = context()
     obj = ctx.obj
-    config = obj['values'].get('webhook')
-    if not config:
+    config = obj.get('values', {}).get('webhook', {})
+    hook_url = hook_url or config.get('url')
+    if not hook_url:
         return
     clusters_to_notify = config.get('clusters') or set()
     cluster = obj['cluster']
     if clusters_to_notify and cluster not in clusters_to_notify:
         return
-    hook_url = config['url']
     pr = urlparse(hook_url)
     if pr.netloc == 'open.feishu.cn':
         return FeishuWebhook(hook_url)

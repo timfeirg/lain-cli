@@ -14,8 +14,7 @@ from click import BadParameter
 from humanfriendly import InvalidTimespan, parse_size, parse_timespan
 
 from lain_cli import __version__
-from lain_cli.gitlab import fetch_chart as fetch_chart_
-from lain_cli.gitlab import validate_repo_name
+from lain_cli.scm import tell_scm
 from lain_cli.kibana import Kibana
 from lain_cli.lint import (
     suggest_cpu_limits,
@@ -505,27 +504,20 @@ def lint(ctx, simple):
 
 
 @lain.command()
-@click.argument('project_name', nargs=1, callback=validate_repo_name)
+@click.argument('project', nargs=1)
+@click.argument('mr_id', nargs=1, type=int)
 @click.option(
-    '--dir',
-    'output_dir',
-    default=cwd(),
-    help='directory name in which chart will be saved',
+    '--webhook-url',
+    help='provide webhook url, will have precedence over values.webhook.url',
 )
-def fetch_chart(project_name, output_dir):
-    """download the helm chart of a project.
-
-    \b
-    to manage apps using lain, you should have the corresponding git repo.
-    but when you don't, you can download the helm chart using this command,
-    and then you'll be able to work with the basic lain commands:
-
-    \b
-        lain fetch-chart dev/avln-server
-        cd dev/avln-server
-        lain logs
-    """
-    fetch_chart_(project_name, output_dir=output_dir)
+def check_mr(project, mr_id, webhook_url):
+    scm = tell_scm()
+    reviewers, mr_url = scm.pending_reviewers(project, mr_id)
+    if reviewers:
+        msg = f'{mr_url} needs review from: {reviewers}'
+        webhook = tell_webhook_client(webhook_url)
+        webhook and webhook.send_msg(msg)
+        error(msg, exit=1)
 
 
 @lain.command()

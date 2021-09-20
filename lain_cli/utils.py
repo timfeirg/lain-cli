@@ -823,7 +823,6 @@ def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
     kvdic = dict(kvpairs or ())
     ctx = context()
     cluster = ctx.obj['cluster']
-    cc = tell_cluster_config(cluster)
     kvdic['cluster'] = cluster
     kvdic['user'] = tell_executor()
     image_tag = kvdic.get('imageTag')

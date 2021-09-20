@@ -9,8 +9,8 @@ from ruamel.yaml.scalarstring import LiteralScalarString
 from lain_cli.aliyun import AliyunRegistry
 from lain_cli.harbor import HarborRegistry
 from lain_cli.utils import (
-    DOCKERIGNORE_NAME,
     CLUSTER_VALUES_DIR,
+    DOCKERIGNORE_NAME,
     banyun,
     change_dir,
     context,
@@ -39,7 +39,6 @@ from tests.conftest import (
     DUMMY_TESTS_CLAUSE,
     RANDOM_STRING,
     TEST_CLUSTER,
-    TEST_CLUSTER_CONFIG,
     run_under_click_context,
 )
 
