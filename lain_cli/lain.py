@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from time import sleep
 import os
 import shutil
 import sys
@@ -14,7 +15,6 @@ from click import BadParameter
 from humanfriendly import InvalidTimespan, parse_size, parse_timespan
 
 from lain_cli import __version__
-from lain_cli.scm import tell_scm
 from lain_cli.kibana import Kibana
 from lain_cli.lint import (
     suggest_cpu_limits,
@@ -31,11 +31,9 @@ from lain_cli.prompt import (
     pod_text,
     top_text,
 )
+from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
-    tell_job_timeout,
-    tell_change_from_kubectl_output,
-    called_by_sh,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
@@ -45,6 +43,7 @@ from lain_cli.utils import (
     RECENT_TAGS_COUNT,
     KVPairType,
     banyun,
+    called_by_sh,
     clean_canary_ingress_annotations,
     click_parse_timespan,
     debug,
@@ -87,12 +86,14 @@ from lain_cli.utils import (
     rc,
     stern,
     tell_best_deploy,
+    tell_change_from_kubectl_output,
     tell_cluster,
     tell_cluster_config,
     tell_grafana_url,
     tell_helm_options,
     tell_image,
     tell_image_tag,
+    tell_job_timeout,
     tell_kibana_url,
     tell_pod_deploy_name,
     tell_registry_client,
@@ -506,18 +507,21 @@ def lint(ctx, simple):
 @lain.command()
 @click.argument('project', nargs=1)
 @click.argument('mr_id', nargs=1, type=int)
-@click.option(
-    '--webhook-url',
-    help='provide webhook url, will have precedence over values.webhook.url',
-)
-def check_mr(project, mr_id, webhook_url):
+def wait_mr_approval(project, mr_id):
+    """wait for mr approval
+
+    \b
+    examples:
+    \b
+        lain wait-mr-approval [GROUP]/[PROJECT] [MR_ID]
+    """
     scm = tell_scm()
-    reviewers, mr_url = scm.pending_reviewers(project, mr_id)
-    if reviewers:
-        msg = f'{mr_url} needs review from: {reviewers}'
-        webhook = tell_webhook_client(webhook_url)
-        webhook and webhook.send_msg(msg)
-        error(msg, exit=1)
+    while True:
+        approved = scm.is_approved(project, mr_id)
+        if approved:
+            break
+        warn('waiting for mr approval')
+        sleep(5)
 
 
 @lain.command()
