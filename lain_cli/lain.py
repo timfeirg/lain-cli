@@ -725,7 +725,7 @@ def job(ctx, image_tag, head, wait, timeout, force, interactive, context, comman
         lain job -- ./manage.py migrate
 
     \b
-    if not in a lain4 app, will start using the lain docker image instead:
+    if not in a lain app, will start using the lain docker image instead:
     \b
         # use -- to avoid click confusion on cli options
         lain job -- echo me so tired
@@ -740,7 +740,7 @@ def job(ctx, image_tag, head, wait, timeout, force, interactive, context, comman
     template = template_env.get_template('job.yaml.j2')
     appname = ctx.obj.get('appname')
     if not appname:
-        warn('not in a lain4 app repo, interpreting job name as "lain"')
+        warn('not in a lain app repo, interpreting job name as "lain"')
         appname = ctx.obj['appname'] = 'lain'
 
     job_name = make_job_name(command)
@@ -904,15 +904,17 @@ def x(ctx, deploy_and_command):
 
 @lain.command()
 @click.argument('cluster', nargs=-1, type=click.Choice(CLUSTERS))
+@click.option('--set-context', is_flag=True, help='set context to configured namespace')
 @click.option('--turn', is_flag=True, help='if shut down, try to boot up this cluster')
 @click.pass_context
-def use(ctx, cluster, turn):
+def use(ctx, cluster, set_context, turn):
     """\b
     point to specified cluster.
 
     this command will link kubeconfig of specified CLUSTER to ~/.kube/config,
     so that you don\'t have to type --kubeconfig when using kubectl, or helm"""
-    if not cluster:
+
+    def print_cluster_and_exit():
         cluster = ctx.obj.get('cluster')
         if cluster:
             goodjob(f'* {cluster}')
@@ -923,6 +925,9 @@ def use(ctx, cluster, turn):
             ctx.exit(0)
         else:
             error('you\'re nowhere, see lain use --help', exit=True)
+
+    if not cluster:
+        print_cluster_and_exit()
     else:
         if len(cluster) != 1:
             error(f'provide one cluster only, got {cluster}', exit=True)
@@ -941,16 +946,21 @@ def use(ctx, cluster, turn):
     ensure_absent(dest)
     os.symlink(src, dest)
     cc = tell_cluster_config(cluster)
-    ns = cc.get('namespace', 'default')
-    kubectl(
-        'config', 'set-context', '--current', f'--namespace={ns}', capture_output=True
-    )
-    goodjob(
-        f'You did good, next time you use lain / helm / kubectl, it\'ll point to cluster {cluster}'
-    )
+    if set_context:
+        ns = cc.get('namespace', 'default')
+        kubectl(
+            'config',
+            'set-context',
+            '--current',
+            f'--namespace={ns}',
+            capture_output=True,
+        )
+
     if turn and cc.get('instance_ids'):
         echo('wait for cluster up...')
         lain_('admin', 'turn', 'on', exit=True)
+
+    print_cluster_and_exit()
 
 
 @lain.command()

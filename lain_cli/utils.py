@@ -2045,7 +2045,7 @@ def ensure_helm_initiated():
         obj['secret_name'] = f'{appname}-secret'
         obj['env_name'] = f'{appname}-env'
     except FileNotFoundError:
-        warn('not in a lain4 app repo')
+        warn('not in a lain app repo')
         raise
     except KeyError as e:
         error(e)
