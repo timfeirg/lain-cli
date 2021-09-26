@@ -508,12 +508,12 @@ def lint(ctx, simple):
 @click.argument('project', nargs=1)
 @click.argument('mr_id', nargs=1, type=int)
 def wait_mr_approval(project, mr_id):
-    """wait for mr approval
+    """wait for mr approval.
 
     \b
     examples:
     \b
-        lain wait-mr-approval [GROUP]/[PROJECT] [MR_ID]
+        lain wait-mr-approval $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID
     """
     scm = tell_scm()
     while True:
@@ -522,6 +522,21 @@ def wait_mr_approval(project, mr_id):
             break
         warn('waiting for mr approval')
         sleep(5)
+
+
+@lain.command()
+@click.argument('project', nargs=1)
+@click.argument('mr_id', nargs=1, type=int)
+def assign_mr(project, mr_id):
+    """assign mr, including reviewers.
+
+    \b
+    examples:
+    \b
+        lain assign-mr $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID
+    """
+    scm = tell_scm()
+    scm.assign_mr(project, mr_id)
 
 
 @lain.command()
