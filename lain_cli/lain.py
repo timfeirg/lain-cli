@@ -34,6 +34,7 @@ from lain_cli.prompt import (
 from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
+    tell_cherry,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
@@ -1219,14 +1220,14 @@ def get(ctx, resource, annotations):
 @lain.command()
 @click.pass_context
 def cherry(ctx):
-    """git cherry between deployed version and HEAD."""
-    release_name = tell_release_name()
-    deployed_image = tell_release_image(release_name)
-    git_revision = ctx.obj.get('git_revision')
-    if not git_revision:
-        error(f'could not infer git revision from imageTag: {deployed_image}', exit=1)
+    """git cherry between deployed version and HEAD.
 
-    git('cherry', '-v', git_revision)
+    \b
+    examples:
+    \b
+        lain send-msg "$(lain cherry)"
+    """
+    tell_cherry()
 
 
 @lain.command()
@@ -1316,6 +1317,8 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
         lain logs
     '''
     release_name = tell_release_name()
+    tell_release_image(release_name, silent=True)
+    previous_revision = ctx.obj.get('git_revision')
     echo(headsup, err=True)
     timeout = tell_job_timeout()
     res = helm(
@@ -1338,7 +1341,7 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
         error(stderr)
         ctx.exit(code)
 
-    webhook and webhook.send_deploy_message()
+    webhook and webhook.send_deploy_message(previous_revision=previous_revision)
     tests = ctx.obj['values'].get('tests')
     if tests:
         # sometimes test pods are cleaned up prematurely, and this command will fail

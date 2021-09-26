@@ -2,6 +2,7 @@ from inspect import cleandoc
 from urllib.parse import urlparse
 
 from lain_cli.utils import (
+    tell_cherry,
     RequestClientMixin,
     context,
     diff_dict,
@@ -57,7 +58,9 @@ class Webhook(RequestClientMixin):
         )
         return self.send_msg(report)
 
-    def send_deploy_message(self, stderr=None, rollback_revision=None):
+    def send_deploy_message(
+        self, stderr=None, rollback_revision=None, previous_revision=None
+    ):
         ctx = context()
         obj = ctx.obj
         git_revision = obj.get('git_revision')
@@ -78,11 +81,17 @@ class Webhook(RequestClientMixin):
         else:
             commit_msg = 'N/A'
 
+        if previous_revision:
+            cherry = tell_cherry(git_revision=previous_revision, capture_output=True)
+        else:
+            cherry = ''
+
         executor = tell_executor()
         text = self.deploy_message_template.render(
             executor=executor,
             commit_msg=commit_msg,
             stderr=stderr,
+            cherry=cherry,
             rollback_revision=rollback_revision,
             **ctx.obj,
         )

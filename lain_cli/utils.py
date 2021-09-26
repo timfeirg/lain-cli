@@ -1199,11 +1199,20 @@ def helm_delete(*args, exit=False):
         ctx.exit(0)
 
 
-def tell_release_image(release_name, revision=None):
+def tell_release_image(release_name, revision=None, silent=False):
     revision_clause = [f'--revision={revision}'] if revision else []
     res = helm(
-        'get', 'values', release_name, *revision_clause, '-ojson', capture_output=True
+        'get',
+        'values',
+        release_name,
+        *revision_clause,
+        '-ojson',
+        capture_output=True,
+        check=not silent,
     )
+    if silent and rc(res):
+        return
+
     values = jalo(res.stdout)
     image_tag = values.get('imageTag')
     if image_tag:
@@ -1212,6 +1221,25 @@ def tell_release_image(release_name, revision=None):
         ctx.obj['git_revision'] = image_tag.split('-')[-1]
 
     return image_tag
+
+
+def tell_cherry(git_revision=None, capture_output=True):
+    if not git_revision:
+        release_name = tell_release_name()
+        deployed_image = tell_release_image(release_name)
+        ctx = context()
+        git_revision = ctx.obj.get('git_revision')
+        if not git_revision:
+            error(
+                f'could not infer git revision from imageTag: {deployed_image}', exit=1
+            )
+
+    if capture_output:
+        res = git('cherry', '-v', git_revision, capture_output=True, check=False)
+        cherry = ensure_str(res.stdout or res.stderr)
+        return cherry
+
+    git('cherry', '-v', git_revision)
 
 
 def docker_images():
