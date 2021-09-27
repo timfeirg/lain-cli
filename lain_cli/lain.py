@@ -1227,7 +1227,7 @@ def cherry(ctx):
     \b
         lain send-msg "$(lain cherry)"
     """
-    tell_cherry()
+    tell_cherry(capture_output=False)
 
 
 @lain.command()

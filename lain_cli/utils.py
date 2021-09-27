@@ -16,7 +16,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from contextlib import contextmanager, suppress
 from copy import deepcopy
-from functools import lru_cache
+from functools import lru_cache, partial
 from glob import glob
 from hashlib import blake2b
 from inspect import cleandoc
@@ -56,7 +56,6 @@ from ruamel.yaml.parser import ParserError
 from ruamel.yaml.scalarstring import LiteralScalarString
 
 from lain_cli import __version__
-
 
 yaml = YAML()
 ENV = os.environ.copy()
@@ -1234,12 +1233,22 @@ def tell_cherry(git_revision=None, capture_output=True):
                 f'could not infer git revision from imageTag: {deployed_image}', exit=1
             )
 
+    git_cherry = partial(
+        git,
+        'log',
+        '--pretty=format:%ad: %s (%an)',
+        '--date=short',
+        '--invert-grep',
+        '--grep',
+        "^Merge",
+        f'{git_revision}..HEAD',
+    )
     if capture_output:
-        res = git('cherry', '-v', git_revision, capture_output=True, check=False)
+        res = git_cherry(capture_output=True, check=False)
         cherry = ensure_str(res.stdout or res.stderr)
         return cherry
 
-    git('cherry', '-v', git_revision)
+    git_cherry()
 
 
 def docker_images():
