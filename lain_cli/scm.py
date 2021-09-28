@@ -33,8 +33,9 @@ class GitLabSCM:
         pj = self.gl.projects.get(project_path)
         mr = pj.mergerequests.get(mr_id)
         reviewers = mr.reviewers
-        if reviewers:
-            warn(f'already assigned to: {reviewers}')
+        assignee = mr.assignee
+        if reviewers or assignee:
+            warn(f'already assigned to {assignee}, reviewer {reviewers}')
             return
         contributors = pj.repository_contributors()
         contributors_names = set()
