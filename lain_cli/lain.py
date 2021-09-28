@@ -930,8 +930,10 @@ def use(ctx, cluster, set_context, turn):
     this command will link kubeconfig of specified CLUSTER to ~/.kube/config,
     so that you don\'t have to type --kubeconfig when using kubectl, or helm"""
 
-    def print_cluster_and_exit():
-        cluster = ctx.obj.get('cluster')
+    def print_cluster_and_exit(cluster=None):
+        if not cluster:
+            cluster = ctx.obj.get('cluster')
+
         if cluster:
             goodjob(f'* {cluster}')
             for c in CLUSTERS:
@@ -976,7 +978,7 @@ def use(ctx, cluster, set_context, turn):
         echo('wait for cluster up...')
         lain_('admin', 'turn', 'on', exit=True)
 
-    print_cluster_and_exit()
+    print_cluster_and_exit(cluster=cluster)
 
 
 @lain.command()
