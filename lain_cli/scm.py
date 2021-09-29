@@ -29,14 +29,23 @@ class GitLabSCM:
         approvals = mr.approvals.get()
         return approvals.approved
 
+    @staticmethod
+    def is_active(u):
+        if not u:
+            return False
+        if u.get('state') != 'active':
+            return False
+        return True
+
     def assign_mr(self, project_path, mr_id):
         pj = self.gl.projects.get(project_path)
         mr = pj.mergerequests.get(mr_id)
         reviewers = mr.reviewers
         assignee = mr.assignee
         if reviewers or assignee:
-            warn(f'already assigned to {assignee}, reviewer {reviewers}')
-            return
+            if self.is_active(reviewers[0]) and self.is_active(assignee):
+                warn(f'already assigned to {assignee}, reviewer {reviewers}')
+                return
         contributors = pj.repository_contributors()
         contributors_names = set()
         for c in contributors:
