@@ -77,6 +77,7 @@ deployments:
     # 比如用 root:
     # podSecurityContext: {'runAsUser': 0}
     podSecurityContext: {}
+    # 有需要的话, 建议在 cluster values 里进行统一超载, 一般应用空间都统一用一个 sa 吧, 便于管理
     # serviceAccountName: default
     # 优雅退出时间默认 30 秒
     # terminationGracePeriodSeconds: 30
@@ -90,10 +91,10 @@ deployments:
         cpu: 1000m
         # memory 千万不要写小 m 啊, m 是一个小的要死的单位, 写上去一定会突破容器的最低内存导致无法启动, 要写 M, Mi, G, Gi 这种才好
         # ref: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory
-        memory: 80M
+        memory: 80Mi
       requests:
         cpu: 10m
-        memory: 80M
+        memory: 80Mi
     # 仅支持 exec 写法, 如果你用一个 shell 脚本作为执行入口, 可以搜索 bash, 这份模板下方会有示范
     command: ["/lain/app/run.py"]
     # 默认的工作目录是 /lain/app, 允许超载

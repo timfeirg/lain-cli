@@ -32,9 +32,6 @@ Selector labels
 app.kubernetes.io/name: {{ .Values.appname }}
 {{- end -}}
 
-{{/*
-Return the apiVersion of deployment.
-*/}}
 {{- define "deployment.apiVersion" -}}
 {{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "extensions/v1beta1" -}}
@@ -43,9 +40,6 @@ Return the apiVersion of deployment.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Return the apiVersion for statefulSet.
-*/}}
 {{- define "statefulSet.apiVersion" -}}
 {{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "apps/v1beta2" -}}
@@ -54,9 +48,6 @@ Return the apiVersion for statefulSet.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Return the appropriate apiVersion for cronjob APIs.
-*/}}
 {{- define "cronjob.apiVersion" -}}
 {{- if semverCompare "< 1.8-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "batch/v2alpha1" }}
@@ -65,9 +56,6 @@ Return the appropriate apiVersion for cronjob APIs.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Return the appropriate apiVersion for ingress.
-*/}}
 {{- define "ingress.apiVersion" -}}
 {{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "extensions/v1beta1" -}}
@@ -78,9 +66,6 @@ Return the appropriate apiVersion for ingress.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Return the appropriate hostAliases
-*/}}
 {{- define "hostAliases" -}}
 hostAliases:
 {{- with $.Values.clusterHostAliases }}
@@ -91,9 +76,6 @@ hostAliases:
 {{- end }}
 {{- end -}}
 
-{{/*
-Return the default env
-*/}}
 {{- define "defaultEnv" -}}
 - name: LAIN_CLUSTER
   value: {{ default "UNKNOWN" $.Values.cluster }}

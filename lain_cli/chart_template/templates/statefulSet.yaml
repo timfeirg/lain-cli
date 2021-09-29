@@ -48,7 +48,7 @@ spec:
       {{- if hasKey $sts "hostNetwork" }}
       hostNetwork: {{ $sts.hostNetwork }}
       {{- end }}
-      serviceAccountName: {{ default "default" $sts.serviceAccountName }}
+      serviceAccountName: {{ coalesce $sts.serviceAccountName $.Values.serviceAccountName "default" }}
       {{- with $sts.podSecurityContext }}
       securityContext:
         {{- toYaml $sts.podSecurityContext | nindent 8 }}

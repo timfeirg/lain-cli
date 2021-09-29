@@ -25,6 +25,7 @@ spec:
         {{- include "chart.labels" $ | nindent 8 }}
     spec:
       {{- include "hostAliases" $ | nindent 6 }}
+      serviceAccountName: {{ coalesce $job.serviceAccountName $.Values.serviceAccountName "default" }}
       {{- if hasKey $job "initContainers" }}
       initContainers:
         {{- range $initJobName, $initJob := $job.initContainers  }}

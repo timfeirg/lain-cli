@@ -50,12 +50,14 @@ def test_values():
     values['labels'] = {'foo': 'bar'}
     web_proc = values['deployments']['web']
     nodePort = 32333
+    fake_proc_sa = 'procsa'
     web_proc.update(
         {
             'podAnnotations': {'prometheus.io/scrape': 'true'},
             'workingDir': RANDOM_STRING,
             'hostNetwork': True,
             'nodePort': nodePort,
+            'serviceAccountName': fake_proc_sa,
             'nodes': ['node-1'],
         }
     )
@@ -90,6 +92,8 @@ def test_values():
         assert tls_name == tell_domain_tls_name(tls_hosts[0])
 
     deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
+    sa = deployment['spec']['template']['spec']['serviceAccountName']
+    assert sa == fake_proc_sa
     # check if podAnnotations work
     assert (
         deployment['spec']['template']['metadata']['annotations'][
@@ -141,9 +145,12 @@ def render_with_override_values(dic):
 @pytest.mark.usefixtures('dummy_helm_chart')
 def test_values_override():
     fake_registry = 'registry.fake'
-    cluster_values = {'registry': fake_registry}
+    fake_sa = 'fake'
+    cluster_values = {'registry': fake_registry, 'serviceAccountName': fake_sa}
     k8s_specs = render_with_override_values(cluster_values)
     deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
+    sa = deployment['spec']['template']['spec']['serviceAccountName']
+    assert sa == fake_sa
     image = tell_deployment_image(deployment)
     assert image == f'{fake_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
     internal_registry = 'registry.in.fake'

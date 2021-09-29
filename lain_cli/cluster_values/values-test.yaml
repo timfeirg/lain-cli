@@ -2,6 +2,7 @@
 
 # k8s namespace
 namespace: default
+serviceAccountName: default
 # lain 每次运行前都会检查是否最新版, 在这里配置对应的 pypi 地址
 # 这里用的是 gitlab pypi registry, 你可以换成你自己喜欢的, 例如 devpi-server
 pypi_index: https://gitlab.example.com/api/v4/projects/[PORJECT_ID]/packages/pypi/simple
