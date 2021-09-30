@@ -270,6 +270,8 @@ def tell_ingress_urls():
     values = ctx.obj['values']
     ingresses = values.get('ingresses') or []
     cc = tell_cluster_config()
+    if not cc:
+        return
     domain = cc['domain']
 
     def make_external_url(ing):
@@ -2457,6 +2459,8 @@ def version_challenge():
     session = PipSession()
     session.timeout = 2
     cc = tell_cluster_config()
+    if not cc:
+        return
     pypi_index = cc['pypi_index']
     search_scope = SearchScope.create(find_links=[], index_urls=[pypi_index])
     link_collector = LinkCollector(session=session, search_scope=search_scope)
