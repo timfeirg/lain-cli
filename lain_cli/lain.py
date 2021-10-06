@@ -930,15 +930,22 @@ def use(ctx, cluster, set_context, turn):
     this command will link kubeconfig of specified CLUSTER to ~/.kube/config,
     so that you don\'t have to type --kubeconfig when using kubectl, or helm"""
 
+    def tell_cluster_line(c, is_current=False):
+        prechar = '*' if is_current else ' '
+        extra_docs = CLUSTERS[c].get('extra_docs') or ''
+        if extra_docs:
+            return f'{prechar} {c}, {extra_docs}'
+        return f'{prechar} {c}'
+
     def print_cluster_and_exit(cluster=None):
         if not cluster:
             cluster = ctx.obj.get('cluster')
 
         if cluster:
-            goodjob(f'* {cluster}')
+            goodjob(tell_cluster_line(cluster, is_current=True))
             for c in CLUSTERS:
                 if c != cluster:
-                    echo(f'  {c}', clean=False)
+                    echo(tell_cluster_line(c), clean=False)
 
             ctx.exit(0)
         else:

@@ -33,9 +33,7 @@ RUN apt-get update && \
     kubectl=1.18.20-00 python3.9-dev docker-ce-cli docker-compose mysql-client mytop libmysqlclient-dev redis-tools iputils-ping dnsutils \
     zip zsh fasd silversearcher-ag telnet rsync vim lsof tree openssh-client apache2-utils git git-lfs && \
     chsh -s /usr/bin/zsh root && \
-    apt-get clean && \
-    git clone --depth 1 https://github.com.cnpmjs.org/ohmyzsh/ohmyzsh && \
-    REMOTE=https://github.com.cnpmjs.org/ohmyzsh/ohmyzsh bash ohmyzsh/tools/install.sh
+    apt-get clean
 COPY docker-image/git_env_password.sh /usr/local/bin/git_env_password.sh
 COPY docker-image/.gitconfig /root/.gitconfig
 ENV GIT_ASKPASS=/usr/local/bin/git_env_password.sh
