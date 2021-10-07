@@ -30,9 +30,9 @@ class HarborRegistry(RequestClientMixin, RegistryUtils):
         responson = res.json()
         return responson
 
-    def list_tags(self, appname, **kwargs):
+    def list_tags(self, repo_name, **kwargs):
         res = self.get(
-            f'/projects/{self.project}/repositories/{appname}/artifacts',
+            f'/projects/{self.project}/repositories/{repo_name}/artifacts',
             params={'page_size': 50},
         )
         responson = res.json()

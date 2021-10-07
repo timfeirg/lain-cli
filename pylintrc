@@ -37,3 +37,4 @@ disable=
     too-few-public-methods,
     abstract-class-instantiated,
     unspecified-encoding,
+    abstract-method,

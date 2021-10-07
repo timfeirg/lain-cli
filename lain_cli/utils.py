@@ -597,10 +597,27 @@ class RegistryUtils:
             return cleaned[:n]
         return cleaned
 
-    def make_image(self, tag):
+    def make_image(self, tag, repo=None):
         ctx = context()
-        repo = ctx.obj['appname']
+        if not repo:
+            repo = ctx.obj['appname']
+
         return f'{self.host}/{repo}:{tag}'
+
+    def list_repos(self):
+        raise NotImplementedError
+
+    def list_tags(self, repo_name):
+        raise NotImplementedError
+
+    def list_images(self):
+        repos = self.list_repos()
+        images = []
+        for repo in repos:
+            tags = set(self.list_tags(repo))
+            images.extend([self.make_image(tag, repo=repo) for tag in tags])
+
+        return images
 
 
 def tell_registry_client():

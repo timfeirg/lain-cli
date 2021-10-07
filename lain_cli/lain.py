@@ -231,6 +231,16 @@ def cleanup_registry():
 
 @admin.command()
 @click.pass_context
+def list_images(ctx):
+    ctx.obj['silent'] = True
+    registry = tell_registry_client()
+    images = registry.list_images()
+    for image in images:
+        echo(image)
+
+
+@admin.command()
+@click.pass_context
 def status(ctx):
     ctx.obj['silent'] = True
     display_cluster_status()

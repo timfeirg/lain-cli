@@ -20,6 +20,8 @@ from lain_cli.utils import (
 
 class TencentClient(RegistryUtils):
 
+    """https://cloud.tencent.com/document/product/1141/41605"""
+
     VM_STATES = {'on', 'off'}
 
     def __init__(self, registry=None, secret_id=None, secret_key=None):
@@ -39,6 +41,21 @@ class TencentClient(RegistryUtils):
         self.cred = credential.Credential(secret_id, secret_key)
         self.cvm_client = cvm_client.CvmClient(self.cred, "ap-beijing")
         self.tcr_client = TcrClient(self.cred, "ap-beijing")
+
+    def list_repos(self):
+        req = tcr_models.DescribeImagePersonalRequest()
+        req.Limit = 100
+        try:
+            responson = jalo(
+                self.tcr_client.DescribeRepositoryOwnerPersonal(req).to_json_string()
+            )
+        except TencentCloudSDKException as e:
+            if e.code == 'AuthFailure.SignatureExpire':
+                raise
+            return None
+        repo_info = responson['Data']['RepoInfo']
+        repos = [dic['RepoName'] for dic in repo_info]
+        return repos
 
     def list_tags(self, repo_name, **kwargs):
         req = tcr_models.DescribeImagePersonalRequest()
