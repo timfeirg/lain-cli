@@ -1927,11 +1927,15 @@ class HostAliasSchema(Schema):
 
 
 class ClusterConfigSchema(LenientSchema):
+    extra_docs = Str()
     secrets_env = Dict(keys=Str(), values=Raw(), required=False, allow_none=True)
     hostAliases = List(Nested(HostAliasSchema), required=False)
 
     @post_load
     def finalize(self, data, **kwargs):
+        if 'extra_docs' in data:
+            data['extra_docs'] = data['extra_docs'].strip()
+
         if self.context.get('is_current', False):
             # only read secrets env when dealing with the current cluster
             secrets_env = data.pop('secrets_env', None) or {}
