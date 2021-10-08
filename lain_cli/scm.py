@@ -61,6 +61,8 @@ class GitLabSCM:
                 s.add(getattr(model, attr))
 
         for user in pj.users.list(all=True):
+            if user.state != 'active':
+                continue
             user_names = set()
             user_names.add(user.name)
             user_names.add(user.username)
