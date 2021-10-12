@@ -154,6 +154,10 @@ spec:
             - containerPort: {{ $deployment.containerPort }}
               protocol: TCP
           {{- end }}
+          {{- with $deployment.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with $deployment.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}

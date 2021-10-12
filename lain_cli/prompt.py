@@ -186,7 +186,7 @@ async def refresh_ingress_text():
 
 def ingress_text():
     ctx = context()
-    urls = ctx.obj['urls']
+    urls = ctx.obj.get('urls')
     if not urls:
         return ''
     rl = []
@@ -296,7 +296,7 @@ def build_app_status():
     )
     parts = [pod_container, top_container, events_container]
     # building ingress container
-    urls = ctx.obj['urls']
+    urls = ctx.obj.get('urls')
     if urls:
         ingress_text_control = FormattedTextControl(
             text=lambda: CONTENT_VENDERER['ingress_text']

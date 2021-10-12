@@ -27,10 +27,12 @@ from lain_cli.utils import (
     tell_helm_options,
     tell_job_names,
     tell_release_name,
+    tell_ingress_urls,
     yadu,
     yalo,
 )
 from tests.conftest import (
+    DUMMY_URL,
     CHART_DIR_NAME,
     DUMMY_APPNAME,
     DUMMY_JOBS_CLAUSE,
@@ -316,3 +318,11 @@ def test_tell_all_clusters(mocker):
     assert set(ccs) == {TEST_CLUSTER, another_cluster_name}
     assert ccs['another']['registry'] == test_cluster_values['registry']
     tempd.cleanup()
+
+
+@pytest.mark.usefixtures('dummy_helm_chart')
+def test_tell_ingress_urls():
+    _, urls = run_under_click_context(
+        tell_ingress_urls,
+    )
+    assert urls == [f'{DUMMY_URL}/']

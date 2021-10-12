@@ -1,0 +1,18 @@
+-e file:.[all]
+docker
+devpi-client
+flake8
+pytest
+pytest-cov
+ipython
+pre-commit
+vulture
+pip-tools
+isort
+locust
+sentry-sdk
+codespell
+twine
+pylint
+semgrep
+alembic

@@ -1432,6 +1432,33 @@ def try_to_cleanup_job(job_name=None):
                 error(stderr, exit=1)
 
 
+def fix_kubectl_link(cv=None, sv=None):
+    """link correct kubectl version to LAIN_EXBIN_PREFIX"""
+    if sv:
+        kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
+    else:
+        candidates = glob(join(LAIN_EXBIN_PREFIX, 'kubectl-*'))
+        if not candidates:
+            error(
+                f'no kubectl found in {LAIN_EXBIN_PREFIX}, please install and save them as {LAIN_EXBIN_PREFIX}/kubectl-x.x, see https://kubernetes.io/docs/tasks/tools/#kubectl',
+                exit=1,
+            )
+
+        kubectl_path = candidates[-1]
+
+    if isfile(kubectl_path):
+        dest = join(LAIN_EXBIN_PREFIX, 'kubectl')
+        ensure_absent(dest)
+        os.symlink(kubectl_path, dest)
+        echo(
+            f'fixed kubectl link to match server version: ln -s -f {kubectl_path} {dest}'
+        )
+    else:
+        error(f'unsupported kubectl {cv} for server version {sv}')
+        error(f'you should download kubectl for {sv}, and put it in {kubectl_path}')
+        error('see see https://kubernetes.io/docs/tasks/tools/#kubectl')
+
+
 @lru_cache(maxsize=None)
 def kubectl_version_challenge():
     try:
@@ -1448,26 +1475,13 @@ def kubectl_version_challenge():
         # TKE Kubernetes verion look like v1.18.4-tke.13
         sv = version.parse(sr.rsplit(None, 1)[-1].split('-', 1)[0])
     except FileNotFoundError:
-        download_kubectl()
+        fix_kubectl_link()
         return kubectl_version_challenge()
     except PermissionError:
-        error('Bad binary: kubectl, remove before use', exit=1)
+        error('Bad binary: kubectl, please reinstall', exit=1)
 
     if cv.major != sv.major or abs(sv.minor - cv.minor) >= 2:
-        error(
-            f'unsupported kubectl {cv} for server version {sv}, if strange kubectl error occurs, you should install kubectl-{sv} and try this command again'
-        )
-        error(
-            'see https://kubernetes.io/releases/version-skew-policy/#supported-versions'
-        )
-
-
-def download_kubectl():
-    platform = tell_platform()
-    # download directly from https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux if you
-    # have a bettern internet connection
-    url = f'https://static.yashihq.com/lain4/kubectl-{platform}'
-    return download_binary(url, join(LAIN_EXBIN_PREFIX, 'kubectl'))
+        fix_kubectl_link(cv, sv)
 
 
 def kubectl(*args, exit=None, check=True, dry_run=False, **kwargs):
@@ -1927,6 +1941,7 @@ class HostAliasSchema(Schema):
 
 
 class ClusterConfigSchema(LenientSchema):
+    domain = Str(load_default='', allow_none=False)
     extra_docs = Str()
     secrets_env = Dict(keys=Str(), values=Raw(), required=False, allow_none=True)
     hostAliases = List(Nested(HostAliasSchema), required=False)
@@ -2601,7 +2616,7 @@ def tell_cluster_config(cluster=None):
     values_file = tell_cluster_values_file(cluster=cluster, internal=True)
     if not values_file:
         warn(f'cluster values not found for {cluster} inside {CLUSTER_VALUES_DIR}')
-        return
+        return {}
 
     data = yalo(open(values_file))
     # cluster values can be overriden in values.yaml

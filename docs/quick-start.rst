@@ -18,7 +18,7 @@
     pip install -U lain_cli -i https://gitlab.example.com/api/v4/projects/9/packages/pypi/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple/
 
     # 安装完毕以后, 我们还需要把 lain 软链到外边, 让你不需要激活 venv 也能顺利使用
-    ln -s -f /usr/local/bin/lain /Users/me/.virtualenvs/lain-cli/bin/lain
+    ln -s -f /Users/$USER/.virtualenvs/lain-cli/bin/lain /usr/local/bin/lain
     # 你也可以用你自己喜欢的方式将 lain 暴露出来, 比如修改 PATH, 总而言之, lain 需要在其他 venv 下也能顺利使用
 
 安装完毕以后, 就可以开始使用了, 你可以参考下面的步骤, 来把一个应用上线到 lain 集群.

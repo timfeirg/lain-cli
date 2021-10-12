@@ -34,6 +34,7 @@ from lain_cli.prompt import (
 from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
+    KUBECONFIG_DIR,
     tell_cherry,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
@@ -942,7 +943,8 @@ def use(ctx, cluster, set_context, turn):
 
     def tell_cluster_line(c, is_current=False):
         prechar = '*' if is_current else ' '
-        extra_docs = CLUSTERS[c].get('extra_docs') or ''
+        cc = CLUSTERS.get(c) or {}
+        extra_docs = cc.get('extra_docs') or ''
         if extra_docs:
             return f'{prechar} {c}, {extra_docs}'
         return f'{prechar} {c}'
@@ -977,7 +979,7 @@ def use(ctx, cluster, set_context, turn):
             exit=1,
         )
 
-    dest = expanduser('~/.kube/config')
+    dest = join(KUBECONFIG_DIR, 'config')
     ensure_absent(dest)
     os.symlink(src, dest)
     cc = tell_cluster_config(cluster)
