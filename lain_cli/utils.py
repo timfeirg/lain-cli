@@ -265,6 +265,15 @@ def tell_pod_deploy_name(s):
     return s.rsplit('-', 2)[0]
 
 
+def tell_domain_suffix(cc):
+    domain_suffix = cc.get('domain_suffix')
+    if not domain_suffix:
+        domain = cc.get('domain')
+        domain_suffix = f'.{domain}' if domain else ''
+
+    return domain_suffix
+
+
 def tell_ingress_urls():
     ctx = context()
     values = ctx.obj['values']
@@ -272,7 +281,7 @@ def tell_ingress_urls():
     cc = tell_cluster_config()
     if not cc:
         return
-    domain = cc['domain']
+    domain_suffix = tell_domain_suffix(cc)
 
     def make_external_url(ing):
         host = ing['host']
@@ -288,7 +297,7 @@ def tell_ingress_urls():
         """internal ingress host can be either full domain or just the first
         part (usually appname)"""
         host = ing['host']
-        url = f'http://{host}' if '.' in host else f'http://{host}.{domain}'
+        url = f'http://{host}' if '.' in host else f'http://{host}{domain_suffix}'
         ingress_internal_port = cc.get('ingress_internal_port', 80)
         if ingress_internal_port != 80:
             url += f':{ingress_internal_port}'
@@ -1607,7 +1616,8 @@ def wait_for_pod_up(selector=None, tries=40):
 def wait_for_cluster_up(tries=1):
     context().obj['silent'] = True
     cc = tell_cluster_config()
-    url = f'http://default-backend.{cc["domain"]}'
+    domain_suffix = tell_domain_suffix(cc)
+    url = f'http://default-backend{domain_suffix}'
     probe_result = None
     forgive_error_substrings = (
         'timeout',
@@ -1942,6 +1952,7 @@ class HostAliasSchema(Schema):
 
 class ClusterConfigSchema(LenientSchema):
     domain = Str(load_default='', allow_none=False)
+    domain_suffix = Str(load_default='', allow_none=False)
     extra_docs = Str()
     secrets_env = Dict(keys=Str(), values=Raw(), required=False, allow_none=True)
     hostAliases = List(Nested(HostAliasSchema), required=False)

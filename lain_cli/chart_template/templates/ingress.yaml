@@ -5,6 +5,8 @@ kind: Ingress
 metadata:
   {{- if contains "." $ingress.host }}
   name: {{ $ingress.host | replace "." "-" }}-{{ $.Release.Name }}-{{ $ingress.deployName }}
+  {{- else if $.Values.domain_suffix }}
+  name: {{ $ingress.host | replace "." "-" }}{{ $.Values.domain_suffix | replace "." "-" }}-{{ $.Release.Name }}-{{ $ingress.deployName }}
   {{- else }}
   name: {{ $ingress.host | replace "." "-" }}-{{ $.Values.domain | replace "." "-" }}-{{ $.Release.Name }}-{{ $ingress.deployName }}
   {{- end }}
@@ -39,17 +41,23 @@ spec:
       - '*.{{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" }}'
       - '{{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" }}'
       secretName: {{ regexReplaceAll "[^\\.]+\\.(.+)" $ingress.host "${1}" | replace "." "-" }}
-      {{- else }}
+      {{- else if $.Values.domain }}
       - "*.{{ $.Values.domain }}"
       - "{{ $.Values.domain }}"
       secretName: {{ $.Values.domain | replace "." "-" }}
+      {{- else }}
+      {{- fail "cannot infer tls config when domain is empty, use ingressTLSSecretName" }}
       {{- end }}
   {{- end }}
   rules:
     {{- if contains "." $ingress.host }}
     - host: {{ $ingress.host }}
-    {{- else }}
+    {{- else if $.Values.domain_suffix }}
+    - host: {{ $ingress.host }}{{ $.Values.domain_suffix }}
+    {{- else if $.Values.domain }}
     - host: {{ $ingress.host }}.{{ $.Values.domain }}
+    {{- else }}
+    {{- fail "host is not a FQDN, then domain or domain_suffix must be defined" }}
     {{- end }}
       http:
         paths:
