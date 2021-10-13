@@ -383,6 +383,21 @@ lain 镜像构建好了, 接下来需要在 GitLab CI Runner 配置里执行成�
 
 上边三个 Job, 每一个都仅有短短几行配置, 便完成了 CI 构建, 测试和上线的工作. 如果你能想到 CI 里还有什么 lain 的妙用, 也可以轻松仿照上边的配置文件来书写.
 
+SCM MR 的功能补充
+^^^^^^^^^^^^^^^^^
+
+lain 和 SCM 打交道 (虽然目前仅支持 GitLab), 因此也实现了不少 SCM 的周边功能, 比如:
+
+* :code:`lain assign-mr $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID` 可以为 MR 自动指派 Assignee 以及 Reviewer
+* :code:`lain wait-mr-approval $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID` 会等待 MR Approval, 当检测到 MR Approved 状态, 则命令成功返回. 这个命令放到 CI 里执行, 配合 "Pipeline 未成功, MR 不许合并", 可以实现 MR Approval
+
+这些功能的由来, 都是 GitLab 缺少某些特性, 或者说 CE 版本不提供, 只能利用其 API 进行自研. 比方说 `GitLab 不支持自动指派 MR Reviewer <https://gitlab.com/gitlab-org/gitlab/-/issues/11745>`_, 而且 `CE 版本不支持 MR Approval <https://docs.gitlab.com/ee/user/project/merge_requests/approvals/>`_.
+
+:code:`lain assign-mr` 会从代码仓库的贡献者里随机挑选两位 GitLab 用户(需要是 Active 状态), 然后分别指派为 Assignee 和 Reviewer. 这个设计的初衷如下:
+
+* 大家创建 MR 的时候, 一般都会按照代码本身的情况, 来手动来指定 Assignee 和 Reviewers, 但如果此人犯懒, 没有做任何指派, 那么 :code:`lain assign-mr` 就可以在最后关头介入, 做一个兜底, 让该 MR 不至于"没人照顾"
+* GitLab 不支持指派多个 Reviewer, 但我们团队又希望能促进大家积极 Review, 因此只好将 Assignee 也用上, :code:`lain assign-mr` 如果将你指派为 Assignee, 并不是说这个 MR 就交给你负责了(我们团队目前也并不存在 "MR 负责人"的概念), 而仅仅是希望你参与进 Review
+
 lain 镜像的其他用途
 ^^^^^^^^^^^^^^^^^^^
 
