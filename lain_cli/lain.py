@@ -955,13 +955,14 @@ def use(ctx, cluster, set_context, turn):
 
         if cluster:
             goodjob(tell_cluster_line(cluster, is_current=True))
-            for c in CLUSTERS:
-                if c != cluster:
-                    echo(tell_cluster_line(c), clean=False)
-
-            ctx.exit(0)
         else:
-            error('you\'re nowhere, see lain use --help', exit=True)
+            error('you\'re nowhere, pick a cluster from the following:')
+
+        for c in CLUSTERS:
+            if c != cluster:
+                echo(tell_cluster_line(c), clean=False)
+
+        ctx.exit(0)
 
     if not cluster:
         print_cluster_and_exit()

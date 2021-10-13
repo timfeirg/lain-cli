@@ -2671,7 +2671,9 @@ def tell_all_clusters():
         fname = basename(f)
         cluster_name = fname.split('-', 1)[-1].split('.', 1)[0]
         if cluster_name not in ccs:
-            error(f'kubeconfig not found for {cluster_name}, you should get it from your system administrator')
+            error(
+                f'kubeconfig not found for {cluster_name}, you should get it from your system administrator'
+            )
 
     return ccs
 
