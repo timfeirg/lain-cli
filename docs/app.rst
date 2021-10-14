@@ -127,7 +127,7 @@
 .. note::
 
    :code:`lain build` 产生的镜像 tag 形如 :code:`1634199833-f02f668bbfb0a630e3d06dcd843a534c29015ca4`, 这其实就是 :code:`git log -1 --pretty=format:%ct-%H` 的输出结果. 之所以在头部放一个时间戳, 是为了方便镜像排序: 直接按照 ASCII 序排列, 就是镜像的时间序, 一下子就知道新旧了.
-   
+
 .. warning::
 
    如果你修改了 base, 请务必记得重新 :code:`lain prepare`, 否则缓存一直不更新, 你的新 base 也不会生效. 当然, 如果你没有用 :code:`build.prepare`, 则可绕过此提示.

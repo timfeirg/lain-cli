@@ -113,7 +113,11 @@ def click_parse_timespan(ctx, param, value):
     return int(parse_timespan(value))
 
 
-def recursive_update(d, u, ignore_extra=False):
+class DuplicationInValues(Exception):
+    """lain hates duplication in values"""
+
+
+def recursive_update(d, u, ignore_extra=False, prevent_duplication=False):
     """
     >>> recursive_update({'foo': {'spam': 'egg'}, 'should': 'preserve'}, {'foo': {'bar': 'egg'}})
     {'foo': {'spam': 'egg', 'bar': 'egg'}, 'should': 'preserve'}
@@ -132,6 +136,10 @@ def recursive_update(d, u, ignore_extra=False):
         elif isinstance(v, Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
         else:
+            if prevent_duplication:
+                old = d.get(k)
+                if old == v:
+                    raise DuplicationInValues(f'duplication key: {k}, values: {old}')
             d[k] = v
     return d
 
@@ -2086,7 +2094,14 @@ def update_extra_values(values, cluster=None, ignore_extra=False):
                     exit=1,
                 )
 
-        recursive_update(values, dic, ignore_extra=ignore_extra)
+        try:
+            recursive_update(
+                values, dic, ignore_extra=ignore_extra, prevent_duplication=True
+            )
+        except DuplicationInValues as e:
+            error(f'duplication detected in {cluster_values_file}')
+            error(f'{e}')
+            error('you must eliminate all duplications before proceed', exit=1)
 
     ctx = context(silent=True)
     extra_values_file = ctx and ctx.obj.get('extra_values_file')

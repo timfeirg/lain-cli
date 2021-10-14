@@ -18,8 +18,8 @@ class HarborRegistry(RequestClientMixin, RegistryUtils):
         self.host = registry_url
         try:
             host, project = registry_url.split('/')
-        except ValueError:
-            raise ValueError(f'bad registry: {registry_url}')
+        except ValueError as e:
+            raise ValueError(f'bad registry: {registry_url}') from e
         self.endpoint = f'http://{host}/api/v2.0'
         self.headers = {
             # get from your harbor console
