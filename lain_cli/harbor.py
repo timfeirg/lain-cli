@@ -16,7 +16,10 @@ class HarborRegistry(RequestClientMixin, RegistryUtils):
             token = cc['harbor_token']
 
         self.host = registry_url
-        host, project = registry_url.split('/')
+        try:
+            host, project = registry_url.split('/')
+        except ValueError:
+            raise ValueError(f'bad registry: {registry_url}')
         self.endpoint = f'http://{host}/api/v2.0'
         self.headers = {
             # get from your harbor console
