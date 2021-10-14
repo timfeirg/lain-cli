@@ -25,6 +25,16 @@ class HarborRegistry(RequestClientMixin, RegistryUtils):
         }
         self.project = project
 
+    def request(self, *args, **kwargs):
+        res = super().request(*args, **kwargs)
+        responson = res.json()
+        if not isinstance(responson, dict):
+            return res
+        errors = responson.get('errors')
+        if errors:
+            raise ValueError(f'harbor error: {errors}')
+        return res
+
     def list_repos(self):
         res = self.get(f'/projects/{self.project}/repositories')
         responson = res.json()
