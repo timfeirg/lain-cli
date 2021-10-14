@@ -1974,7 +1974,7 @@ class ClusterConfigSchema(LenientSchema):
                     hint = env['hint']
 
                 if env_name not in ENV:
-                    error(f'{env_name} not found, hint: {hint}', exit=1)
+                    error(f'environment variable {env_name} is missing, hint: {hint}', exit=1)
                 else:
                     data[dest] = ENV[env_name]
 
