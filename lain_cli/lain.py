@@ -1125,6 +1125,10 @@ def update_image(ctx, procs, deduce):
 @click.argument('msg', nargs=1, type=str)
 def send_msg(msg):
     """send webhook message, if applicable."""
+    msg = msg.strip()
+    if not msg:
+        echo('skip due to empty message', exit=0)
+
     webhook = tell_webhook_client()
     webhook and webhook.send_msg(msg)
 
