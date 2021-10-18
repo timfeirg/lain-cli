@@ -2238,7 +2238,7 @@ def top_procs(appname):
     else:
         return result
     for proc_name, proc in values['procs'].items():
-        memory_top = prometheus.memory_p95(appname, proc_name)
+        memory_top = prometheus.memory_quantile(appname, proc_name)
         if not memory_top:
             continue
         # container memory shoudn't be lower than 4Mi

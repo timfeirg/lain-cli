@@ -7,7 +7,7 @@ from humanfriendly import parse_timespan
 
 from lain_cli.utils import RequestClientMixin, ensure_str, tell_cluster_config, warn
 
-LAIN_LINT_PROMETHEUS_QUERY_RANGE = '2d'
+LAIN_LINT_PROMETHEUS_QUERY_RANGE = '7d'
 LAIN_LINT_PROMETHEUS_QUERY_STEP = int(
     int(parse_timespan(LAIN_LINT_PROMETHEUS_QUERY_RANGE)) / 1440
 )
@@ -59,11 +59,13 @@ class Prometheus(RequestClientMixin):
 
         return max([cpu_top, 5])
 
-    def memory_p95(self, appname, proc_name, **kwargs):
+    def memory_quantile(self, appname, proc_name, **kwargs):
         cc = tell_cluster_config()
-        query_template = cc.get('pql_template', {}).get('memory_p95')
+        query_template = cc.get('pql_template', {}).get('memory_quantile')
         if not query_template:
-            raise ValueError('pql_template.memory_p95 not configured in cluster config')
+            raise ValueError(
+                'pql_template.memory_quantile not configured in cluster config'
+            )
         q = query_template.format(
             appname=appname, proc_name=proc_name, range=LAIN_LINT_PROMETHEUS_QUERY_RANGE
         )
@@ -72,8 +74,8 @@ class Prometheus(RequestClientMixin):
         if not res:
             return
         # [{'metric': {}, 'value': [1583388354.31, '744079360']}]
-        memory_p95 = int(float(res[0]['value'][-1]))
-        return memory_p95
+        memory_quantile = int(float(res[0]['value'][-1]))
+        return memory_quantile
 
     def query(self, query, start=None, end=None, step=None, timeout=20):
         # https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries
