@@ -40,7 +40,7 @@ def suggest_memory_limits(limits, top, proc=None):
         margin = parse_size('50Mi', binary=True)
     else:
         top_to_limits = 2.5
-        margin = parse_size('150Mi', binary=True)
+        margin = parse_size('1Gi', binary=True)
 
     limits_suggest = top * top_to_limits
     if abs(limits_suggest - limits) < margin:
