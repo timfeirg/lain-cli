@@ -109,6 +109,43 @@ Auto Migration
    * 知道 job name 就好办了, 执行 :code:`kubectl delete job [job name]`, Job 就被删除了
    * 对于 MySQL Migration, 删掉 Job 还不算完, 毕竟指令已经提交给数据库了, 你需要连上数据库, :code:`show processlist` 地研究为什么 Migration 会死锁, 并且对罪魁祸首的命令执行 Kill.
 
+.. _health-check:
+
+健康检查
+--------
+
+如果你阅读过 :ref:`values.yaml 示范 <helm-values>`, 那你多半已经了解到, Kubernetes 提供 :code:`readinessProbe` 和 :code:`livenessProbe` 两种健康检查机制, 作为示范, 你可以这样书写:
+
+.. code-block:: yaml
+
+       # readinessProbe 如果检测不通过, 将会从 Service Endpoint 中移除
+       # 这样一来, 容器就不再接受流量了
+       readinessProbe:
+         httpGet:
+           path: /healthcheck
+           port: 8000
+         initialDelaySeconds: 5
+         periodSeconds: 3
+         failureThreshold: 1
+       # livenessProbe 如果检测不通过, 将会直接重启容器
+       livenessProbe:
+         httpGet:
+           path: /healthcheck
+           port: 8000
+         initialDelaySeconds: 60
+         periodSeconds: 5
+         failureThreshold: 10
+
+书写健康检查配置, 请注意以下几点:
+
+* :code:`initialDelaySeconds`: 容器创建好之后, 你往往希望先等上一段时间, 再开始健康检查. 这个参数就是用来控制等待多久:
+
+  对于 readinessProbe, 建议写成 1-5s, 容器创建以后, 就尽快开启检查, 健康了就立马开始接受流量.
+
+  而对于 livenessProbe, 事情就略有不同了, 比如一个应用需要 3 分钟时间预热, 那你最好把 :code:`initialDelaySeconds` 写成大于 360s, 否则应用还没准备好, 就被 livenessProbe 断定为不健康, 然后操作重启. 这样一来, 这个应用将会一辈子都陷入在重启循环里.
+* :code:`periodSeconds`: 多久执行一次健康检查, 这个视情况写 1-5s 均可, 但如果你的健康检查接口需要消耗比较多的资源, 也可以适量放松, 否则过于频繁的健康检查, 将有可能压垮容器.
+* :code:`failureThreshold`: 失败多少次, 才标记为"不健康", 对于 readinessProbe, 我们尽量填 1. 而对于 livenessProbe, 一般而言还是放松一些, 多给他几次机会, 否则一遇到失败就造成容器重启, 在大流量场景下反而容易引起"雪崩".
+
 .. _deploy-strategy:
 
 应用镜像的构建, 以及 CI 配置
