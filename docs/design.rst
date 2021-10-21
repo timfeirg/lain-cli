@@ -85,7 +85,7 @@ lain 希望把最佳实践的方方面面都落实到工具层面, 以工具作�
 .. note::
 
    :code:`lain lint` 再怎么聪明, 给出的建议都是基于 Prometheus 的历史监控数据. 不过随着应用的开发迭代, 资源占用可能会变得越来越高, 如果发生这种情况, 你需要手动调整资源声明.
-   
+
    这些调整如果和 :code:`lain lint` 发生冲突, 你可以用 :code:`lain --ignore-lint deploy` 来跳过检查, 但也请注意, 切勿滥用这个选项, 因为 :code:`lain lint` 还包括许许多多其他的正确性检查, 如果你习惯性使用 :code:`--ignore-lint` 来上线, 总有一天会出问题.
 
 .. _lain-auto-pilot:

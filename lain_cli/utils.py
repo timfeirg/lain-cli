@@ -360,7 +360,7 @@ def get_pods(
         return res, pods[1:]
     header = pods.pop(0)
     bad_pods = []
-    for podline in pods[1:]:
+    for podline in pods:
         # ['deploy-x-x', '1/1', 'Running', '0', '6h6m', '192.168.0.13', 'node-1', '<none>', '1/1']
         _, ready_str, status, restarts, *_ = podline.split()
         if status == 'Completed':

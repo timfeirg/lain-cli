@@ -285,6 +285,15 @@ ENV (环境变量) 管理
 
   你也可以直接用 :code:`helm rollback`, 但请务必提前熟悉 helm 的使用.
 
+内置环境变量
+------------
+
+lain 会注入如下环境变量, 方便你使用:
+
+* :code:`LAIN_CLUSTER` 就是当前容器所在的集群名. 你可以用 :code:`lain use` 打印出所有的集群名.
+* :code:`K8S_NAMESPACE` 用来标记容器所在的 Kubernetes Namespace, 如果 SA 没有特别配置, lain 鼓励直接用 default namespace.
+* :code:`IMAGE_TAG` 就是镜像 tag, :code:`lain build` 产生的镜像 tag, 其实就是 :code:`git log -1 --pretty=format:%ct-%H` 的输出, 形如 :code:`1634699031-11766623c3f7773b4d1031060f6f2cc0603ace5f`, 头部的时间戳是为了方便按照 commit 时间排序.
+
 运行时的应用管理
 ----------------
 
