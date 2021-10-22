@@ -10,6 +10,11 @@ docker error: no space left on device
 
 docker 分配的磁盘空间是有限的, 空间不够时, docker 就会报错无法使用. 你要么为自己的 docker 分配更大的磁盘空间, 要么用 :code:`docker system prune` 进行一番清理, 也许能修复此问题.
 
+docker build error: too many levels of symbolic links
+-----------------------------------------------------
+
+如果在其他环境 (CI, 别人的电脑) 无法复现此问题, 那多半是你本地 docker 的数据有些异常, 请抹掉整个 docker 的数据, (可选)升级 docker, 然后重试.
+
 docker pull error
 -----------------
 

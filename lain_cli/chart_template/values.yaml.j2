@@ -193,7 +193,7 @@ deployments:
 # 如果啥 tests 都没写, lain deploy 过后会直接进入 lain status, 你也可以肉眼看到 url 和容器状态绿灯以后, 再结束上线任务
 # tests:
 #   simple-test:
-#     image: ccr.ccs.tencentyun.com/yashi/lain:latest
+#     image: lain:latest
 #     command:
 #       - bash
 #       - -ec
@@ -298,7 +298,7 @@ hostAliases:
 #       name: another-env
 
 build:
-  base: ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest
+  base: ubuntu-python:latest
   # # 这里也可以声明 env, 会转化为 Dockerfile 里的 ENV clause, 这样一来, 镜像本身就会携带这些 ENV
   # env:
   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
@@ -320,7 +320,7 @@ build:
 # release:
 #   # env:
 #   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
-#   dest_base: ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest
+#   dest_base: ubuntu-python:latest
 #   copy:
 #     - src: /etc/nginx
 #     - src: /path
