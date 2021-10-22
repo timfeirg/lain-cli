@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta, timezone
-from statistics import quantiles
+from statistics import StatisticsError, quantiles
 
 import click
 from humanfriendly import parse_timespan
@@ -53,7 +53,10 @@ class Prometheus(RequestClientMixin):
             if cpu_top_list.count(0) / cnt > 0.7:
                 warn(f'lint suggestions might not be accurate for {proc_name}')
 
-            cpu_top = int(quantiles(cpu_top_list, n=10)[-1])
+            try:
+                cpu_top = int(quantiles(cpu_top_list, n=10)[-1])
+            except StatisticsError:
+                cpu_top = 5
         else:
             cpu_top = 5
 
