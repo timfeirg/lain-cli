@@ -9,8 +9,8 @@ metadata:
 spec:
   schedule: {{ $cronjob.schedule | quote }}
   concurrencyPolicy: {{ default "Replace" $cronjob.concurrencyPolicy }}
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: {{ default 1 $cronjob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 1 $cronjob.failedJobsHistoryLimit }}
   startingDeadlineSeconds: 300
   jobTemplate:
     metadata:
