@@ -71,8 +71,8 @@ deployments:
     # image: kibana:7.5.0
     # 以 hard-code 方式指定 imageTag, 相当于还是在用该应用的镜像, 只是固定了版本
     # imageTag: specific-version
-    # 部署应用的时候拉取镜像的策略, 默认为 IfNotPresent, 但如果你有覆盖镜像 tag 的打算, 记得写成 Always
-    # imagePullPolicy: IfNotPresent
+    # 为了支持同一个版本反复修改构建上线, 每次部署都会重新拉取镜像
+    # imagePullPolicy: Always
     # lain 默认用 1001 这个低权限用户来运行你的应用, 如需切换成其他身份, 可以在 podSecurityContext 下声明 runAsUser
     # 比如用 root:
     # podSecurityContext: {'runAsUser': 0}

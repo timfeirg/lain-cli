@@ -42,9 +42,7 @@ spec:
           {{- else }}
           image: {{ include "chart.image" $ }}
           {{- end }}
-          {{- if hasKey $initJob "imagePullPolicy" }}
-          imagePullPolicy: {{ default "IfNotPresent" $initJob.imagePullPolicy }}
-          {{- end }}
+          imagePullPolicy: {{ default "Always" $initJob.imagePullPolicy }}
           envFrom:
             - secretRef:
                 name: {{ $.Values.appname }}-env
@@ -101,9 +99,7 @@ spec:
           {{- else }}
           image: {{ include "chart.image" $ }}
           {{- end }}
-          {{- if hasKey $job "imagePullPolicy" }}
-          imagePullPolicy: {{ default "IfNotPresent" $job.imagePullPolicy }}
-          {{- end }}
+          imagePullPolicy: {{ default "Always" $job.imagePullPolicy }}
           envFrom:
             - secretRef:
                 name: {{ $.Values.appname }}-env

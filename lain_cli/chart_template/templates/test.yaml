@@ -26,9 +26,7 @@ spec:
       {{- else }}
       image: {{ include "chart.image" $ }}
       {{- end }}
-      {{- if hasKey $test_job "imagePullPolicy" }}
-      imagePullPolicy: {{ default "IfNotPresent" $test_job.imagePullPolicy }}
-      {{- end }}
+      imagePullPolicy: {{ default "Always" $test_job.imagePullPolicy }}
       envFrom:
         - secretRef:
             name: {{ $.Values.appname }}-env

@@ -218,9 +218,6 @@ def test_workflow(registry):
     run(lain, args=['job', '--force', 'env'])
 
     values = load_dummy_values()
-    # example 里用的是 IfNotPresent, 这是合理的默认值
-    # 但是对于测试来说, 肯定希望每次都拉一下, 因为 dummy 这个应用会反复构建
-    # push, 需要隔离构建错误带来的问题
     web_proc = values['deployments']['web']
     web_proc.update(
         {
