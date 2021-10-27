@@ -229,11 +229,11 @@ ENV (环境变量) 管理
 上边示范的写法, 就是在把 :code:`topsecret.txt` 挂载到 :code:`/lain/app/deploy/topsecret.txt` 这个目录. 至于 volumeMounts, subPath 等名词, 都是 `底层的 Kubernetes 配置块 <https://kubernetes.io/docs/concepts/storage/volumes/>`_, 如果你感到费解, 其实也不必深究, 按照这个示范格式来书写就不会有问题.
 
 .. warning::
-   `修改 env / secret 以后, 容器内的配置需要 pod 重建以后才会生效! <https://kubernetes.io/docs/concepts/configuration/secret/#mounted-secrets-are-updated-automatically>`_ 重建 pod 可以用以下办法:
+   `修改 env / secret 以后, 容器内的配置需要 Pod 重建以后才会生效! <https://kubernetes.io/docs/concepts/configuration/secret/#mounted-secrets-are-updated-automatically>`_ 重建 Pod 可以用以下办法:
 
    * :code:`lain --auto-pilot [secret|env] edit` 会在编辑结束后, 自动优雅重启应用, 使配置生效. 详见 :ref:`lain-auto-pilot`.
-   * 重新部署该应用的当前版本: :code:`lain redeploy`, 如果你的应用做好了多实例和健康检查, 那多半是平滑上线的效果, 但某些情况下, Kubernetes 并不会重建这些 pod (你可以用 :code:`lain status` 来确认), 如果这种情况真的发生了, 那就只好用 :code:`lain restart` 来重建容器了.
-   * :code:`lain restart --graceful` 将会挨个删除所有 pod, 每删一个都会等待"绿灯", 也就是观察到所有 pod 都 up and running, 才会继续删除下一个 pod.
+   * 重新部署该应用的当前版本: :code:`lain redeploy`, 如果你的应用做好了多实例和健康检查, 那多半是平滑上线的效果, 但某些情况下, Kubernetes 并不会重建这些 Pod (你可以用 :code:`lain status` 来确认), 如果这种情况真的发生了, 那就只好用 :code:`lain restart` 来重建容器了.
+   * :code:`lain restart --graceful` 将会挨个删除所有 Pod, 每删一个都会等待"绿灯", 也就是观察到所有 Pod 都 up and running, 才会继续删除下一个 Pod.
 
 部署上线, 以及生产化梳理
 ------------------------

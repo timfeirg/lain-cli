@@ -103,7 +103,7 @@ Auto Migration
    * 如果需要获取出错日志, 执行 :code:`lain logs [job-name]` 就能打印出来, 出错的容器不会被清理掉, 但万一容器真的找不到了, 也可以去 kibana 上看日志, 用 :code:`lain status -s` 就能打印出日志链接
    * 如果仅仅是需要打断 Job, 那就需要先获取 job name, 怎么找呢? 可以用以下方法:
 
-     * 用 :code:`lain status` 找到 pod name, 例如 :code:`[APPNAME]-migration-xxx`, 那么 job name 便是 :code:`[APPNAME]-migration`
+     * 用 :code:`lain status` 找到 Pod name, 例如 :code:`[APPNAME]-migration-xxx`, 那么 job name 便是 :code:`[APPNAME]-migration`
      * :code:`kubectl get job | ack [APPNAME]`
 
    * 知道 job name 就好办了, 执行 :code:`kubectl delete job [job name]`, Job 就被删除了

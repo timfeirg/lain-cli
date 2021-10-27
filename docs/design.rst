@@ -97,7 +97,7 @@ Auto Pilot
 
 * :code:`lain --auto-pilot deploy`, 如果应用尚未构建, 则先 :code:`lain build`. 如果部署遭遇某些特殊的 helm 状态导致卡死(比如 `pending-upgrade <https://github.com/helm/helm/issues/7476>`_), 则自动回滚到上一个"正常"的版本, 然后继续部署操作.
 * :code:`lain --auto-pilot [secret|env] edit` 将会在编辑结束以后, 自动优雅重启应用. 当然啦, 这里的优雅重启指的是 :code:`lain restart --graceful`, 如果应用本身是单实例, 用这个命令也无法达到真正优雅的效果.
-* :code:`lain --auto-pilot restart` 会采用"优雅重启"的策略, 每删除一个 pod, 就会等待全体容器 up and running, 再继续重启操作.
+* :code:`lain --auto-pilot restart` 会采用"优雅重启"的策略, 每删除一个 Pod, 就会等待全体容器 up and running, 再继续重启操作.
 
 .. _lain-security-design:
 
