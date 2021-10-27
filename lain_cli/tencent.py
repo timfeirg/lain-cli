@@ -24,21 +24,23 @@ class TencentClient(RegistryUtils):
 
     VM_STATES = {'on', 'off'}
 
-    def __init__(self, registry=None, secret_id=None, secret_key=None):
-        if not all([registry, secret_id, secret_key]):
+    def __init__(
+        self, registry=None, access_key_id=None, access_key_secret=None, **kwargs
+    ):
+        if not all([registry, access_key_id, access_key_secret]):
             cc = tell_cluster_config()
             registry = cc['registry']
-            secret_id = cc.get('access_key_id')
-            secret_key = cc.get('access_key_secret')
+            access_key_id = cc.get('access_key_id')
+            access_key_secret = cc.get('access_key_secret')
 
-        self.host = registry
+        self.registry = registry
         self.repo_namespace = registry.split('/')[-1]
-        if not all([secret_id, secret_key]):
+        if not all([access_key_id, access_key_secret]):
             raise ValueError(
                 'access_key_id, access_key_secret not provided in cluster config'
             )
 
-        self.cred = credential.Credential(secret_id, secret_key)
+        self.cred = credential.Credential(access_key_id, access_key_secret)
         self.cvm_client = cvm_client.CvmClient(self.cred, "ap-beijing")
         self.tcr_client = TcrClient(self.cred, "ap-beijing")
 

@@ -17,10 +17,10 @@ class AliyunRegistry(RegistryUtils):
         self,
         access_key_id=None,
         access_key_secret=None,
-        region_id=None,
-        repo_namespace=None,
+        registry=None,
+        **kwargs,
     ):
-        if not all([access_key_id, access_key_secret, region_id, repo_namespace]):
+        if not all([access_key_id, access_key_secret, registry]):
             cc = tell_cluster_config()
             access_key_id = cc.get('access_key_id')
             access_key_secret = cc.get('access_key_secret')
@@ -28,11 +28,11 @@ class AliyunRegistry(RegistryUtils):
                 raise ValueError(
                     'access_key_id, access_key_secret not provided in cluster config'
                 )
-            if not all([region_id, repo_namespace]):
-                host = cc['registry']
-                _, region_id, _, _, repo_namespace = re.split(r'[\./]', host)
+            if not registry:
+                registry = cc['registry']
 
-        self.host = f'registry.{region_id}.aliyuncs.com/{repo_namespace}'
+        _, region_id, _, _, repo_namespace = re.split(r'[\./]', registry)
+        self.registry = f'registry.{region_id}.aliyuncs.com/{repo_namespace}'
         self.acs_client = AcsClient(access_key_id, access_key_secret, region_id)
         self.repo_namespace = repo_namespace
         self.endpoint = f'cr.{region_id}.aliyuncs.com'

@@ -205,18 +205,18 @@ def parse_helm_set_clause_from_options(options):
 def test_registry():
     region_id = 'cn-hangzhou'
     repo_ns = 'big-company'
+    registry = f'registry.{region_id}.aliyuncs.com/{repo_ns}'
     aliyun_registry = AliyunRegistry(
         access_key_id='hh',
         access_key_secret='hh',
-        region_id=region_id,
-        repo_namespace=repo_ns,
+        registry=registry,
     )
     tag = 'noway'
     _, image = run_under_click_context(
         aliyun_registry.make_image,
         args=[tag],
     )
-    assert image == f'registry.{region_id}.aliyuncs.com/{repo_ns}/{DUMMY_APPNAME}:{tag}'
+    assert image == f'{registry}/{DUMMY_APPNAME}:{tag}'
     project = 'foo'
     registry_url = f'harbor.fake/{project}'
     harbor_registry = HarborRegistry(registry_url, 'fake-token')
@@ -225,7 +225,7 @@ def test_registry():
         harbor_registry.make_image,
         args=[tag],
     )
-    assert harbor_registry.host == registry_url
+    assert harbor_registry.registry == registry_url
     assert image == f'{registry_url}/{DUMMY_APPNAME}:{tag}'
 
 

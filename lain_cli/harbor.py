@@ -7,23 +7,23 @@ from lain_cli.utils import (
 
 
 class HarborRegistry(RequestClientMixin, RegistryUtils):
-    def __init__(self, registry_url=None, token=None):
-        if not all([registry_url, token]):
+    def __init__(self, registry=None, harbor_token=None, **kwargs):
+        if not all([registry, harbor_token]):
             cc = tell_cluster_config()
-            registry_url = cc['registry']
+            registry = cc['registry']
             if 'harbor_token' not in cc:
                 raise ValueError('harbor_token not provided in cluster config')
-            token = cc['harbor_token']
+            harbor_token = cc['harbor_token']
 
-        self.host = registry_url
+        self.registry = registry
         try:
-            host, project = registry_url.split('/')
+            host, project = registry.split('/')
         except ValueError as e:
-            raise ValueError(f'bad registry: {registry_url}') from e
+            raise ValueError(f'bad registry: {registry}') from e
         self.endpoint = f'http://{host}/api/v2.0'
         self.headers = {
             # get from your harbor console
-            'authorization': f'Basic {token}',
+            'authorization': f'Basic {harbor_token}',
             'accept': 'application/json',
         }
         self.project = project

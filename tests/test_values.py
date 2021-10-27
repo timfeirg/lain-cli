@@ -6,7 +6,6 @@ from marshmallow import ValidationError
 from lain_cli.utils import (
     HelmValuesSchema,
     IngressSchema,
-    context,
     load_helm_values,
     make_wildcard_domain,
     tell_domain_tls_name,

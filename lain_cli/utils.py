@@ -587,7 +587,7 @@ class RequestClientMixin:
 
 
 class RegistryUtils:
-    host = 'registry.fake/dev'
+    registry = 'registry.fake/dev'
 
     @staticmethod
     def is_protected_repo(repo):
@@ -619,7 +619,7 @@ class RegistryUtils:
         if not repo:
             repo = ctx.obj['appname']
 
-        return f'{self.host}/{repo}:{tag}'
+        return f'{self.registry}/{repo}:{tag}'
 
     def list_repos(self):
         raise NotImplementedError
@@ -637,25 +637,27 @@ class RegistryUtils:
         return images
 
 
-def tell_registry_client():
-    cc = tell_cluster_config()
+def tell_registry_client(cc=None):
+    if not cc:
+        cc = tell_cluster_config()
+
     registry_type = cc.get('registry_type') or 'registry'
     if registry_type == 'registry':
         from lain_cli.registry import Registry
 
-        return Registry()
+        return Registry(**cc)
     if registry_type == 'aliyun':
         from lain_cli.aliyun import AliyunRegistry
 
-        return AliyunRegistry()
+        return AliyunRegistry(**cc)
     if registry_type == 'harbor':
         from lain_cli.harbor import HarborRegistry
 
-        return HarborRegistry()
+        return HarborRegistry(**cc)
     if registry_type == 'tencent':
         from lain_cli.tencent import TencentRegistry
 
-        return TencentRegistry()
+        return TencentRegistry(**cc)
     warn(f'unsupported registry type: {registry_type}')
 
 
@@ -2038,9 +2040,6 @@ class HelmValuesSchema(LenientSchema):
             raise ValidationError(
                 f'proc names should not duplicate: {duplicated_names}'
             )
-        online_clusters = [
-            name for name, cluster in CLUSTERS.items() if not cluster.get('offline')
-        ]
         release_clause = data.get('release')
         if release_clause:
             build_clause = data.get('build')

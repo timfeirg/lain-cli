@@ -35,6 +35,7 @@ from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
     KUBECONFIG_DIR,
+    ClusterConfigSchema,
     tell_cherry,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
@@ -343,6 +344,34 @@ def list_waste():
             continue
 
         error(f'{appname}-{proc_name} has {desired} pods, cpu P90: {cpu_top}')
+
+
+@admin.command()
+@click.option(
+    '--cluster-config',
+    'cc_path',
+    type=click.Path(),
+    required=True,
+    help='specify cluster config yaml',
+)
+@click.pass_context
+def migrate_registry(ctx, cc_path):
+    data = yalo(cc_path)
+    schema = ClusterConfigSchema(context={'is_current': True})
+    cc = schema.load(data)
+    registry_addr = cc['registry']
+    dest_registry = tell_registry_client(cc)
+    existing_images = dest_registry.list_images()
+    registry = tell_registry_client()
+    images = registry.list_images()
+    for image in images:
+        if image in existing_images:
+            continue
+        banyun(
+            image,
+            pull=True,
+            registry=registry_addr,
+        )
 
 
 @admin.command()

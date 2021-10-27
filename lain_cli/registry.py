@@ -6,13 +6,13 @@ from lain_cli.utils import RegistryUtils, RequestClientMixin, tell_cluster_confi
 class Registry(RequestClientMixin, RegistryUtils):
     headers = {'Accept': 'application/vnd.docker.distribution.manifest.v2+json'}
 
-    def __init__(self, host=None):
-        if not host:
+    def __init__(self, registry=None, **kwargs):
+        if not registry:
             cc = tell_cluster_config()
-            host = cc['registry']
+            registry = cc['registry']
 
-        self.host = host
-        self.endpoint = f'http://{host}'
+        self.registry = registry
+        self.endpoint = f'http://{registry}'
 
     def list_repos(self):
         path = '/v2/_catalog'
