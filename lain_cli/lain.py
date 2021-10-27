@@ -1734,27 +1734,24 @@ def save(ctx, images, retag, pull, output_dir):
 @click.argument('images', nargs=-1)
 @click.option('--pull', is_flag=True, help='pull image before retag and push')
 @click.option(
-    '--publish',
-    is_flag=True,
-    help='if provided, lain will push to all possible registries',
-)
-@click.option(
     '--overwrite-latest',
     is_flag=True,
     help='if provided, lain will also retag this image into :latest. (default to True when called with no arguments)',
 )
+@click.option(
+    '--registry',
+    help='destination registry, default to the registry configured for current cluster',
+)
 @click.pass_context
-def push(ctx, images, pull, publish, overwrite_latest):
+def push(ctx, images, pull, overwrite_latest, registry):
     """
-    push app image to current registry.
+    push app image to registry.
 
     \b
     examples:
     \b
         lain use [CLUSTER]
         lain push
-        # push to all registries (controlled using values.publish_to)
-        lain push --publish
 
     \b
     also, you can use this command to retag and transfer an image to another registry:
@@ -1767,21 +1764,16 @@ def push(ctx, images, pull, publish, overwrite_latest):
         # docker push registry.foo/namespace/dummy:***
         # docker push registry.foo/namespace/dummy:latest
     """
-    if publish:
-        if tell_cluster_config().get('offline'):
-            registries = None
-        else:
-            registries = ctx.obj['values']['publish_to_registries']
-    else:
+    if not registry:
         cluster = ctx.obj['cluster']
-        registries = CLUSTERS[cluster]['registry']
+        registry = CLUSTERS[cluster]['registry']
 
     if images:
         for image in images:
             banyun(
                 image,
                 pull=pull,
-                registry=registries,
+                registry=registry,
                 overwrite_latest_tag=overwrite_latest,
             )
 
@@ -1794,7 +1786,7 @@ def push(ctx, images, pull, publish, overwrite_latest):
     if not image:
         error(f'image not found for {appname}', exit=True)
 
-    theirs = banyun(image, pull=pull, registry=registries, overwrite_latest_tag=True)
+    theirs = banyun(image, pull=pull, registry=registry, overwrite_latest_tag=True)
     echo(theirs)
     ctx.exit(0)
 

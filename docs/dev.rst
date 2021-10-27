@@ -82,7 +82,7 @@
 有 kubeconfig 才能和 Kubernetes 集群打交道, 你可以用以下步骤获得合适的 kubeconfig:
 
 * lain 调用的 kubectl, helm, 都是直接和 Kubernetes Apiserver 打交道的, 因此你需要让 Apiserver 对内网可访问.
-* [可选] 配置好 Kubernetes ServiceAccount, 加入私有 Registry 的 imagePullSecrets. 
+* [可选] 配置好 Kubernetes ServiceAccount, 加入私有 Registry 的 imagePullSecrets.
 
   如果你在用阿里云, 可能需要注意关闭 `aliyun-acr-credential-helper <https://help.aliyun.com/document_detail/177224.html>`_, 否则这玩意会持续覆盖你的 ServiceAccount Secrets. 禁用的命令类似 :code:`kubectl scale --replicas=0 deployment -n kube-system aliyun-acr-credential-helper`.
 * lain 需要 admin 权限的 kubeconfig, 并且要提前设置好 namespace: :code:`kubectl config set-context --current --namespace=[namespace]`. 如果没什么特别要求, 并且这个集群仅使用 lain 来管理, 那么建议直接用 default namespace 就好.

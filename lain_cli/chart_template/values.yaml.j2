@@ -3,13 +3,6 @@ appname: {{ appname }}
 # releaseName 就是 helm release name, 如果你想要把 app 部署两份, 则在其他 values 文件里超载该字段
 # releaseName: {{ appname }}
 
-# # publish_to 用来控制以 --publish 参数上传镜像的范围
-# # 以下边的写法为例, lain push --publish 只会上传镜像至 cluster1, cluster2
-# # 而不是上传至所有集群
-# publish_to:
-#   - cluster1
-#   - cluster2
-
 # # 上线以后发送通知到指定的 webhook
 # webhook:
 #   # 目前仅支持 feishu, 需要先添加 webhook 机器人才行:

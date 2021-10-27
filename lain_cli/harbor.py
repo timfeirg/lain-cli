@@ -39,14 +39,18 @@ class HarborRegistry(RequestClientMixin, RegistryUtils):
         return res
 
     def list_repos(self):
-        res = self.get(f'/projects/{self.project}/repositories')
+        res = self.get(
+            f'/projects/{self.project}/repositories', params={'page_size': 100}
+        )
         responson = res.json()
-        return responson
+        repos = [dic['name'].split('/')[-1] for dic in responson]
+        return repos
 
     def list_tags(self, repo_name, **kwargs):
+        repo_name = repo_name.split('/')[-1]
         res = self.get(
             f'/projects/{self.project}/repositories/{repo_name}/artifacts',
-            params={'page_size': 50},
+            params={'page_size': 100},
         )
         responson = res.json()
         tag_dics = flatten_list([dic['tags'] for dic in responson if dic['tags']])

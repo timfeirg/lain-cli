@@ -2019,7 +2019,6 @@ class HelmValuesSchema(LenientSchema):
         allow_none=True,
         load_default=None,
     )
-    publish_to = List(Str)
     build = Nested(BuildSchema, required=False)
     release = Nested(ReleaseSchema, required=False)
 
@@ -2042,13 +2041,6 @@ class HelmValuesSchema(LenientSchema):
         online_clusters = [
             name for name, cluster in CLUSTERS.items() if not cluster.get('offline')
         ]
-        data.setdefault('publish_to', online_clusters)
-        data['publish_to'] = set(data['publish_to'])
-        data['publish_to_registries'] = set(
-            c.get('registry')
-            for n, c in CLUSTERS.items()
-            if n in data['publish_to'] and c.get('registry')
-        )
         release_clause = data.get('release')
         if release_clause:
             build_clause = data.get('build')

@@ -162,20 +162,6 @@ def test_values_override():
 
 
 @pytest.mark.usefixtures('dummy_helm_chart')
-def test_publish_to():
-    values = load_dummy_values()
-    values['publish_to'] = ['test']
-    yadu(values, DUMMY_VALUES_PATH)
-
-    def _get_publish_to_registries():
-        obj = context().obj
-        return obj['values']['publish_to_registries']
-
-    _, registries = run_under_click_context(_get_publish_to_registries)
-    assert registries == {TEST_CLUSTER_CONFIG['registry']}
-
-
-@pytest.mark.usefixtures('dummy_helm_chart')
 def test_duplicate_proc_names():
     values = load_dummy_values()
     web = values['deployments']['web'].copy()
