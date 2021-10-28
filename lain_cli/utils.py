@@ -2626,7 +2626,7 @@ def tell_cluster_values_file(cluster=None, internal=False):
         return values_file
 
 
-def tell_cluster_config(cluster=None):
+def tell_cluster_config(cluster=None, is_current=None):
     ctx = context(silent=True)
     if ctx and 'cluster_config' in ctx.obj:
         return ctx.obj['cluster_config']
@@ -2638,14 +2638,15 @@ def tell_cluster_config(cluster=None):
         warn(f'cluster values not found for {cluster} inside {CLUSTER_VALUES_DIR}')
         return {}
 
+    if is_current is None:
+        try:
+            is_current = tell_cluster() == cluster
+        except OSError:
+            is_current = False
+
     data = yalo(open(values_file))
     # cluster values can be overriden in values.yaml
     update_extra_values(data, cluster=cluster, ignore_extra=True)
-    try:
-        is_current = tell_cluster() == cluster
-    except OSError:
-        is_current = False
-
     schema = ClusterConfigSchema(context={'is_current': is_current})
     try:
         cc = schema.load(data)
@@ -2672,6 +2673,14 @@ def tell_cluster_config(cluster=None):
 
 def tell_all_clusters():
     ccs = {}
+    argv = sys.argv
+    wanted_cluster = None
+    if len(argv) == 3 and argv[1] == 'use' and argv[0].rsplit('/', 1)[-1] == 'lain':
+        wanted_cluster = argv[-1]
+    else:
+        with suppress(OSError):
+            wanted_cluster = tell_cluster()
+
     for f in glob(join(KUBECONFIG_DIR, '*')):
         if not isfile(f):
             continue
@@ -2679,7 +2688,8 @@ def tell_all_clusters():
         if not fname.startswith('kubeconfig-'):
             continue
         cluster_name = fname.split('-', 1)[-1]
-        cc = tell_cluster_config(cluster_name)
+        is_current = cluster_name == wanted_cluster
+        cc = tell_cluster_config(cluster_name, is_current=is_current)
         if not cc:
             continue
         ccs[cluster_name] = cc
