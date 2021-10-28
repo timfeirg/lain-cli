@@ -362,10 +362,16 @@ def migrate_registry(ctx, cc_path):
     registry_addr = cc['registry']
     dest_registry = tell_registry_client(cc)
     existing_images = dest_registry.list_images()
+
+    def tell_tag(image):
+        return image.split('/')[-1]
+
+    tags = set(tell_tag(s) for s in existing_images)
     registry = tell_registry_client()
     images = registry.list_images()
     for image in images:
-        if image in existing_images:
+        if tell_tag(image) in tags:
+            echo(f'skip {image}')
             continue
         banyun(
             image,
