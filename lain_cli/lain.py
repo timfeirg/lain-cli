@@ -919,19 +919,6 @@ def x(ctx, deploy_and_command):
         lain x bash -c "ls | grep foo"
         # use -- to avoid click confusion on cli options
         lain x -- python3 manage.py foo --bar
-
-    \b
-    do not use when network isn't stable! instead, use lain behind mosh, for example:
-
-    \b
-        mosh relay
-        tmux attach
-        lain.sh
-        lain use test
-        export GITLAB_API_TOKEN=xxx  # your personal gitlab api token
-        lain fetch-chart dev/avln-server
-        cd dev/avln-server
-        lain x  # this is a stable session due to mosh and tmux, you can safely work here
     """
     deploy_names = set(ctx.obj['values']['deployments'])
     if deploy_and_command:

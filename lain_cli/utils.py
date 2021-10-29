@@ -1048,7 +1048,7 @@ def ensure_resource_initiated(chart=False, secret=False):
         # 如果 values 里边定制过了 volumes, 就绕过检查吧, 肯定是高级用户
         if subPaths and not values.get('volumes'):
             cluster = ctx.obj['cluster']
-            res = kubectl('get', 'secret', secret_name, capture_output=True)
+            res = kubectl('get', 'secret', secret_name, capture_output=True, check=False)
             code = rc(res)
             if code:
                 tutorial = '\n'.join(f'lain secret add {f}' for f in subPaths)

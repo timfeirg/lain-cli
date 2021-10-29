@@ -285,6 +285,18 @@ ENV (环境变量) 管理
 
   你也可以直接用 :code:`helm rollback`, 但请务必提前熟悉 helm 的使用.
 
+查看部署历史
+------------
+
+你可以用 helm 方便地查看历次部署的信息:
+
+.. code-block:: bash
+
+    # 打印出部署历史, 找出你关心的 revision, 把 id 复制一下
+    helm history APPNAME
+    # 用 id 查询部署配置, 比如镜像 tag, 操作者的 $USER, 都记录在这里
+    helm get values --revision=15 APPNAME
+
 内置环境变量
 ------------
 
@@ -460,15 +472,17 @@ Review 与审计
 
 因为都是敏感信息, :code:`lain (secret|env)` 里的内容修改了, 自然没办法在公开场合进行 Review 了, 但如果你的项目设置了 webhook, 那么 lain 会将修改的部分 (只有 keys, 没有 values) 发送到 webhook notification, 让团队知悉你的改动.
 
-查看某次部署是谁操作的
-^^^^^^^^^^^^^^^^^^^^^^
+定位某次部署的操作者
+^^^^^^^^^^^^^^^^^^^^
 
-生产性质的项目都应该声明 webhook, 每次 :code:`lain deploy`, :code:`lain (secret|env) edit` 都会发送通知, 记录操作者和其他信息, 但如果要追溯历史操作, 可以直接用 helm:
+作为最佳实践, 所有生产性质的项目都应该声明 webhook, 这样一来, 每次 :code:`lain deploy`, :code:`lain (secret|env) edit` 都会发送通知, 记录操作者和其他信息.
+
+但如果要追溯历史操作, 可以直接用 helm:
 
 .. code-block:: bash
 
     # 查看最近的一次部署是谁操作的
-    helm get values avln-server | ag user
+    helm get values APPNAME | ack user
     # 查看某一次历史部署是谁操作的
-    helm history avln-server
-    helm get values --revision=15 avln-server | ag user
+    helm history APPNAME
+    helm get values --revision=15 APPNAME | ack user
