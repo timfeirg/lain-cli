@@ -24,6 +24,9 @@ metadata:
   labels:
     {{- include "chart.labels" $ | nindent 4 }}
 spec:
+  {{- if and (hasKey $.Values "ingressClass") (semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ default $.Values.externalIngressClass $ingress.ingressClass }}
+  {{- end }}
   {{- if hasKey $.Values "externalIngressTLSSecretName" }}
   tls:
     - secretName: {{ $.Values.externalIngressTLSSecretName }}
