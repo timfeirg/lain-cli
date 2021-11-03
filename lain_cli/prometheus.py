@@ -5,7 +5,7 @@ from statistics import StatisticsError, quantiles
 import click
 from humanfriendly import parse_timespan
 
-from lain_cli.utils import RequestClientMixin, ensure_str, tell_cluster_config, warn
+from lain_cli.utils import RequestClientMixin, ensure_str, tell_cluster_config, warn, error
 
 LAIN_LINT_PROMETHEUS_QUERY_RANGE = '7d'
 LAIN_LINT_PROMETHEUS_QUERY_STEP = int(
