@@ -117,3 +117,30 @@ class Prometheus(RequestClientMixin):
         if responson.get('status') == 'error':
             raise ValueError(responson['error'])
         return responson['data']['result']
+
+
+class Alertmanager(RequestClientMixin):
+    """https://github.com/prometheus/alertmanager/blob/main/api/v2/openapi.yaml"""
+
+    timeout = 20
+
+    def __init__(self, endpoint=None):
+        if not endpoint:
+            cc = tell_cluster_config()
+            endpoint = cc.get('alertmanager')
+            if not endpoint:
+                raise click.Abort(f'alertmanager not provided in cluster config: {cc}')
+
+        self.endpoint = endpoint.rstrip('/')
+
+    def post_alerts(self):
+        payload = [
+            {
+                'labels': {'label': 'value'},
+                'annotations': {'label': 'value'},
+                'generatorURL': f'{self.endpoint}/<generating_expression>',
+            },
+        ]
+        res = self.post('/api/v2/alerts', json=payload)
+        if res.status_code >= 400:
+            error(res.text)

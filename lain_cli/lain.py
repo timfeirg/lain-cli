@@ -22,7 +22,7 @@ from lain_cli.lint import (
     suggest_memory_limits,
     suggest_memory_requests,
 )
-from lain_cli.prometheus import Prometheus
+from lain_cli.prometheus import Prometheus, Alertmanager
 from lain_cli.prompt import (
     build_app_status_command,
     display_app_status,
@@ -1263,6 +1263,13 @@ def get(ctx, resource, annotations):
                 echo(line)
             else:
                 debug(line)
+
+
+@admin.command()
+@click.pass_context
+def post_alerts(ctx):
+    am = Alertmanager()
+    am.post_alerts()
 
 
 @lain.command()
