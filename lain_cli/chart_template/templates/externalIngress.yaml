@@ -8,7 +8,7 @@ metadata:
     {{- if hasKey $.Values "clusterIssuer" }}
     cert-manager.io/cluster-issuer: {{ $.Values.clusterIssuer }}
     {{- end }}
-    {{- if hasKey $.Values "externalIngressClass" }}
+    {{- if and (hasKey $.Values "externalIngressClass") (not $.Values.supportsIngressClassName | default false ) }}
     kubernetes.io/ingress.class: {{ default $.Values.externalIngressClass $ingress.ingressClass }}
     {{- end }}
     {{- with $.Values.externalIngressAnnotations }}
@@ -24,6 +24,9 @@ metadata:
   labels:
     {{- include "chart.labels" $ | nindent 4 }}
 spec:
+  {{- if and (hasKey $.Values "externalIngressClass") ($.Values.supportsIngressClassName) }}
+  ingressClassName: {{ default $.Values.externalIngressClass $ingress.ingressClass }}
+  {{- end }}
   {{- if hasKey $.Values "externalIngressTLSSecretName" }}
   tls:
     - secretName: {{ $.Values.externalIngressTLSSecretName }}
