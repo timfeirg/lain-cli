@@ -1286,8 +1286,15 @@ def cherry(ctx):
 
 
 @lain.command()
-def get_values():
-    release_name = tell_release_name()
+@click.argument('release_name', nargs=-1)
+def get_values(release_name):
+    if not release_name:
+        release_name = tell_release_name()
+    elif len(release_name) != 1:
+        error('provide only one release name, please', exit=1)
+    else:
+        release_name = release_name[0]
+
     helm(
         'get',
         'values',
