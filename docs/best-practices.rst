@@ -208,6 +208,9 @@ Auto Migration
           - .cache/
           - node_modules/
 
+    # 之所以把 prepare 放在最后, 是因为 prepare 镜像只是一层缓存, 不必非得等 prepare 完成, 才继续接下来的 test / deploy
+    # 但如果在 prepare.script 里增加了新的依赖, 由于执行顺序的问题, 运行 test_job 的时候, prepare 镜像还没有重新生成
+    # 这时候可能就只好辛苦你本地先 prepare 一番了, 或者把这些新的依赖在 test_job.script 里手动安装一下
     prepare_job:
       stage: .post
       cache:

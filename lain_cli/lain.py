@@ -1286,6 +1286,16 @@ def cherry(ctx):
 
 
 @lain.command()
+def get_values():
+    release_name = tell_release_name()
+    helm(
+        'get',
+        'values',
+        release_name,
+    )
+
+
+@lain.command()
 @click.option(
     '--set',
     'pairs',

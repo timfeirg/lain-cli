@@ -862,6 +862,8 @@ def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
     cluster = ctx.obj['cluster']
     kvdic['cluster'] = cluster
     kvdic['user'] = tell_executor()
+    repo_urls = git_remote()
+    kvdic['repo_url'] = '{{{}}}'.format(','.join(repo_urls))
     image_tag = kvdic.get('imageTag')
     if deduce_image:
         image_tag = tell_image_tag(image_tag)
@@ -1404,6 +1406,18 @@ def git(*args, exit=None, check=True, **kwargs):
         context().exit(rc(completed))
 
     return completed
+
+
+def git_remote(**kwargs):
+    cmd = ['git', 'remote', '-v']
+    completed = subprocess_run(cmd, env=ENV, capture_output=True, check=True, **kwargs)
+    output = ensure_str(completed.stdout)
+    remotes = set()
+    for line in output.splitlines():
+        _, url, *_ = line.split()
+        remotes.add(url)
+
+    return remotes
 
 
 def try_to_label_nodes():
