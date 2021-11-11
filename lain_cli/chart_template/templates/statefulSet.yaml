@@ -54,7 +54,7 @@ spec:
         {{- toYaml $sts.podSecurityContext | nindent 8 }}
       {{- end }}
       {{- include "hostAliases" $ | nindent 6 }}
-      terminationGracePeriodSeconds: {{ default 30 $sts.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ default 100 $sts.terminationGracePeriodSeconds }}
       {{- if hasKey $sts "initContainers" }}
       initContainers:
         {{- range $initJobName, $initJob := $sts.initContainers  }}

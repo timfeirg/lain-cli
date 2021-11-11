@@ -72,8 +72,8 @@ deployments:
     podSecurityContext: {}
     # 有需要的话, 建议在 cluster values 里进行统一超载, 一般应用空间都统一用一个 sa 吧, 便于管理
     # serviceAccountName: default
-    # 优雅退出时间默认 30 秒
-    # terminationGracePeriodSeconds: 30
+    # 优雅退出时间默认 100 秒
+    # terminationGracePeriodSeconds: 100
     # resources 用于声明资源的预期用量, 以及最大用量
     # 如果你不熟悉你的应用的资源使用表现, 可以先拍脑袋 requests 和 limits 写成一样
     # 运行一段时间以后, lain lint 会依靠监控数据, 计算给出修改建议

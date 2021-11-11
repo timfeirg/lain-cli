@@ -36,7 +36,7 @@ spec:
             {{- toYaml $cronjob.podSecurityContext | nindent 12 }}
           {{- end }}
           {{- include "hostAliases" $ | nindent 10 }}
-          terminationGracePeriodSeconds: {{ default 30 $cronjob.terminationGracePeriodSeconds }}
+          terminationGracePeriodSeconds: {{ default 100 $cronjob.terminationGracePeriodSeconds }}
           {{- if hasKey $cronjob "initContainers" }}
           initContainers:
             {{- range $initJobName, $initJob := $cronjob.initContainers  }}
