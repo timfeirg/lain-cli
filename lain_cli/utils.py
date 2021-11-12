@@ -746,11 +746,19 @@ def kubectl_edit(f, capture_output=False, notify_diff=True, **kwargs):
         if webhook:
             old = yalo(f)
 
+    current_cluster = tell_cluster()
     edit_file(f)
     try:
         secret_dic = yalo(f)
         if notify_diff:
             new = deepcopy(secret_dic)
+
+        cluster = tell_cluster()
+        if cluster != current_cluster:
+            error(
+                f'you have switched from {current_cluster} to {cluster}, this is not allowed, abort',
+                exit=1,
+            )
 
         res = kubectl_apply(secret_dic, capture_output=capture_output, **kwargs)
     except (ParserError, ValueError, KeyError) as e:
