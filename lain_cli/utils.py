@@ -27,7 +27,7 @@ from os import getcwd as cwd
 from os import getppid, readlink, remove, unlink
 from os.path import abspath, basename, dirname, expanduser, isdir, isfile, join
 from tempfile import TemporaryDirectory, mkstemp
-from time import sleep
+from time import sleep, time
 
 import click
 import psutil
@@ -785,6 +785,7 @@ def kubectl_apply(
     validate=True,
     capture_output=False,
     check=True,
+    backup=False,
     **kwargs,
 ):
     """dump content into a temp yaml file, and then k apply.
@@ -829,9 +830,30 @@ def kubectl_apply(
                 'secret changes will not take effect until pod is re-created, one way to do this is lain restart --graceful'
             )
 
+        if backup:
+            backup_kubernetes_resource(dic)
+
         return res
     finally:
         unlink(name)
+
+
+def backup_kubernetes_resource(dic):
+    resource_name = dic['metadata']['name']
+    ts = int(time())
+    dic['metadata']['name'] = f'{resource_name}-backup-{ts}'
+    backup_fd, backup_name = mkstemp(suffix='.yaml')
+    yadu(dic, backup_fd)
+    try:
+        kubectl(
+            'apply',
+            '-f',
+            backup_name,
+            '--validate=false',
+            capture_output=False,
+        )
+    finally:
+        unlink(backup_name)
 
 
 def tell_change_from_kubectl_output(stdout):

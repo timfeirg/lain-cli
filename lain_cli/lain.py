@@ -1937,7 +1937,7 @@ def show(ctx):
 def edit(ctx):
     """edit environment variables using $EDITOR"""
     f = dump_secret(ctx.obj['env_name'], init='env')
-    res = kubectl_edit(f, notify_diff=True, tee=True)
+    res = kubectl_edit(f, notify_diff=True, tee=True, backup=True)
     auto_pilot = ctx.obj.get('auto_pilot')
     if auto_pilot and tell_change_from_kubectl_output(ensure_str(res.stdout)):
         lain_('restart', '--graceful')
@@ -2063,7 +2063,7 @@ def edit(ctx, name):
             error('one secret at a time')
 
     f = dump_secret(name, init='secret')
-    res = kubectl_edit(f, notify_diff=True, tee=True)
+    res = kubectl_edit(f, notify_diff=True, tee=True, backup=True)
     auto_pilot = ctx.obj.get('auto_pilot')
     if auto_pilot and tell_change_from_kubectl_output(ensure_str(res.stdout)):
         lain_('restart', '--graceful')
