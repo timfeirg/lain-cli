@@ -3,6 +3,8 @@
 快速上手
 ========
 
+lain 需要调用 kubectl, docker, helm. 这些工具都需要你自行安装. 如果你不清楚要安装什么版本, 那就统一安装最新版吧! lain 最喜欢新版了. 当然啦, kubectl 还是要和 server version 匹配才行, 不过这个你也不必担心, lain 做了版本校验, 如果你手上的 kubectl 版本和 server 不对付, lain 会提示你去安装合适的版本.
+
 安装 lain
 ---------
 
