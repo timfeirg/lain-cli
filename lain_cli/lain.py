@@ -820,16 +820,19 @@ def job(ctx, image_tag, head, wait, timeout, force, interactive, context, comman
     if appname == 'lain':
         # 如果没有在任何 app 内运行 lain job, 则会用 lain 镜像启动一个容器
         ctx.obj['image'] = make_image_str(appname='lain', image_tag='latest')
-        ctx.obj['volumeMounts'] = [{'name': 'jfs', 'mountPath': '/jfs'}]
-        ctx.obj['volumes'] = [
-            {
-                'name': 'jfs',
-                'hostPath': {
-                    'path': '/jfs',
-                    'type': 'Directory',
-                },
-            }
-        ]
+        cc = tell_cluster_config()
+        jfs = cc.get('jfs', '/jfs')
+        if jfs:
+            ctx.obj['volumeMounts'] = [{'name': 'jfs', 'mountPath': '/jfs'}]
+            ctx.obj['volumes'] = [
+                {
+                    'name': 'jfs',
+                    'hostPath': {
+                        'path': '/jfs',
+                        'type': 'Directory',
+                    },
+                }
+            ]
     else:
         # 如果发现是在 lain app 目录内运行 lain job, 就选取一个 deploy,
         # 拿出各种 spec 里的信息, 来渲染 job.yaml
