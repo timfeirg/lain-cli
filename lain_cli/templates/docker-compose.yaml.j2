@@ -26,7 +26,7 @@ services:
       {{ proc.env | to_yaml | indent(6) }}
       {%- endif %}
     {%- endif %}
-    working_dir: {{ proc.working_dir | default('lain/app') }}
+    working_dir: {{ proc.working_dir | default('/lain/app') }}
     # depends_on:
     #   - redis
     #   - mysql
