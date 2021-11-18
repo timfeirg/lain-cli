@@ -783,18 +783,17 @@ def job(ctx, image_tag, head, wait, timeout, force, interactive, context, comman
     \b
     examples:
     \b
-        # start a container using the same environment
-        lain job -- ./manage.py migrate
-
-    \b
-    if not in a lain app, will start using the lain docker image instead:
-    \b
         # use -- to avoid click confusion on cli options
         lain job -- echo me so tired
         # omit command to run interactive shell, this implies --wait
         lain job
-        # run a interactive command
+    \b
+        # when CWD is a lain app, will start a container using the same environment (same image, same env / secrets)
+        lain job -- ./manage.py migrate
+    \b
+        # when CWD isn't a lain app, the job will use the lain image instead, lain image is "battery included"
         lain job -i -- mysql -hmysql -uroot -pxxx
+    \b
     """
     if image_tag and head:
         raise BadParameter('cannot use --image-tag with --head')
@@ -1269,10 +1268,17 @@ def get(ctx, resource, annotations):
 
 
 @admin.command()
+@click.option(
+    '--labels',
+    'labels',
+    multiple=True,
+    type=KVPairType(),
+    help='custom labels',
+)
 @click.pass_context
-def post_alerts(ctx):
+def post_alerts(ctx, labels):
     am = Alertmanager()
-    am.post_alerts()
+    am.post_alerts(labels)
 
 
 @lain.command()

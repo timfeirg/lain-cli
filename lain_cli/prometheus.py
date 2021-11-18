@@ -139,11 +139,12 @@ class Alertmanager(RequestClientMixin):
 
         self.endpoint = endpoint.rstrip('/')
 
-    def post_alerts(self):
+    def post_alerts(self, labels=None):
+        label_dic = dict(labels or ('label', 'value'))
         payload = [
             {
-                'labels': {'label': 'value'},
-                'annotations': {'label': 'value'},
+                'labels': label_dic,
+                'annotations': label_dic,
                 'generatorURL': f'{self.endpoint}/<generating_expression>',
             },
         ]

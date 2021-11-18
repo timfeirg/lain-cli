@@ -21,13 +21,15 @@ def tell_webhook_client(hook_url=None):
     hook_url = hook_url or config.get('url')
     if not hook_url:
         return
-    clusters_to_notify = config.get('clusters') or set()
+    clusters_to_notify = config.pop('clusters', None) or set()
     cluster = obj['cluster']
     if clusters_to_notify and cluster not in clusters_to_notify:
         return
     pr = urlparse(hook_url)
     if pr.netloc == 'open.feishu.cn':
-        return FeishuWebhook(hook_url)
+        return FeishuWebhook(hook_url, **config)
+    if pr.netloc == 'hooks.slack.com':
+        return SlackIncomingWebhook(hook_url, **config)
     raise NotImplementedError(f'webhook not implemented for {hook_url}')
 
 
@@ -37,7 +39,7 @@ class Webhook(RequestClientMixin):
     deploy_message_template = template_env.get_template('deploy-webhook-message.txt.j2')
     k8s_secret_diff_template = template_env.get_template('k8s-secret-diff.txt.j2')
 
-    def __init__(self, endpoint=None):
+    def __init__(self, endpoint=None, **kwargs):
         self.endpoint = endpoint
 
     def send_msg(self, msg):
@@ -105,5 +107,23 @@ class FeishuWebhook(Webhook):
             'content': {
                 'text': cleandoc(msg),
             },
+        }
+        return self.post(json=payload)
+
+
+class SlackIncomingWebhook(Webhook):
+    def __init__(self, endpoint=None, **kwargs):
+        super().__init__(endpoint=endpoint, **kwargs)
+        channel = kwargs.get('channel')
+        if not channel:
+            raise ValueError(
+                'must define webhook.channel when using SlackIncomingWebhook'
+            )
+        self.channel = channel
+
+    def send_msg(self, msg):
+        payload = {
+            'channel': self.channel,
+            'text': msg,
         }
         return self.post(json=payload)
