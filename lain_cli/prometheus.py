@@ -4,13 +4,14 @@ from statistics import StatisticsError, quantiles
 
 import click
 from humanfriendly import parse_timespan
+from requests.exceptions import ReadTimeout
 
 from lain_cli.utils import (
     RequestClientMixin,
     ensure_str,
+    error,
     tell_cluster_config,
     warn,
-    error,
 )
 
 LAIN_LINT_PROMETHEUS_QUERY_RANGE = '7d'
@@ -113,7 +114,11 @@ class Prometheus(RequestClientMixin):
         else:
             path = '/api/v1/query'
 
-        res = self.post(path, data=data)
+        try:
+            res = self.post(path, data=data)
+        except ReadTimeout:
+            warn('prometheus query timeout, consider using grafana instead')
+            return []
         try:
             responson = res.json()
         except json.decoder.JSONDecodeError as e:
@@ -121,7 +126,11 @@ class Prometheus(RequestClientMixin):
                 'cannot decode this shit: {}'.format(ensure_str(res.text))
             ) from e
         if responson.get('status') == 'error':
-            raise ValueError(responson['error'])
+            err_msg = responson['error']
+            if 'query timed out' in err_msg:
+                warn('prometheus query timeout, consider using grafana instead')
+                return []
+            raise ValueError(err_msg)
         return responson['data']['result']
 
 
