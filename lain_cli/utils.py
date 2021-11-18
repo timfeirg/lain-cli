@@ -2391,6 +2391,7 @@ def tell_git_ignore():
         warn(
             f'{GITIGNORE_NAME} not found, consider creating one. if .gitignore is in somewhere else, make a soft link'
         )
+        return ''
 
 
 def make_docker_ignore():
