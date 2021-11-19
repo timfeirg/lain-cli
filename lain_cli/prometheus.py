@@ -12,11 +12,7 @@ from lain_cli.utils import (
     error,
     tell_cluster_config,
     warn,
-)
-
-LAIN_LINT_PROMETHEUS_QUERY_RANGE = '7d'
-LAIN_LINT_PROMETHEUS_QUERY_STEP = int(
-    int(parse_timespan(LAIN_LINT_PROMETHEUS_QUERY_RANGE)) / 1440
+    context,
 )
 
 
@@ -30,6 +26,13 @@ class Prometheus(RequestClientMixin):
             if not endpoint:
                 raise click.Abort(f'prometheus not provided in cluster config: {cc}')
 
+        ctx = context(silent=True)
+        self.query_range = (
+            ctx.obj.get('values', {}).get('prometheus_query_range', '7d')
+            if ctx
+            else '7d'
+        )
+        self.query_step = int(int(parse_timespan(self.query_range)) / 1440)
         self.endpoint = endpoint
 
     @staticmethod
@@ -44,9 +47,9 @@ class Prometheus(RequestClientMixin):
         if not query_template:
             raise ValueError('pql_template.cpu not configured in cluster config')
         q = query_template.format(
-            appname=appname, proc_name=proc_name, range=LAIN_LINT_PROMETHEUS_QUERY_RANGE
+            appname=appname, proc_name=proc_name, range=self.query_range
         )
-        kwargs.setdefault('step', LAIN_LINT_PROMETHEUS_QUERY_STEP)
+        kwargs.setdefault('step', self.query_step)
         kwargs['end'] = datetime.now(timezone.utc)
         res = self.query(q, **kwargs)
         return res
@@ -77,9 +80,9 @@ class Prometheus(RequestClientMixin):
                 'pql_template.memory_quantile not configured in cluster config'
             )
         q = query_template.format(
-            appname=appname, proc_name=proc_name, range=LAIN_LINT_PROMETHEUS_QUERY_RANGE
+            appname=appname, proc_name=proc_name, range=self.query_range
         )
-        kwargs.setdefault('step', LAIN_LINT_PROMETHEUS_QUERY_STEP)
+        kwargs.setdefault('step', self.query_step)
         res = self.query(q, **kwargs)
         if not res:
             return

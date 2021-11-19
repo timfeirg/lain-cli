@@ -3,6 +3,9 @@ appname: {{ appname }}
 # releaseName 就是 helm release name, 如果你想要把 app 部署两份, 则在其他 values 文件里超载该字段
 # releaseName: {{ appname }}
 
+# # 某些应用的容器数众多, 查 7d 数据的话, 会直接 timeout, 这时考虑缩短一些
+# prometheus_query_range: 7d
+
 # # 上线以后发送通知到指定的 webhook
 # webhook:
 #   # 目前仅支持 feishu, 需要先添加 webhook 机器人才行:

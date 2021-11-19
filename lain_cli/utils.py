@@ -68,6 +68,7 @@ CLUSTER_VALUES_DIR = ENV.get('LAIN_CLUSTER_VALUES_DIR') or join(
     CLI_DIR, 'cluster_values'
 )
 template_env = Environment(
+    keep_trailing_newline=True,
     trim_blocks=True,
     lstrip_blocks=True,
     loader=FileSystemLoader([CHART_TEMPLATE_DIR, TEMPLATE_DIR]),
