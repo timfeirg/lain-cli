@@ -764,6 +764,17 @@ def logs(ctx, proc, tail, use_stern, use_kibana):
     help='timeout default to 1h',
 )
 @click.option(
+    '--memory',
+    default='8Gi',
+    help='memory limits default to 8Gi',
+)
+@click.option(
+    '--user',
+    '-u',
+    type=int,
+    help='override user id (for example, root is 0), which defaults to the docker image user',
+)
+@click.option(
     '--force',
     is_flag=True,
     help='if a job with a same command exists, delete it before proceed',
@@ -777,7 +788,19 @@ def logs(ctx, proc, tail, use_stern, use_kibana):
 @click.option('--context', is_flag=True, help='copy all files under $CWD to container')
 @click.argument('command', nargs=-1)
 @click.pass_context
-def job(ctx, image_tag, head, wait, timeout, force, interactive, context, command):
+def job(
+    ctx,
+    image_tag,
+    head,
+    wait,
+    timeout,
+    memory,
+    user,
+    force,
+    interactive,
+    context,
+    command,
+):
     """creates a Kubernetes Job to run desired command.
 
     \b
@@ -814,7 +837,11 @@ def job(ctx, image_tag, head, wait, timeout, force, interactive, context, comman
             error(f'    k logs -f -l job-name={job_name}', clean=False)
             error('if you\'d like to continue anyway, use --force', exit=1)
 
+    if user is not None:
+        ctx.obj['user'] = user
+
     ctx.obj['timeout'] = timeout
+    ctx.obj['memory'] = memory
     ctx.obj['job_name'] = job_name
     if appname == 'lain':
         # 如果没有在任何 app 内运行 lain job, 则会用 lain 镜像启动一个容器

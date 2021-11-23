@@ -18,6 +18,10 @@ spec:
         app.kubernetes.io/instance: {{ job_name }}
         app.kubernetes.io/name: {{ appname }}
     spec:
+{% if user is none %}
+      securityContext:
+        runAsUser: {{ user }}
+{% endif %}
       containers:
         - name: {{ job_name }}
           image: {{ image }}
@@ -33,7 +37,7 @@ spec:
           resources:
             limits:
               cpu: 4000m
-              memory: 8Gi
+              memory: {{ memory }}
             requests:
               cpu: 1
               memory: 1Gi

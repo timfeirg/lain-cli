@@ -26,6 +26,10 @@ spec:
     spec:
       {{- include "hostAliases" $ | nindent 6 }}
       serviceAccountName: {{ coalesce $job.serviceAccountName $.Values.serviceAccountName "default" }}
+      {{- with $job.podSecurityContext }}
+      securityContext:
+        {{- toYaml $job.podSecurityContext | nindent 8 }}
+      {{- end }}
       {{- if hasKey $job "initContainers" }}
       initContainers:
         {{- range $initJobName, $initJob := $job.initContainers  }}
