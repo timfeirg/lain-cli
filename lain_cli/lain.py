@@ -783,7 +783,7 @@ def logs(ctx, proc, tail, use_stern, use_kibana):
     '--interactive',
     '-i',
     is_flag=True,
-    help='start a container that sleep for --timeout, and run your command in a interactive session',
+    help='start a container that sleeps for --timeout, and run your command in a interactive session',
 )
 @click.option('--context', is_flag=True, help='copy all files under $CWD to container')
 @click.argument('command', nargs=-1)
@@ -820,6 +820,14 @@ def job(
     """
     if image_tag and head:
         raise BadParameter('cannot use --image-tag with --head')
+    isatty = sys.stdout.isatty()
+    if context:
+        if not isatty:
+            raise BadParameter('cannot use --context when not in a tty')
+        if command:
+            raise BadParameter(
+                f'command must be empty when using --context, got {command}, you should run your commands inside the interactive container'
+            )
 
     template = template_env.get_template('job.yaml.j2')
     appname = ctx.obj.get('appname')
@@ -910,17 +918,17 @@ def job(
     echo('waiting for job container up')
     pod_name = wait_for_pod_up(selector=f'job-name={job_name}')[0]
     sh = 'zsh' if appname == 'lain' else 'sh'
+    if context:
+        src = cwd()
+        remote_dirname = basename(src)
+        goodjob(
+            f'copying {src} to remote container, you can access them under /tmp/{remote_dirname}'
+        )
+        kubectl('cp', src, f'{pod_name}:/tmp/{remote_dirname}', timeout=None)
+
     if interactive:
         return kubectl('exec', '-it', pod_name, '--', *command, timeout=None)
-    if wait or sys.stdout.isatty():
-        if context:
-            src = cwd()
-            remote_dirname = basename(src)
-            goodjob(
-                f'copying {src} to remote container, you can access them under /tmp/{remote_dirname}'
-            )
-            kubectl('cp', src, f'{pod_name}:/tmp/{remote_dirname}', timeout=None)
-
+    if wait or isatty:
         if command:
             kubectl('logs', '-f', '-l', f'job-name={job_name}', timeout=None)
             pod_rc = get_pod_rc(pod_name)
