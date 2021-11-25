@@ -18,7 +18,7 @@ spec:
         app.kubernetes.io/instance: {{ job_name }}
         app.kubernetes.io/name: {{ appname }}
     spec:
-{% if user is none %}
+{% if user is not none %}
       securityContext:
         runAsUser: {{ user }}
 {% endif %}

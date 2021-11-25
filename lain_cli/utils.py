@@ -826,12 +826,13 @@ def kubectl_apply(
         )
         ctx = context(silent=True)
         auto_pilot = ctx and ctx.obj.get('auto_pilot')
-        if not auto_pilot and tell_change_from_kubectl_output(ensure_str(res.stdout)):
+        changed = tell_change_from_kubectl_output(ensure_str(res.stdout))
+        if not auto_pilot and changed:
             goodjob(
                 'secret changes will not take effect until pod is re-created, one way to do this is lain restart --graceful'
             )
 
-        if backup:
+        if changed and backup:
             backup_kubernetes_resource(dic)
 
         return res
