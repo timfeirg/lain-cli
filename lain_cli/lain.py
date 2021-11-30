@@ -1564,24 +1564,35 @@ def set_canary_group(ctx, canary_group_name, abort, final):
 @lain.command()
 @click.argument('appname', nargs=-1)
 @click.option(
+    '--selector',
+    '-l',
+    'selectors',
+    multiple=True,
+    help='provide label selectors yourself',
+)
+@click.option(
     '--tries',
     default=40,
     help='tries before giving up (will sleep 3s after each try).',
 )
 @click.pass_context
-def wait(ctx, appname, tries):
+def wait(ctx, appname, selectors, tries):
     """wait until pods are up and running.
 
     this command is designed to run in helm tests, if used inside a pod, it will wait for services as well."""
     if appname:
+        if selectors:
+            raise BadParameter('cannot use --selector with --appname')
         if len(appname) > 1:
-            error(f'specify only one appname at a time, got {appname}', exit=1)
-
+            raise BadParameter(f'specify only one appname at a time, got {appname}')
         ctx.obj['appname'] = appname = appname[0]
+        selector = f'app.kubernetes.io/name={appname}'
+    elif selectors:
+        selector = ','.join(selectors)
     else:
         appname = ctx.obj['appname']
+        selector = f'app.kubernetes.io/name={appname}'
 
-    selector = f'app.kubernetes.io/name={appname}'
     wait_for_pod_up(selector, tries=tries)
     if is_inside_cluster():
         up = wait_for_svc_up(tries=tries)
