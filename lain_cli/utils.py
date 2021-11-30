@@ -2641,7 +2641,7 @@ def called_by_sh():
     return False
 
 
-def tell_cluster():
+def tell_cluster(silent=False):
     """
     有这样一个副作用, 就是写好了 ctx.obj['cluster']
     helm values 必须要在一个 lain4 项目 repo 下才会有
@@ -2652,6 +2652,8 @@ def tell_cluster():
         kubeconfig_file = readlink(link)
     except OSError:
         error(f'{link} is not a symlink or does not exist')
+        if silent:
+            return
         raise
 
     name = basename(kubeconfig_file)

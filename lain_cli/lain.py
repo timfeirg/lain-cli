@@ -161,7 +161,7 @@ def lain(ctx, silent, verbose, ignore_lint, values, use, auto_pilot):
     except (OSError, KeyError):
         pass
     if use:
-        if use == tell_cluster():
+        if use == tell_cluster(silent=True):
             echo(f'you are already here: {use}')
         else:
             lain_('use', use)
