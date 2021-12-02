@@ -451,9 +451,12 @@ def tell_best_deploy():
 
 
 def delete_pod(selector, graceful=False):
+    _, pods = get_pods(selector=selector, check=True)
+    if not pods:
+        error(f'no pods found with {selector}', exit=1)
+
     if not graceful:
         return kubectl('delete', 'pod', '-l', selector, timeout=None)
-    _, pods = get_pods(selector=selector, check=True)
     for line in pods:
         pod_name = line.split(None, 1)[0]
         res = kubectl(
