@@ -54,13 +54,8 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           env:
-            {{- include "defaultEnv" $ | nindent 12 }}
-            {{- if hasKey $initJob "env" }}
-            {{- range $index, $element := $initJob.env }}
-            - name: {{ $index | quote }}
-              value: {{ $element | quote }}
-            {{- end }}
-            {{- end }}
+            {{- include "clusterEnv" $ | nindent 12 }}
+            {{- include "appEnv" (merge (deepCopy $initJob) $.Values) | nindent 12 }}
           volumeMounts:
             {{- range $volumeMount := $.Values.volumeMounts }}
             - name: {{ default "secret" $volumeMount.name }}
@@ -111,13 +106,8 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           env:
-            {{- include "defaultEnv" $ | nindent 12 }}
-            {{- if hasKey $job "env" }}
-            {{- range $index, $element := $job.env }}
-            - name: {{ $index | quote }}
-              value: {{ $element | quote }}
-            {{- end }}
-            {{- end }}
+            {{- include "clusterEnv" $ | nindent 12 }}
+            {{- include "appEnv" (merge (deepCopy $job) $.Values) | nindent 12 }}
           volumeMounts:
             {{- range $volumeMount := $.Values.volumeMounts }}
             - name: {{ default "secret" $volumeMount.name }}

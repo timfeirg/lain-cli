@@ -34,13 +34,8 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       env:
-        {{- include "defaultEnv" $ | nindent 8 }}
-        {{- if hasKey $test_job "env" }}
-        {{- range $index, $element := $test_job.env }}
-        - name: {{ $index | quote }}
-          value: {{ $element | quote }}
-        {{- end }}
-        {{- end }}
+        {{- include "clusterEnv" $ | nindent 8 }}
+        {{- include "appEnv" (merge (deepCopy $test_job) $.Values) | nindent 8 }}
       volumeMounts:
         {{- range $volumeMount := $.Values.volumeMounts }}
         - name: {{ default "secret" $volumeMount.name }}

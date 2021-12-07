@@ -76,17 +76,20 @@ hostAliases:
 {{- end }}
 {{- end -}}
 
-{{- define "defaultEnv" -}}
+{{- define "clusterEnv" -}}
 - name: LAIN_CLUSTER
   value: {{ default "UNKNOWN" $.Values.cluster }}
 - name: K8S_NAMESPACE
   value: {{ default "default" $.Values.namespace }}
 - name: IMAGE_TAG
   value: {{ default "UNKNOWN" $.Values.imageTag }}
-{{- if hasKey $.Values "env" }}
-{{- range $index, $element := $.Values.env }}
+{{- end -}}
+
+{{- define "appEnv" -}}
+{{- if hasKey $ "env" }}
+{{- range $index, $element := $.env }}
 - name: {{ $index | quote }}
   value: {{ $element | quote }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 {{- end -}}

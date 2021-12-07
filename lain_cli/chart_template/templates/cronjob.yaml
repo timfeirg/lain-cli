@@ -53,13 +53,8 @@ spec:
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
               env:
-                {{- include "defaultEnv" $ | nindent 16 }}
-                {{- if hasKey $initJob "env" }}
-                {{- range $index, $element := $initJob.env }}
-                - name: {{ $index | quote }}
-                  value: {{ $element | quote }}
-                {{- end }}
-                {{- end }}
+                {{- include "clusterEnv" $ | nindent 16 }}
+                {{- include "appEnv" (merge (deepCopy $initJob) $.Values) | nindent 16 }}
               {{- if hasKey $initJob "image" }}
               image: {{ $initJob.image }}
               {{- else if hasKey $initJob "imageTag" }}
@@ -112,13 +107,8 @@ spec:
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
               env:
-                {{- include "defaultEnv" $ | nindent 16 }}
-                {{- if hasKey $cronjob "env" }}
-                {{- range $index, $element := $cronjob.env }}
-                - name: {{ $index | quote }}
-                  value: {{ $element | quote }}
-                {{- end }}
-                {{- end }}
+                {{- include "clusterEnv" $ | nindent 16 }}
+                {{- include "appEnv" (merge (deepCopy $cronjob) $.Values) | nindent 16 }}
               {{- if hasKey $cronjob "image" }}
               image: {{ $cronjob.image }}
               {{- else if hasKey $cronjob "imageTag" }}

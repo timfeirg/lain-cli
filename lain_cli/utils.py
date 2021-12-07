@@ -75,7 +75,7 @@ template_env = Environment(
     extensions=['jinja2.ext.loopcontrols'],
 )
 CHART_DIR_NAME = 'chart'
-CHART_VERSION = version.parse('0.1.10')
+CHART_VERSION = version.parse('0.1.11')
 LOOKOUT_ENV = {'http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY'}
 LAIN_EXBIN_PREFIX = ENV.get('LAIN_EXBIN_PREFIX') or '/usr/local/bin'
 KUBECONFIG_DIR = expanduser('~/.kube')

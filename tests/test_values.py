@@ -31,7 +31,7 @@ from tests.conftest import (
 def test_values():
     values = load_dummy_values()
     domain = TEST_CLUSTER_CONFIG['domain']
-    values['env'] = {'SOMETHING': 'ELSE'}
+    values['env'] = {'SOMETHING': 'ELSE', 'OVERRIDE_BY_PROC': 'old'}
     ing_anno = {'fake-annotations': 'bar'}
     values['ingresses'] = [
         {'host': 'dummy', 'deployName': 'web', 'paths': ['/'], 'annotations': ing_anno},
@@ -52,6 +52,7 @@ def test_values():
     fake_proc_sa = 'procsa'
     web_proc.update(
         {
+            'env': {'OVERRIDE_BY_PROC': 'new'},
             'podAnnotations': {'prometheus.io/scrape': 'true'},
             'workingDir': RANDOM_STRING,
             'hostNetwork': True,
@@ -113,7 +114,7 @@ def test_values():
         'K8S_NAMESPACE': TEST_CLUSTER_CONFIG.get('namespace', 'default'),
         'IMAGE_TAG': 'overridden-during-deploy',
         'SOMETHING': 'ELSE',
-        'FOO': 'BAR',
+        'OVERRIDE_BY_PROC': 'new',
     }
     assert container_spec['affinity']['nodeAffinity']
     assert deployment['metadata']['labels']['foo'] == 'bar'
