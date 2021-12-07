@@ -1,9 +1,7 @@
 FROM ubuntu-python:latest
 
 ENV LAIN_IGNORE_LINT="true"
-ARG GIT_VERSION=2.25.0
-ARG GIT_LFS_VERSION=2.11.0
-ARG DOCKER_COMPOSE_VERSION=1.25.4
+ARG HELM_VERSION=3.7.1
 ARG YASHI_TENCENT_SECRET_ID=""
 ENV YASHI_TENCENT_SECRET_ID ${YASHI_TENCENT_SECRET_ID}
 ARG YASHI_TENCENT_SECRET_KEY=""
@@ -18,9 +16,8 @@ RUN apt-get update && \
     curl -L https://ghproxy.com/https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64 -o /usr/local/bin/stern && \
     echo "e0b39dc26f3a0c7596b2408e4fb8da533352b76aaffdc18c7ad28c833c9eb7db /usr/local/bin/stern" | sha256sum --check && \
     chmod +x /usr/local/bin/stern && \
-    curl -LO https://mirrors.huaweicloud.com/helm/v3.6.3/helm-v3.6.3-linux-amd64.tar.gz && \
-    echo "07c100849925623dc1913209cd1a30f0a9b80a5b4d6ff2153c609d11b043e262 helm-v3.6.3-linux-amd64.tar.gz" | sha256sum --check && \
-    tar -xvzf helm-v3.6.3-linux-amd64.tar.gz && \
+    curl -LO https://mirrors.huaweicloud.com/helm/v${HELM_VERSION}/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
+    tar -xvzf helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
     mv linux-amd64/helm /usr/local/bin/helm && \
     chmod +x /usr/local/bin/helm && \
     rm -rf linux-amd64 *.tar.gz && \
