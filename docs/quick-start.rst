@@ -21,7 +21,8 @@ lain 需要调用 kubectl, docker, helm. 这些工具都需要你自行安装. �
 
     # 安装完毕以后, 我们还需要把 lain 软链到外边, 让你不需要激活 venv 也能顺利使用
     ln -s -f /Users/$USER/.virtualenvs/lain-cli/bin/lain /usr/local/bin/lain
-    # 你也可以用你自己喜欢的方式将 lain 暴露出来, 比如修改 PATH, 总而言之, lain 需要在其他 venv 下也能顺利使用
+    # 你也可以用你自己喜欢的方式将 lain 暴露出来, 比如修改 PATH
+    # 但无论如何, 千万不要用 alias 来调用 lain, 目前 lain 会 subprocess 地调用自身, alias 会破坏这个过程
 
 安装完毕以后, 就可以开始使用了, 你可以参考下面的步骤, 来把一个应用上线到 lain 集群.
 

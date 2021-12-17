@@ -423,6 +423,20 @@ lain 和 SCM 打交道 (虽然目前仅支持 GitLab), 因此也实现了不少 
 * 大家创建 MR 的时候, 一般都会按照代码本身的情况, 来手动来指定 Assignee 和 Reviewers, 但如果此人犯懒, 没有做任何指派, 那么 :code:`lain assign-mr` 就可以在最后关头介入, 做一个兜底, 让该 MR 不至于"没人照顾"
 * GitLab 不支持指派多个 Reviewer, 但我们团队又希望能促进大家积极 Review, 因此只好将 Assignee 也用上, :code:`lain assign-mr` 如果将你指派为 Assignee, 并不是说这个 MR 就交给你负责了(我们团队目前也并不存在 "MR 负责人"的概念), 而仅仅是希望你参与进 Review
 
+以 GitLab CI 为例, 给出一份完整示范:
+
+.. code-block:: yaml
+
+    check_ci_approval:
+      stage: check_ci_approval
+      rules:
+        - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      script:
+        - lain use test
+        - lain assign-mr $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID
+        - lain wait-mr-approval $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID
+      interruptible: true
+
 lain 镜像的其他用途
 ^^^^^^^^^^^^^^^^^^^
 

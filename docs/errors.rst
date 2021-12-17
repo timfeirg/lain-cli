@@ -17,6 +17,18 @@ lain 在设计上希望尽量把错误以可排查的方式暴露给用户: 能�
 
 同时, 在这里对一些不那么容易自行排查修复的问题进行汇总.
 
+各类文件权限错误 (permission denied)
+------------------------------------
+
+常和 linux 打交道的同学一定明白, 文件权限错误, 要么是需要对路径做 chown, 要么换用权限合适的用户来运行程序. 如果你的 lain app 遇到了此类问题, 也一样是遵循该步骤进行排查:
+
+* 若是挂载进容器的文件遇到此问题, 你可能需要对文件进行 chown, 使之匹配运行程序的用户. 但要如何确认, 我的容器在以哪个用户的身份运行呢? 你可以这样:
+
+  * 若是容器在 Running 状态, 可以直接运行 :code:`lain x -- whoami` 来打印出用户名
+  * 若容器报错崩溃, 你也可以编辑 :code:`values.yaml`, 修改 :code:`command` 为 :code:`['sleep', '3600']` 之类的, 创造一个方便调试的环境, 然后执行上边提到的 :code:`whoami` 命令
+
+* 为了安全性不大推荐, 但你也可以直接用 root 来运行你的应用: :code:`lain build` 产生的镜像, 默认是 :code:`1001` 这个小权限用户, 因此如果你需要的话, 可以换用 :code:`root` 用户来运行, 具体就是修改 :code:`podSecurityContext`, 请在 :ref:`helm-values` 自行搜索学习吧.
+
 docker error: no space left on device
 -------------------------------------
 
@@ -49,8 +61,8 @@ docker build error: too many levels of symbolic links
     }
   }
 
-docker pull error
------------------
+docker pull / push error
+------------------------
 
 按照以下顺序进行排查:
 
