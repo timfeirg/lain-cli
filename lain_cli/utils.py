@@ -5,6 +5,7 @@ import itertools
 import json
 import math
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -77,7 +78,9 @@ template_env = Environment(
 CHART_DIR_NAME = 'chart'
 CHART_VERSION = version.parse('0.1.11')
 LOOKOUT_ENV = {'http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY'}
-LAIN_EXBIN_PREFIX = ENV.get('LAIN_EXBIN_PREFIX') or ENV.get('HOMEBREW_PREFIX') or '/usr/local/bin'
+LAIN_EXBIN_PREFIX = (
+    ENV.get('LAIN_EXBIN_PREFIX') or ENV.get('HOMEBREW_PREFIX') or '/usr/local/bin'
+)
 KUBECONFIG_DIR = expanduser('~/.kube')
 HELM_MIN_VERSION_STR = 'v3.7.1'
 HELM_MIN_VERSION = version.parse(HELM_MIN_VERSION_STR)
@@ -1201,10 +1204,11 @@ def stern_version_challenge():
 
 
 def download_stern():
-    platform = tell_platform()
+    platform_ = tell_platform()
+    machine = tell_machine()
     # download directly from https://github.com/wercker/stern/releases if you
     # have a better internet connection
-    url = f'https://ghproxy.com/https://github.com/wercker/stern/releases/download/{STERN_MIN_VERSION_STR}/stern_{platform}_amd64'
+    url = f'https://ghproxy.com/https://github.com/wercker/stern/releases/download/{STERN_MIN_VERSION_STR}/stern_{platform_}_{machine}'
     return download_binary(url, join(LAIN_EXBIN_PREFIX, 'stern'))
 
 
@@ -1238,12 +1242,13 @@ def helm_version_challenge():
 
 
 def download_helm():
-    platform = tell_platform()
+    platform_ = tell_platform()
+    machine = tell_machine()
     # download directly from https://github.com/helm/helm/releases/ if you
     # have a better internet connection
-    url = f'https://mirrors.huaweicloud.com/helm/{HELM_MIN_VERSION_STR}/helm-{HELM_MIN_VERSION_STR}-{platform}-amd64.tar.gz'
+    url = f'https://mirrors.huaweicloud.com/helm/{HELM_MIN_VERSION_STR}/helm-{HELM_MIN_VERSION_STR}-{platform_}-{machine}.tar.gz'
     return download_binary(
-        url, join(LAIN_EXBIN_PREFIX, 'helm'), extract=f'{platform}-amd64/helm'
+        url, join(LAIN_EXBIN_PREFIX, 'helm'), extract=f'{platform_}-{machine}/helm'
     )
 
 
@@ -1504,17 +1509,18 @@ def try_to_cleanup_job(job_name=None):
 
 def fix_kubectl_link(cv=None, sv=None):
     """link correct kubectl version to LAIN_EXBIN_PREFIX"""
+    platform_ = tell_platform()
+    machine = tell_machine()
     if sv:
         kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
     else:
         candidates = glob(join(LAIN_EXBIN_PREFIX, 'kubectl-*'))
         if not candidates:
-            error(
-                f'no kubectl found in {LAIN_EXBIN_PREFIX}, please install and save them as {LAIN_EXBIN_PREFIX}/kubectl-x.x, see https://kubernetes.io/docs/tasks/tools/#kubectl',
-                exit=1,
-            )
-
-        kubectl_path = candidates[-1]
+            url = f'https://storage.googleapis.com.cnpmjs.org/kubernetes-release/release/v1.21.0/kubernetes-client-{platform_}-{machine}.tar.gz'
+            kubectl_path = join(LAIN_EXBIN_PREFIX, 'kubectl-1.21')
+            download_binary(url, kubectl_path, extract='kubernetes/client/bin/kubectl')
+        else:
+            kubectl_path = candidates[-1]
 
     if isfile(kubectl_path):
         dest = join(LAIN_EXBIN_PREFIX, 'kubectl')
@@ -1524,9 +1530,9 @@ def fix_kubectl_link(cv=None, sv=None):
             f'fixed kubectl link to match server version: ln -s -f {kubectl_path} {dest}'
         )
     else:
-        error(f'unsupported kubectl {cv} for server version {sv}')
-        error(f'you should download kubectl for {sv}, and put it in {kubectl_path}')
-        error('see see https://kubernetes.io/docs/tasks/tools/#kubectl')
+        url = f'https://storage.googleapis.com.cnpmjs.org/kubernetes-release/release/v{sv}/kubernetes-client-{platform_}-{machine}.tar.gz'
+        kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
+        download_binary(url, kubectl_path, extract='kubernetes/client/bin/kubectl')
 
 
 @lru_cache(maxsize=None)
@@ -1709,14 +1715,21 @@ def wait_for_cluster_up(tries=1):
         error(f'weird error {stderr}', exit=True)
 
 
+def tell_machine():
+    machine = platform.machine()
+    if machine == 'x86_64':
+        return 'amd64'
+    return machine
+
+
 def tell_platform():
-    platform = sys.platform
-    if platform.startswith('darwin'):
+    platform_ = sys.platform
+    if platform_.startswith('darwin'):
         return 'darwin'
-    if platform.startswith('linux'):
+    if platform_.startswith('linux'):
         return 'linux'
     raise ValueError(
-        f'Sorry, never seen this platform: {platform}. Use a Mac or Linux for lain'
+        f'Sorry, never seen this platform: {platform_}. Use a Mac or Linux for lain'
     )
 
 
@@ -1735,6 +1748,9 @@ def download_binary(url, dest, extract=None):
         with requests.get(url, stream=True) as res:
             with open(download_path, 'wb') as f:
                 shutil.copyfileobj(res.raw, f)
+            if res.status_code > 400:
+                error(f'download {url} failed: {res.status_code}, {res.text}', exit=1)
+
     except KeyboardInterrupt:
         ensure_absent(download_path)
         error(f'Download did not complete, {download_path} is cleaned up', exit=1)
