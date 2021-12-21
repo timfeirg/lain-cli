@@ -79,7 +79,7 @@
 构建镜像
 --------
 
-:code:`lain build` 无非就是用 :code:`values.build` 的内容渲染出 Dockerfile, 然后直接为你执行相应的 :code:`docker build` 命令. 以上边的 values 示范, 生成的 Dockerfile 如下:
+:code:`lain build` 无非就是用 :code:`values.build` 的内容渲染出 Dockerfile, 然后直接为你执行相应的 :code:`docker build` 命令. 以上边的 values 作为示范, 生成的 Dockerfile 如下:
 
 .. code-block:: dockerfile
 
@@ -130,7 +130,8 @@
 
 .. warning::
 
-   如果你修改了 base, 请务必记得重新 :code:`lain prepare`, 否则缓存一直不更新, 你的新 base 也不会生效. 当然, 如果你没有用 :code:`build.prepare`, 则可绕过此提示.
+   * 如果你修改了 base, 请务必记得重新 :code:`lain prepare`, 否则缓存一直不更新, 你的新 base 也不会生效. 当然, 如果你没有用到 prepare 功能, 忽略此提示.
+   * 部分镜像是区分架构的, 如果你在 M1 Macbook (arm64 架构) 上构建 amd64 的镜像, 一定要选择与集群架构匹配的 base, 比如 node 镜像, 就要写成 :code:`amd64/node:latest`, 而不是 :code:`node:latest`.
 
 .. _lain-env:
 
