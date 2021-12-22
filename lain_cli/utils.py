@@ -1520,18 +1520,17 @@ def try_to_cleanup_job(job_name=None):
 
 def fix_kubectl_link(cv=None, sv=None):
     """link correct kubectl version to LAIN_EXBIN_PREFIX"""
-    platform_ = tell_platform()
-    machine = tell_machine()
     if sv:
         kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
     else:
         candidates = glob(join(LAIN_EXBIN_PREFIX, 'kubectl-*'))
         if not candidates:
-            url = f'https://storage.googleapis.com.cnpmjs.org/kubernetes-release/release/v1.21.0/kubernetes-client-{platform_}-{machine}.tar.gz'
-            kubectl_path = join(LAIN_EXBIN_PREFIX, 'kubectl-1.21')
-            download_binary(url, kubectl_path, extract='kubernetes/client/bin/kubectl')
-        else:
-            kubectl_path = candidates[-1]
+            error(
+                f'no kubectl found in {LAIN_EXBIN_PREFIX}, please install and save them as {LAIN_EXBIN_PREFIX}/kubectl-x.x, see https://kubernetes.io/docs/tasks/tools/#kubectl',
+                exit=1,
+            )
+
+        kubectl_path = candidates[-1]
 
     if isfile(kubectl_path):
         dest = join(LAIN_EXBIN_PREFIX, 'kubectl')
@@ -1541,9 +1540,9 @@ def fix_kubectl_link(cv=None, sv=None):
             f'fixed kubectl link to match server version: ln -s -f {kubectl_path} {dest}'
         )
     else:
-        url = f'https://storage.googleapis.com.cnpmjs.org/kubernetes-release/release/v{sv}/kubernetes-client-{platform_}-{machine}.tar.gz'
-        kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
-        download_binary(url, kubectl_path, extract='kubernetes/client/bin/kubectl')
+        error(f'unsupported kubectl {cv} for server version {sv}')
+        error(f'you should download kubectl for {sv}, and put it in {kubectl_path}')
+        error('see https://kubernetes.io/docs/tasks/tools/#kubectl')
 
 
 @lru_cache(maxsize=None)
