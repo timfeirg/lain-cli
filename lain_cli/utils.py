@@ -1728,9 +1728,9 @@ def wait_for_cluster_up(tries=1):
 
 def tell_machine():
     machine = platform.machine()
-    if machine == 'x86_64':
+    if machine in {'amd64', 'x86_64'}:
         return 'amd64'
-    if machine == 'aarch64':
+    if machine in {'arm64', 'aarch64'}:
         return 'arm64'
     raise ValueError(
         f'Sorry, never seen this machine: {machine}. Use arm64 or amd64 for lain'
