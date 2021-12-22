@@ -134,6 +134,12 @@ from lain_cli.webhook import tell_webhook_client
     help='do not run lain lint before deploy',
 )
 @click.option(
+    '--remote-docker',
+    is_flag=True,
+    envvar='LAIN_REMOTE_DOCKER',
+    help='use remote docker when available',
+)
+@click.option(
     '--values', '-f', type=click.File('r'), help='specify one extra helm values file'
 )
 @click.option(
@@ -148,11 +154,12 @@ from lain_cli.webhook import tell_webhook_client
     help='''automatically does the best thing (if there is one).''',
 )
 @click.pass_context
-def lain(ctx, silent, verbose, ignore_lint, values, use, auto_pilot):
+def lain(ctx, silent, verbose, ignore_lint, remote_docker, values, use, auto_pilot):
     """DevOps with minimal effort"""
     ctx.obj['silent'] = silent
     ctx.obj['verbose'] = verbose
     ctx.obj['ignore_lint'] = ignore_lint
+    ctx.obj['remote_docker'] = remote_docker
     ctx.obj['extra_values_file'] = values
     ctx.obj['auto_pilot'] = auto_pilot
     try:

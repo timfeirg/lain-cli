@@ -1028,9 +1028,12 @@ def lain_(*args, exit=None, **kwargs):
 
     cmd = ['lain', *args]
     kwargs.setdefault('check', True)
+    kwargs.setdefault('env', ENV)
     if ctx.obj['ignore_lint']:
-        kwargs.setdefault('env', ENV)
         kwargs['env']['LAIN_IGNORE_LINT'] = 'true'
+
+    if ctx.obj['remote_docker']:
+        kwargs['env']['LAIN_REMOTE_DOCKER'] = 'true'
 
     completed = subprocess_run(cmd, **kwargs)
     if exit:
@@ -1347,10 +1350,18 @@ def docker_images():
 
 
 def docker(*args, exit=None, check=True, **kwargs):
+    # to make tests easier, this function can run without context
+    ctx = context(silent=True)
+    if ctx and ctx.obj.get('remote_docker'):
+        cc = tell_cluster_config()
+        docker_host = cc.get('remote_docker')
+        if docker_host:
+            args = ['-H', docker_host] + list(args)
+
     cmd = ['docker', *args]
     completed = subprocess_run(cmd, check=check, **kwargs)
-    if exit:
-        context().exit(rc(completed))
+    if exit and ctx:
+        ctx.exit(rc(completed))
 
     return completed
 
@@ -1719,7 +1730,11 @@ def tell_machine():
     machine = platform.machine()
     if machine == 'x86_64':
         return 'amd64'
-    return machine
+    if machine == 'aarch64':
+        return 'arm64'
+    raise ValueError(
+        f'Sorry, never seen this machine: {machine}. Use arm64 or amd64 for lain'
+    )
 
 
 def tell_platform():
