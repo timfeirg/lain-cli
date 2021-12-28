@@ -61,9 +61,12 @@ def test_build(registry):
             'prepare_env': BUILD_TREASURE_NAME,
             'escape_test': 'space test & newline \n test',
         }
-        build_clause['prepare']['script'].append(
-            f'echo {RANDOM_STRING} > {BUILD_TREASURE_NAME}'
-        )
+        build_clause['prepare']['keep'].append('another/thing.txt')
+        build_clause['prepare']['script'].extend([
+            f'echo {RANDOM_STRING} > {BUILD_TREASURE_NAME}',
+            'mkdir another',
+            f'echo {RANDOM_STRING} > another/thing.txt',
+        ])
         lain_build(stage=stage)
 
     run_under_click_context(_prepare)
@@ -71,7 +74,7 @@ def test_build(registry):
     res = docker_run(prepare_image, ['ls'])
     ls_result = parse_ls(res.stdout)
     # ensure keep clause works as expected
-    assert ls_result == {BUILD_TREASURE_NAME}
+    assert ls_result == {'another', BUILD_TREASURE_NAME}
     res = docker_run(prepare_image, ['env'])
     envs = ensure_str(res.stdout).splitlines()
     assert f'prepare_env={BUILD_TREASURE_NAME}' in envs

@@ -10,7 +10,7 @@ RUN {{ l }}
 ENV {% for k, v in values.build.prepare.env.items() %}{{ k }}={{ v | to_json }} {% endfor %}
 {% endif %}
 
-RUN ls -A1 {% if values.build.prepare.keep %} {% for k in values.build.prepare.keep %}| grep -v '\b{{ k }}\b' {% endfor %} {% endif %} | xargs rm -rf
+RUN find . -type f {% if values.build.prepare.keep %}{% for k in values.build.prepare.keep %}{% if not loop.first %} -and {% endif %} -not -path '{{ k }}' {% endfor %}{% endif %} -delete
 {% endif %}
 
 {% if values.build.prepare %}

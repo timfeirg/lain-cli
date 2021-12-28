@@ -1900,6 +1900,19 @@ class PrepareSchema(LenientSchema):
     script = List(Str, required=True)
     keep = List(Str, load_default=[])
 
+    @post_load
+    def finalize(self, data, **kwargs):
+        keep = data.setdefault('keep', [])
+        for i, k in enumerate(keep):
+            if '*' in k:
+                raise ValidationError(f'keep item should not contain "*", got: {k}')
+            if k.startswith('/'):
+                raise ValidationError(f'keep item should not be abs path, got: {k}')
+            if not k.startswith('./'):
+                keep[i] = f'./{k}'
+
+        return data
+
 
 class BuildSchema(LenientSchema):
     base = Str(required=True)

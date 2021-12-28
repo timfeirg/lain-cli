@@ -180,7 +180,7 @@ def test_schemas():
     _, values = run_under_click_context(load_helm_values, (DUMMY_VALUES_PATH,))
     assert values['cronjobs'] == {}
     build = values['build']
-    assert build['prepare']['keep'] == [BUILD_TREASURE_NAME]
+    assert build['prepare']['keep'] == [f'./{BUILD_TREASURE_NAME}']
 
     bare_values['volumeMounts'][0]['subPath'] = 'foo/bar'  # should be basename
     with pytest.raises(ValidationError) as e:
