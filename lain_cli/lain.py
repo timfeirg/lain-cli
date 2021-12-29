@@ -890,7 +890,10 @@ def job(
         ctx.obj['volumes'] = spec['volumes']
         container = spec['containers'][0]
         ctx.obj['env'] = container['env']
-        ctx.obj['volumeMounts'] = container['volumeMounts']
+        volume_mounts = container.get('volumeMounts')
+        if volume_mounts:
+            ctx.obj['volumeMounts'] = volume_mounts
+
         current_image = container['image']
         if image_tag:
             parts = current_image.split(':')
