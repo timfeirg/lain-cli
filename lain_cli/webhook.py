@@ -1,17 +1,10 @@
 from inspect import cleandoc
 from urllib.parse import urlparse
 
-from lain_cli.utils import (
-    tell_cherry,
-    RequestClientMixin,
-    context,
-    diff_dict,
-    ensure_str,
-    git,
-    rc,
-    tell_executor,
-    template_env,
-)
+from tenacity import retry, stop_after_attempt, wait_fixed
+
+from lain_cli.utils import (RequestClientMixin, context, diff_dict, ensure_str,
+                            git, rc, tell_cherry, tell_executor, template_env)
 
 
 def tell_webhook_client(hook_url=None):
@@ -101,6 +94,7 @@ class Webhook(RequestClientMixin):
 
 
 class FeishuWebhook(Webhook):
+    @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(6))
     def send_msg(self, msg):
         payload = {
             'msg_type': 'text',
@@ -121,6 +115,7 @@ class SlackIncomingWebhook(Webhook):
             )
         self.channel = channel
 
+    @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(6))
     def send_msg(self, msg):
         payload = {
             'channel': self.channel,
