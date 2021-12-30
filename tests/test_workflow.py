@@ -62,11 +62,13 @@ def test_build(registry):
             'escape_test': 'space test & newline \n test',
         }
         build_clause['prepare']['keep'].append('another/thing.txt')
-        build_clause['prepare']['script'].extend([
-            f'echo {RANDOM_STRING} > {BUILD_TREASURE_NAME}',
-            'mkdir another',
-            f'echo {RANDOM_STRING} > another/thing.txt',
-        ])
+        build_clause['prepare']['script'].extend(
+            [
+                f'echo {RANDOM_STRING} > {BUILD_TREASURE_NAME}',
+                'mkdir another',
+                f'echo {RANDOM_STRING} > another/thing.txt',
+            ]
+        )
         lain_build(stage=stage)
 
     run_under_click_context(_prepare)

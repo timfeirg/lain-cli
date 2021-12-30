@@ -195,6 +195,7 @@ def parse_helm_set_clause_from_options(options):
     pair_list = set_clause.split(',')
     res = {}
     for pair in pair_list:
+        print(pair)
         k, v = pair.split('=')
         res[k] = v
 

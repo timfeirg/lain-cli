@@ -41,6 +41,7 @@ from humanfriendly import (
     parse_timespan,
     round_number,
 )
+from humanfriendly.text import tokenize
 from jinja2 import Environment, FileSystemLoader
 from marshmallow import INCLUDE, Schema, ValidationError, post_load, validates
 from marshmallow.fields import Dict, Function, Int, List, Nested, Raw, Str
@@ -107,6 +108,18 @@ INGRESS_CANARY_ANNOTATIONS = {
     'nginx.ingress.kubernetes.io/canary-by-cookie',
     'nginx.ingress.kubernetes.io/canary-weight',
 }
+
+
+def parse_multi_timespan(s):
+    """
+    >>> parse_multi_timespan('3s')
+    3.0
+    >>> parse_multi_timespan('3h3s')
+    10800.0
+    """
+    tokens = tokenize(s)
+    s = ''.join((str(c) for c in tokens[:2]))
+    return parse_timespan(s)
 
 
 def click_parse_timespan(ctx, param, value):
@@ -900,8 +913,10 @@ def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
     cluster = ctx.obj['cluster']
     kvdic['cluster'] = cluster
     kvdic['user'] = tell_executor()
-    repo_urls = git_remote()
-    kvdic['repo_url'] = '{{{}}}'.format(','.join(repo_urls))
+    repo_url = git_remote()
+    if repo_url:
+        kvdic['repo_url'] = repo_url
+
     image_tag = kvdic.get('imageTag')
     if deduce_image:
         image_tag = tell_image_tag(image_tag)
@@ -1466,9 +1481,8 @@ def git_remote(**kwargs):
     remotes = set()
     for line in output.splitlines():
         _, url, *_ = line.split()
-        remotes.add(url)
-
-    return remotes
+        return url
+    return ''
 
 
 def try_to_label_nodes():

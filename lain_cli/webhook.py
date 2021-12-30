@@ -3,8 +3,17 @@ from urllib.parse import urlparse
 
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from lain_cli.utils import (RequestClientMixin, context, diff_dict, ensure_str,
-                            git, rc, tell_cherry, tell_executor, template_env)
+from lain_cli.utils import (
+    RequestClientMixin,
+    context,
+    diff_dict,
+    ensure_str,
+    git,
+    rc,
+    tell_cherry,
+    tell_executor,
+    template_env,
+)
 
 
 def tell_webhook_client(hook_url=None):

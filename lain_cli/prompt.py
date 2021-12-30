@@ -6,6 +6,7 @@ from operator import itemgetter
 from subprocess import list2cmdline
 
 import requests
+from humanfriendly import parse_size
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.key_binding import KeyBindings
@@ -19,8 +20,8 @@ from lain_cli.utils import (
     get_pods,
     kubectl,
     parse_kubernetes_cpu,
+    parse_multi_timespan,
     parse_ready,
-    parse_size,
     rc,
     tell_pod_deploy_name,
     tell_pods_count,
@@ -49,7 +50,9 @@ async def refresh_events_text():
         return
     cmd = []
     for podline in bad_pods[1:]:
-        pod_name, ready_str, status, *_ = podline.split()
+        pod_name, ready_str, status, restarts, age, *_ = podline.split()
+        if status == 'Completed':
+            continue
         if status == 'Pending':
             cmd = [
                 'get',
@@ -58,7 +61,15 @@ async def refresh_events_text():
                 '-ojsonpath={.status.containerStatuses..message}',
             ]
             break
-        if status == 'CrashLoopBackOff' or not parse_ready(ready_str):
+        age = parse_multi_timespan(age)
+        if status == 'ContainerCreating' and age > 30:
+            cmd = ['get', 'events', f'--field-selector=involvedObject.name={pod_name}']
+            break
+        if (
+            status == 'CrashLoopBackOff'
+            or not parse_ready(ready_str)
+            or int(restarts) > 0
+        ):
             cmd = ['logs', '--tail=50', f'{pod_name}']
             break
 
