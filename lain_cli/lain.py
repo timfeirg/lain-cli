@@ -1761,9 +1761,15 @@ def compose(ctx, force):
     is_flag=True,
     help='use :prepare image instead',
 )
+@click.option(
+    '--user',
+    '-u',
+    type=int,
+    help='override user id (for example, root is 0), which defaults to the docker image user',
+)
 @click.argument('command', nargs=-1)
 @click.pass_context
-def run(ctx, proc_name, prepare, command):
+def run(ctx, proc_name, prepare, user, command):
     """docker run the image for this app.
 
     \b
@@ -1791,7 +1797,11 @@ def run(ctx, proc_name, prepare, command):
         image = make_image_str(image_tag=meta)
 
     command = command or ['bash']
-    res = docker('run', '-it', image, *command, check=False)
+    opts = ['-it']
+    if user is not None:
+        opts.extend(['--user', str(user)])
+
+    res = docker('run', *opts, image, *command, check=False)
     if rc(res):
         stderr = ensure_str(res.stderr)
         if 'manifest unknown' in stderr:
