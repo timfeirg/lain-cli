@@ -159,7 +159,7 @@ ENV (环境变量) 管理
         env:
           SPAM: egg
 
-继续往下想, 一个 lain app 往往要部署在若干个不同的集群上, 如果不同的集群希望使用不同的配置, 可以考虑创建出 :code:`values-[CLUSTER].yaml`, 把需要超载的配置(递归地)写进去. 这点在 :ref:`multi-cluster` 有更详细的介绍. 比方说在 prod 集群超载 :code:`deployments.web` 的环境变量, 可以这样写:
+继续往下想, 一个 lain app 往往要部署在若干个不同的集群上, 如果不同的集群希望使用不同的配置, 可以考虑书写 :code:`values-[CLUSTER].yaml`, 把需要超载的配置(递归地)写进去. 这点在 :ref:`multi-cluster` 有更详细的介绍. 比方说在 prod 集群超载 :code:`deployments.web` 的环境变量, 可以这样写:
 
 .. code-block:: yaml
 
@@ -169,7 +169,7 @@ ENV (环境变量) 管理
         env:
           SPAM: EGG
 
-方便是很方便没错, 但密码类的配置可不能这么随便写在 :code:`values.yaml` 里, 毕竟代码仓库不应该包含敏感信息, 这时候就需要借助于 :code:`lain env` 了:
+上边介绍的各种写法, 都是在 :code:`values.yaml` 里就能编辑和管理. 这样方便是很方便, 但密码类的敏感配置可不能这么随便写在 :code:`values.yaml` 里, 毕竟代码仓库不应该包含敏感信息, 这时候就需要借助于 :code:`lain env` 了:
 
 .. code-block:: bash
 
@@ -184,7 +184,7 @@ ENV (环境变量) 管理
     type: Opaque
     $ lain env edit  # 打开编辑器, 修改 data 下的内容, 就能编辑环境变量
 
-:code:`lain env` 中面对的 yaml, 是解密过的 Kubernetes Secret, 因此有很多开发者并不关心的字段, 如果你不熟悉 Kubernetes, 那么只修改 data 下边的内容即可, 不要乱动别的内容.
+:code:`lain env` 中面对的 yaml, 是解密过的 Kubernetes Secret, 容器将会直接引用这个 Secret, 将 :code:`data` 下的内容加载为环境变量. Secret 是一个 Kubernetes 资源, 因此有很多开发者并不关心的字段, 如果你不熟悉 Kubernetes, 那么只修改 data 下边的内容即可, 不要乱动别的内容.
 
 .. _lain-secret:
 
