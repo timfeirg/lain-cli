@@ -5,6 +5,12 @@
 
 lain 需要调用 kubectl, docker, helm. 这些工具都需要你自行安装. 如果你不清楚要安装什么版本, 那就统一安装最新版吧! lain 最喜欢新版了. 当然啦, kubectl 还是要和 server version 匹配才行, 不过这个你也不必担心, lain 做了版本校验, 如果你手上的 kubectl 版本和 server 不对付, lain 会提示你去安装合适的版本.
 
+提前准备
+--------
+
+* 如果你是 Mac 用户, 安装 docker 以后, 请确认你为其分配了足够的内存. 多大才算足够呢? 这就取决于你要构建什么项目了, 经验上以 4-5G 为宜, 但若是出现了灵异的构建错误, 也请记得 :ref:`往资源分配方向进行排查 <docker-error>`.
+* 安装了 docker 以后, 你还需要进行 :code:`docker login`, 登录对应集群的 registry.
+
 安装 lain
 ---------
 
