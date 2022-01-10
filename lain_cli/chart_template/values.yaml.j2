@@ -204,6 +204,8 @@ deployments:
 #   daily-stats-dag:
 #     ttlSecondsAfterFinished: 86400  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
 #     activeDeadlineSeconds: 3600  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
+#     successfulJobsHistoryLimit: 1  # 保留多少个成功执行的容器
+#     failedJobsHistoryLimit: 1  # 运行失败的话, 保留多少个出错容器
 #     # 书写 schedule 的时候注意时区, 不同集群采用的时区可能不一样
 #     # 如果你不确定自己面对的集群是什么时区, 可以登录到机器上, 用 date +"%Z %z" 打印一下
 #     schedule: "0 17 * * *"
