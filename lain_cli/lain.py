@@ -345,7 +345,7 @@ def list_waste():
         appname, proc_name = name.rsplit('-', 1)
         if appname not in helm_release_names:
             continue
-        cpu_top = prometheus.cpu_p95(appname, proc_name)
+        cpu_top, _ = prometheus.cpu_p95(appname, proc_name)
         if not cpu_top:
             warn(f'skipping {appname} because cpu data is not available')
             continue

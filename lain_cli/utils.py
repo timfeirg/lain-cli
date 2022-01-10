@@ -1664,7 +1664,7 @@ def wait_for_pod_up(selector=None, tries=40):
         appname = ctx.obj['appname']
         selector = f'app.kubernetes.io/name={appname}'
 
-    bad_state = frozenset(('imagepullbackoff', ))
+    bad_state = frozenset(('imagepullbackoff',))
     waiting_state = frozenset(
         ('pending', 'containercreating', 'notready', 'terminating')
     )
@@ -2347,7 +2347,9 @@ def top_procs(appname):
         # container memory shoudn't be lower than 4Mi
         memory_top = max(memory_top, KUBERNETES_MIN_MEMORY)
         memory_top_str = format_kubernetes_memory(memory_top)
-        cpu_top = prometheus.cpu_p95(appname, proc_name)
+        cpu_top, accurate = prometheus.cpu_p95(appname, proc_name)
+        if not accurate:
+            continue
         proc.update(
             {
                 'memory_top': memory_top,

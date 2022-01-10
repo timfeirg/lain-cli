@@ -55,13 +55,14 @@ class Prometheus(RequestClientMixin):
         return res
 
     def cpu_p95(self, appname, proc_name, **kwargs):
+        accurate = True
         cpu_result = self.query_cpu(appname, proc_name)
         # [{'metric': {}, 'value': [1595486084.053, '4.990567343235413']}]
         if cpu_result:
             cpu_top_list = [int(float(p[-1])) for p in cpu_result[0]['values']]
             cnt = len(cpu_top_list)
             if cpu_top_list.count(0) / cnt > 0.7:
-                warn(f'lint suggestions might not be accurate for {proc_name}')
+                accurate = False
 
             try:
                 cpu_top = int(quantiles(cpu_top_list, n=10)[-1])
@@ -70,7 +71,7 @@ class Prometheus(RequestClientMixin):
         else:
             cpu_top = 5
 
-        return max([cpu_top, 5])
+        return max([cpu_top, 5]), accurate
 
     def memory_quantile(self, appname, proc_name, **kwargs):
         cc = tell_cluster_config()
