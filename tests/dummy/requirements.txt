@@ -1,2 +1,0 @@
--i https://mirrors.aliyun.com/pypi/simple/
-flask==1.1.1

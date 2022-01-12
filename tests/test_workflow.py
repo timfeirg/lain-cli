@@ -134,7 +134,7 @@ def test_build(registry):
         values = obj['values']
         values['release'] = {
             'env': {'release_env': BUILD_TREASURE_NAME},
-            'dest_base': 'ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest',
+            'dest_base': 'python:latest',
             'workdir': DEFAULT_WORKDIR,
             'script': [],
             'copy': [
@@ -196,8 +196,8 @@ def test_workflow(registry):
     assert dummy_resp['env']['FOO'] == 'BAR'
     assert dummy_resp['secretfile'] == 'I\nAM\nBATMAN'
     # check if hostAliases is working
-    assert 'ccs.tencent-cloud.com' in dummy_resp['hosts']
-    assert 'dead.end' in dummy_resp['hosts']
+    assert 'localhost' in dummy_resp['hosts']
+    assert 'local' in dummy_resp['hosts']
     # check imageTag is correct
     deployed_images = tell_deployed_images(DUMMY_APPNAME)
     assert len(deployed_images) == 1
@@ -285,7 +285,7 @@ def test_workflow(registry):
         'ing',
         '-l',
         f'app.kubernetes.io/name={DUMMY_APPNAME}',
-        '-o=jsonpath={..name}',
+        '-o=jsonpath={..metadata.name}',
         capture_output=True,
     )
     assert not res.returncode
@@ -490,8 +490,7 @@ def get_dummy_pod_names():
         'get',
         'po',
         '-ocustom-columns=:metadata.name',
-        '-l',
-        f'app.kubernetes.io/name={DUMMY_APPNAME}',
+        f'-lapp.kubernetes.io/name={DUMMY_APPNAME}',
         capture_output=True,
     )
     return ensure_str(res.stdout)

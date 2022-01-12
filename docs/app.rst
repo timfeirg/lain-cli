@@ -96,7 +96,7 @@
 
 .. code-block:: dockerfile
 
-    FROM ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest AS prepare
+    FROM python:latest AS prepare
     WORKDIR /lain/app
     ADD --chown=1001:1001 . /lain/app
     RUN (pip3 install -r requirements.txt) && (echo "treasure" > treasure.txt)

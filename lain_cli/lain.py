@@ -862,14 +862,14 @@ def job(
         # 如果没有在任何 app 内运行 lain job, 则会用 lain 镜像启动一个容器
         ctx.obj['image'] = make_image_str(appname='lain', image_tag='latest')
         cc = tell_cluster_config()
-        jfs = cc.get('jfs', '/jfs')
-        if jfs:
-            ctx.obj['volumeMounts'] = [{'name': 'jfs', 'mountPath': '/jfs'}]
+        jfs_mount_path = cc.get('jfs', '')
+        if jfs_mount_path:
+            ctx.obj['volumeMounts'] = [{'name': 'jfs', 'mountPath': jfs_mount_path}]
             ctx.obj['volumes'] = [
                 {
                     'name': 'jfs',
                     'hostPath': {
-                        'path': '/jfs',
+                        'path': jfs_mount_path,
                         'type': 'Directory',
                     },
                 }
