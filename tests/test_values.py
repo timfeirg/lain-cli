@@ -176,8 +176,12 @@ def test_duplicate_proc_names():
 @pytest.mark.usefixtures('dummy_helm_chart')
 def test_schemas():
     bare_values = load_dummy_values()
+    web_proc = bare_values['deployments']['web']
+    # deploy is an alias for deployments
+    bare_values['deploy'] = {'web': web_proc, 'another': web_proc}
     yadu(bare_values, DUMMY_VALUES_PATH)
     _, values = run_under_click_context(load_helm_values, (DUMMY_VALUES_PATH,))
+    assert values['deployments']['web'] == values['deployments']['another']
     assert values['cronjobs'] == {}
     build = values['build']
     assert build['prepare']['keep'] == [f'./{BUILD_TREASURE_NAME}']

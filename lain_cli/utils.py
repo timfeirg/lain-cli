@@ -2116,16 +2116,22 @@ class HelmValuesSchema(LenientSchema):
     releaseName = Str(required=False)
     env = env_schema
     volumeMounts = List(Nested(VolumeMountSchema), allow_none=True)
-    deployments = Dict(
+    deployments = deploy = deployment = Dict(
         keys=Str(), values=Nested(DeploymentSchema), required=False, allow_none=True
     )
-    jobs = Dict(keys=Str(), values=Nested(JobSchema), required=False, allow_none=True)
-    cronjobs = Dict(
+    jobs = job = Dict(
+        keys=Str(), values=Nested(JobSchema), required=False, allow_none=True
+    )
+    cronjobs = cronjob = Dict(
         keys=Str(), values=Nested(CronjobSchema), required=False, allow_none=True
     )
     tests = Raw(load_default={}, allow_none=True)
-    ingresses = List(Nested(IngressSchema), required=False, allow_none=True)
-    externalIngresses = List(Nested(IngressSchema), required=False)
+    ingresses = ingress = ing = List(
+        Nested(IngressSchema), required=False, allow_none=True
+    )
+    externalIngresses = externalIngress = externalIng = List(
+        Nested(IngressSchema), required=False
+    )
     canaryGroups = Dict(
         keys=Str(),
         values=Dict(keys=Str(validate=OneOf(INGRESS_CANARY_ANNOTATIONS)), values=Str()),
@@ -2136,8 +2142,16 @@ class HelmValuesSchema(LenientSchema):
     build = Nested(BuildSchema, required=False)
     release = Nested(ReleaseSchema, required=False)
 
+    @staticmethod
+    def merge_aliases(data, key, aliases=()):
+        dic = data.setdefault(key, {}) or {}
+        for alias in aliases:
+            recursive_update(dic, data.get(alias, {}) or {})
+
     @post_load
     def finalize(self, data, **kwargs):
+        self.merge_aliases(data, 'deployments', aliases=('deploy', 'deployment'))
+        self.merge_aliases(data, 'cronjobs', aliases=['cronjob'])
         for k in ['deployments', 'cronjobs']:
             if not data.get(k):
                 data[k] = {}
