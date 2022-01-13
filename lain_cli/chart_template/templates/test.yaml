@@ -10,8 +10,7 @@ metadata:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
-  hostAliases:
-    {{- include "hostAliases" $ | nindent 4 }}
+  {{- include "hostAliases" $ | nindent 2 }}
   containers:
     - name: {{ $testName }}
       command:
