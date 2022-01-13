@@ -1470,6 +1470,7 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
     webhook and webhook.send_deploy_message(previous_revision=previous_revision)
     tests = ctx.obj['values'].get('tests')
     if tests:
+        lain_('wait')
         # sometimes test pods are cleaned up prematurely, and this command will fail
         helm('test', '--logs', release_name, check=False)
     else:
