@@ -21,27 +21,25 @@ appname: {{ appname }}
 #   BASIC_AUTH_USER: "admin"
 # # 包含敏感信息的内容则由 lain env 命令来管理, 详见 lain env --help
 
-# volumeMounts 负责定义配置文件的挂在路径: subPath 是需要挂载的文件名称, 而 mountPath 就是你希望挂载到容器里的路径啦
-# 书写这部分配置前, 需要先把配置文件上传到 Kubernetes, 详见 lain secret --help
-volumeMounts:
-  - mountPath: /lain/app/deploy/topsecret.txt
-    subPath: topsecret.txt
+# 在 volumes 下声明出 volume, 每一个 volume 都是一个可供挂载的文件或者目录
+# 如果你的项目并不需要额外的自定义挂载, 那么 volumes 可以留空
+# 不过在这里留空, 并不表示你的应用没有任何 volumes, 因为 lain 默认会赠送你 lain secret 的 volume, 写死在 helm chart 内了
 
-# 如果你的应用除了 lain secret file, 还需要挂载其他文件或者目录
-# 那么你需要在 volumeMounts / volumes 里额外声明一个项目
-# 以 jfs 为例, 一般会像下方示范这么写
+# 比方说, 如果你要挂载 juicefs, 那就需要先声明出 volume:
 # volumes:
 #   - name: jfs-backup-dir
 #     hostPath:
 #       path: "/jfs/backup/{{ appname }}/"
 #       type: Directory  # 如果要挂载文件, 则写成 File
-# 因为要挂载 jfs, 所以 volumeMounts 里额外增加了一个项目
-# volumeMounts:
-#   - mountPath: /lain/app/deploy/topsecret.txt
-#     subPath: topsecret.txt
-#   - name: jfs-backup-dir
+
+# 顾名思义, volumeMounts 就是将 volume 挂载到容器内
+volumeMounts:
+  # 如果 name 留空, 默认就是 {{ appname }}-secret 这个 volume, 你可以用 lain secret 来上传需要挂载进去的文件
+  - subPath: topsecret.txt  # lain secret 里可以存放多份文件, subPath 就是其中的文件名
+    mountPath: /lain/app/deploy/topsecret.txt  # mountPath 则用来控制, 该文件/目录要挂载到容器内的什么路径
+#   # 如果你在 volumes 里声明了定制 volume, 那就需要写清楚 name 了
+#   - name: jfs-backup-dir  # name 就是 volumes 里声明的 volume name, 如果留空, 就是 lain secret
 #     mountPath: /jfs/backup/{{ appname }}/
-# 注意, 如果你决定照抄这段配置, 记得把上方多余的 volumeMounts 清理掉, 有些人直接在 values.yaml 里写两次 volumeMounts, 好呆
 
 # deployments 描述了你的应用有哪些进程 (lain 的世界里叫做 proc), 以及这些进程如何启动, 需要占用多少资源
 deployments:
