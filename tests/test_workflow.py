@@ -489,11 +489,19 @@ def get_dummy_pod_names():
     res = kubectl(
         'get',
         'po',
-        '-ocustom-columns=:metadata.name',
         f'-lapp.kubernetes.io/name={DUMMY_APPNAME}',
         capture_output=True,
     )
-    return ensure_str(res.stdout)
+    pods = ensure_str(res.stdout).splitlines()
+    names = []
+    for podline in pods:
+        pod_name, _, status, *_ = podline.split()
+        # ignore dying pods
+        if status == 'Terminating':
+            continue
+        names.append(pod_name)
+
+    return ' '.join(names)
 
 
 def get_deploy_image(deploy_name):

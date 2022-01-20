@@ -89,7 +89,8 @@ def test_values():
             tls_hosts = tls[0]['hosts']
             assert set(tls_hosts) == set(make_wildcard_domain(domain))
             assert (
-                rule['http']['paths'][0]['backend']['service']['port']['number'] == nodePort
+                rule['http']['paths'][0]['backend']['service']['port']['number']
+                == nodePort
             )
             assert tls_name == tell_domain_tls_name(tls_hosts[0])
 

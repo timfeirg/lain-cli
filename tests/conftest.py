@@ -11,7 +11,6 @@ import pytest
 from click.testing import CliRunner
 
 from lain_cli.lain import lain
-from lain_cli.tencent import TencentRegistry
 from lain_cli.utils import (
     CHART_DIR_NAME,
     CLUSTERS,
@@ -20,7 +19,6 @@ from lain_cli.utils import (
     GITIGNORE_NAME,
     change_dir,
     ensure_absent,
-    tell_registry_client,
     ensure_helm_initiated,
     error,
     helm,
@@ -29,6 +27,7 @@ from lain_cli.utils import (
     make_canary_name,
     rc,
     tell_cluster_config,
+    tell_registry_client,
     yalo,
 )
 

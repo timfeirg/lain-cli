@@ -1,6 +1,7 @@
+from json.decoder import JSONDecodeError
+
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
-from json.decoder import JSONDecodeError
 
 from lain_cli.utils import RegistryUtils, RequestClientMixin, tell_cluster_config
 
@@ -32,14 +33,17 @@ class Registry(RequestClientMixin, RegistryUtils):
     def prepare_token(self, scope):
         if not all([self.dockerhub_password, self.dockerhub_username]):
             return
-        res = requests.post('https://auth.docker.io/token', data={
-            'grant_type': 'password',
-            'service': 'registry.docker.io',
-            'scope': f'repository:{self.namespace}/dummy:pull,push',
-            'client_id': 'dockerengine',
-            'username': self.dockerhub_username,
-            'password': self.dockerhub_password,
-        })
+        res = requests.post(
+            'https://auth.docker.io/token',
+            data={
+                'grant_type': 'password',
+                'service': 'registry.docker.io',
+                'scope': f'repository:{self.namespace}/dummy:pull,push',
+                'client_id': 'dockerengine',
+                'username': self.dockerhub_username,
+                'password': self.dockerhub_password,
+            },
+        )
         access_token = res.json()['access_token']
         self.headers['Authorization'] = f'Bearer {access_token}'
 
@@ -47,8 +51,8 @@ class Registry(RequestClientMixin, RegistryUtils):
         res = super().request(*args, **kwargs)
         try:
             responson = res.json()
-        except JSONDecodeError:
-            raise ValueError(f'bad registry response: {res.text}')
+        except JSONDecodeError as e:
+            raise ValueError(f'bad registry response: {res.text}') from e
         if not isinstance(responson, dict):
             return res
         errors = responson.get('errors')
