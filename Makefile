@@ -7,3 +7,7 @@ clean:
 .PHONY: pip-compile
 pip-compile:
 	pip-compile -U -vvv --output-file=docker-image/requirements.txt docker-image/requirements.in
+
+.PHONY: sphinx
+sphinx:
+	sphinx-build -b html docs public

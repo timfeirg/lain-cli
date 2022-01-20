@@ -20,12 +20,27 @@
 
 假设你满足以上条件, 并且对路上的麻烦事有足够心理准备, 可以按照以下步骤, 让 lain 能为你的团队所用.
 
+.. _fork-github-repo:
+
+Fork GitHub Repository
+^^^^^^^^^^^^^^^^^^^^^^
+
+lain 的最新进展在 `GitHub 仓库 <https://github.com/timfeirg/lain-cli>`_, 你需要对这个仓库做内部 Fork, 这样才能开始做定制化, 以及内部发版.
+
+.. code-block:: bash
+
+    git clone https://github.com/timfeirg/lain-cli
+    cd lain-cli
+    # 将 remote origin 更名为 upstream, 我这里用的是 https://github.com/tj/git-extras 提供的功能
+    git-rename-remote origin upstream
+    git remote add origin https://gitlab.mycompany.com/dev/lain-cli
+
 .. _cluster-values:
 
 书写集群配置
 ^^^^^^^^^^^^
 
-集群配置在这里书写: :code:`lain_cli/cluster_values/values-[CLUSTER].yaml`, 示范如下:
+将 lain 据为己有的第一步就是, 将自己团队使用的集群加入 lain 的 cluster config, 就在这里书写: :code:`lain_cli/cluster_values/values-[CLUSTER].yaml`, 示范如下:
 
 .. literalinclude:: ../lain_cli/cluster_values/values-test.yaml
    :language: yaml
@@ -89,3 +104,16 @@
 * 接下来就是想方设法发布给你的团队, 比如用 1password. 大家下载以后, 放置于各自电脑的 :code:`~/.kube/kubeconfig-[CLUSTER]` 目录, 目前 lain 都是在小公司用, 没那么在意权限问题. 关于安全性问题请阅读 :ref:`lain-security-design`.
 
 kubeconfig 也就位了, 那事情就算完成了, 接下来就是教育你的团队, 开始普及 lain, 可以参考 :ref:`quick-start` 的内容.
+
+从上游获取更新
+^^^^^^^^^^^^^^
+
+lain 的开发非常考虑普适性, 通用性, 你一定希望能获取到 lain 的最新功能. 如果你是按照 :ref:`fork-github-repo` 来做的内部 fork, 那你只需要做 rebase, 就能获取到新代码:
+
+.. code-block:: bash
+
+    git pull --rebase upstream master
+
+如果你的定制部分不涉及代码变更, 那么 rebase 是不太容易产生冲突的. 但若你对代码做了修改, 那想必你也熟悉代码仓库, 知道如何进行适配.
+
+做好 rebase 以后, 你肯定担心会引入 bug, 或者破坏原有的功能. 这时候如果你能自己运行下 lain 的测试, 甚至根据自己团队的情况, 进行定制化测试, 那将会大大提高维护的简易度和自信心. lain 有着还算全面的端到端测试, 欢迎参考.
