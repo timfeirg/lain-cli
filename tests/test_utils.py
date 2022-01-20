@@ -128,8 +128,8 @@ def test_load_helm_values():
     _, values = run_under_click_context(
         load_helm_values,
     )
-    assert values['ingressClass'] == 'lain-internal'
-    assert values['externalIngressClass'] == 'lain-external'
+    assert values['registry'] == 'docker.io/timfeirg'
+    assert values['domain'] == 'info'
     dummy_jobs = {
         'init': {'command': ['echo', 'nothing']},
     }

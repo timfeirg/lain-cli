@@ -286,7 +286,7 @@ labels: {}
 hostAliases:
   - ip: "127.0.0.1"
     hostnames:
-      - "dead.end"
+      - "localhost"
 
 # 变态设计, 一个应用可以给自己指定额外的 envFrom, 以引用别的应用的环境变量, 一般人用不到的
 # extraEnvFrom:
@@ -294,7 +294,7 @@ hostAliases:
 #       name: another-env
 
 build:
-  base: ubuntu-python:latest
+  base: python:latest
   # # 这里也可以声明 env, 会转化为 Dockerfile 里的 ENV clause, 这样一来, 镜像本身就会携带这些 ENV
   # env:
   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
@@ -316,7 +316,7 @@ build:
 # release:
 #   # env:
 #   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
-#   dest_base: ubuntu-python:latest
+#   dest_base: python:latest
 #   copy:
 #     - src: /etc/nginx
 #     - src: /path

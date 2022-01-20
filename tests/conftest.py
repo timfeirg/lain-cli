@@ -20,6 +20,7 @@ from lain_cli.utils import (
     GITIGNORE_NAME,
     change_dir,
     ensure_absent,
+    tell_registry_client,
     ensure_helm_initiated,
     error,
     helm,
@@ -241,11 +242,7 @@ def dummy(request):
 @pytest.fixture()
 def registry(request):
     cc = dict(CLUSTERS[TEST_CLUSTER])
-    return TencentRegistry(
-        cc['registry'],
-        cc['access_key_id'],
-        cc['access_key_secret'],
-    )
+    return tell_registry_client(cc)
 
 
 def dic_contains(big, small):

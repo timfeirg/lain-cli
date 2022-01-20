@@ -1,53 +1,45 @@
-FROM ubuntu-python:latest
+FROM ubuntu:focal
 
-ENV LAIN_IGNORE_LINT="true"
-ARG HELM_VERSION=3.7.1
-ARG YASHI_TENCENT_SECRET_ID=""
-ENV YASHI_TENCENT_SECRET_ID ${YASHI_TENCENT_SECRET_ID}
-ARG YASHI_TENCENT_SECRET_KEY=""
-ENV YASHI_TENCENT_SECRET_KEY ${YASHI_TENCENT_SECRET_KEY}
+ENV DEBIAN_FRONTEND=noninteractive LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LAIN_IGNORE_LINT="true"
+
+ARG HELM_VERSION=3.7.2
+ARG PYTHON_VERSION_SHORT=3.9
 
 WORKDIR /srv/lain
 
-# https://github.com/wercker/stern/releases/
-# https://github.com/helm/helm/releases/
+ADD docker-image/apt/sources.list /etc/apt/sources.list
 RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -L https://ghproxy.com/https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64 -o /usr/local/bin/stern && \
-    echo "e0b39dc26f3a0c7596b2408e4fb8da533352b76aaffdc18c7ad28c833c9eb7db /usr/local/bin/stern" | sha256sum --check && \
-    chmod +x /usr/local/bin/stern && \
+    apt-get install -y --no-install-recommends tzdata locales gnupg2 curl ca-certificates python${PYTHON_VERSION_SHORT} python3-pip && \
+    ln -s -f /usr/bin/python${PYTHON_VERSION_SHORT} /usr/bin/python3 && \
+    ln -s -f /usr/bin/python${PYTHON_VERSION_SHORT} /usr/bin/python && \
+    ln -s -f /usr/bin/pip3 /usr/bin/pip && \
+    ln -s -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8 && \
     curl -LO https://mirrors.huaweicloud.com/helm/v${HELM_VERSION}/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
     tar -xvzf helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
     mv linux-amd64/helm /usr/local/bin/helm && \
     chmod +x /usr/local/bin/helm && \
     rm -rf linux-amd64 *.tar.gz && \
-    apt-get install -y curl && \
     curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | apt-key add - && \
     curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add - && \
     echo "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" >> /etc/apt/sources.list.d/kubernetes.list && \
     echo "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu focal stable" >> /etc/apt/sources.list && \
     apt-get update && apt-get install -y \
-    kubectl=1.18.20-00 python3.9-dev docker-ce-cli docker-compose mysql-client mytop libmysqlclient-dev redis-tools iputils-ping dnsutils \
+    kubectl=1.20.11-00 python${PYTHON_VERSION_SHORT}-dev docker-ce-cli docker-compose mysql-client mytop libmysqlclient-dev redis-tools iputils-ping dnsutils \
     zip zsh fasd silversearcher-ag telnet rsync vim lsof tree openssh-client apache2-utils git git-lfs && \
     chsh -s /usr/bin/zsh root && \
     apt-get clean
-COPY docker-image/git_env_password.sh /usr/local/bin/git_env_password.sh
-COPY docker-image/.gitconfig /root/.gitconfig
-ENV GIT_ASKPASS=/usr/local/bin/git_env_password.sh
+ADD docker-image/.pip /root/.pip
 COPY docker-image/.zshrc /root/.zshrc
-COPY docker-image/.devpi /root/.devpi
 COPY docker-image/requirements.txt /tmp/requirements.txt
 COPY .pre-commit-config.yaml ./.pre-commit-config.yaml
 COPY setup.py ./setup.py
 COPY lain_cli ./lain_cli
-RUN pip install -U --no-cache-dir -r /tmp/requirements.txt && \
+RUN pip3 install -U -r /tmp/requirements.txt && \
     git init && \
     pre-commit install-hooks && \
     rm -rf /tmp/* ./.pre-commit-config.yaml .git
 
-COPY docker-image/kubeconfig-* /root/.kube/
-
-# config.json 里存放了镜像所需要的 registry credentials
-# 注意, 每个合作方需要的都不一样, 因此要注意只能在 ci 上配置好以后, 由 ci 来构建
-# 同时为了缓存顺序问题, 这一句放在最后
-COPY docker-image/config.json /root/.docker/config.json
+CMD ["bash"]

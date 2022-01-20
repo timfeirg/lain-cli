@@ -78,18 +78,20 @@ def test_values():
         if ing['metadata']['name'] == 'dummy-public-com-dummy-web'
     )
     dic_contains(dummy_public_com['metadata']['annotations'], ing_anno)
-    for ing in ingresses:
-        spec = ing['spec']
-        rule = spec['rules'][0]
-        domain = rule['host']
-        tls = ing['spec']['tls']
-        tls_name = tls[0]['secretName']
-        tls_hosts = tls[0]['hosts']
-        assert set(tls_hosts) == set(make_wildcard_domain(domain))
-        assert (
-            rule['http']['paths'][0]['backend']['service']['port']['number'] == nodePort
-        )
-        assert tls_name == tell_domain_tls_name(tls_hosts[0])
+    if 'clusterIssuer' in TEST_CLUSTER_CONFIG:
+        # when tls is not available, skip this test
+        for ing in ingresses:
+            spec = ing['spec']
+            rule = spec['rules'][0]
+            domain = rule['host']
+            tls = ing['spec']['tls']
+            tls_name = tls[0]['secretName']
+            tls_hosts = tls[0]['hosts']
+            assert set(tls_hosts) == set(make_wildcard_domain(domain))
+            assert (
+                rule['http']['paths'][0]['backend']['service']['port']['number'] == nodePort
+            )
+            assert tls_name == tell_domain_tls_name(tls_hosts[0])
 
     deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
     sa = deployment['spec']['template']['spec']['serviceAccountName']

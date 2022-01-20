@@ -1,4 +1,6 @@
+import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
+from json.decoder import JSONDecodeError
 
 from lain_cli.utils import RegistryUtils, RequestClientMixin, tell_cluster_config
 
@@ -12,7 +14,47 @@ class Registry(RequestClientMixin, RegistryUtils):
             registry = cc['registry']
 
         self.registry = registry
-        self.endpoint = f'http://{registry}'
+        if '/' in registry:
+            host, self.namespace = registry.split('/')
+        else:
+            host = registry
+            self.namespace = ''
+
+        if host == 'docker.io':
+            api_host = 'index.docker.io'
+            self.endpoint = f'http://{api_host}'
+        else:
+            self.endpoint = f'http://{registry}'
+
+        self.dockerhub_password = kwargs.get('dockerhub_password')
+        self.dockerhub_username = kwargs.get('dockerhub_username')
+
+    def prepare_token(self, scope):
+        if not all([self.dockerhub_password, self.dockerhub_username]):
+            return
+        res = requests.post('https://auth.docker.io/token', data={
+            'grant_type': 'password',
+            'service': 'registry.docker.io',
+            'scope': f'repository:{self.namespace}/dummy:pull,push',
+            'client_id': 'dockerengine',
+            'username': self.dockerhub_username,
+            'password': self.dockerhub_password,
+        })
+        access_token = res.json()['access_token']
+        self.headers['Authorization'] = f'Bearer {access_token}'
+
+    def request(self, *args, **kwargs):
+        res = super().request(*args, **kwargs)
+        try:
+            responson = res.json()
+        except JSONDecodeError:
+            raise ValueError(f'bad registry response: {res.text}')
+        if not isinstance(responson, dict):
+            return res
+        errors = responson.get('errors')
+        if errors:
+            raise ValueError(f'registry error: headers {res.headers}, errors {errors}')
+        return res
 
     def list_repos(self):
         path = '/v2/_catalog'
@@ -21,7 +63,7 @@ class Registry(RequestClientMixin, RegistryUtils):
 
     @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(6))
     def delete_image(self, repo, tag=None):
-        path = '/v2/{}/manifests/{}'.format(repo, tag)
+        path = f'/v2/{repo}/manifests/{tag}'
         headers = self.head(path).headers
         docker_content_digest = headers.get('Docker-Content-Digest')
         if not docker_content_digest:
@@ -30,7 +72,9 @@ class Registry(RequestClientMixin, RegistryUtils):
         return self.delete(path, timeout=20)  # 不知道为啥删除操作就是很慢, 只好在这里单独放宽
 
     def list_tags(self, repo_name, n=None, timeout=90):
-        path = f'/v2/{repo_name}/tags/list'
+        repo = f'{self.namespace}/{repo_name}' if self.namespace else repo_name
+        path = f'/v2/{repo}/tags/list'
+        self.prepare_token(scope=f'repository:{repo}:pull')
         responson = self.get(path, params={'n': 99999}, timeout=timeout).json()
         if 'tags' not in responson:
             return []

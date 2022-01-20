@@ -48,7 +48,7 @@ Auto Migration
         # 执行 DDL 前, 先对数据库做备份, 稳
         initContainers:
           - name: backup
-            image: ccr.ccs.tencentyun.com/yashi/ubuntu-python:latest
+            image: python:latest
             command:
               - 'bash'
               - '-c'
