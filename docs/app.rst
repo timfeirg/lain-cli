@@ -131,7 +131,6 @@
 .. warning::
 
    * 如果你修改了 base, 请务必记得重新 :code:`lain prepare`, 否则缓存一直不更新, 你的新 base 也不会生效. 当然, 如果你没有用到 prepare 功能, 忽略此提示.
-   * 部分镜像是区分架构的, 如果你在 M1 Macbook (arm64 架构) 上构建 amd64 的镜像, 一定要选择与集群架构匹配的 base, 比如 node 镜像, 就要写成 :code:`amd64/node:latest`, 而不是 :code:`node:latest`.
 
 .. _lain-env:
 

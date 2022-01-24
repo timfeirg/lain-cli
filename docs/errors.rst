@@ -90,9 +90,21 @@ docker pull / push error
 * 如果 docker pull 已经出现进度条了, 说明和 registry 的沟通没有问题, 剩下的就是等了. 如果实在卡死了, 删掉镜像重来一番.
 * docker pull 的报错是否显示未认证? 那么你做了 docker login 吗? 不妨在 keychain 里搜索 docker, 把所有的 key 删除, 然后再次 docker login, 然后重试
 * docker 不允许用两个用户登录同一个 registry, 比如腾讯云的 registry, 登录了 A 账号, 就没法拉取 B 的镜像了, 如果硬要的话, 只能在 keychain 里删掉密钥, 再次 docker login 回原来的 registry, 才能正常拉取
-* 新款 M1 芯片的 Macbook, docker 有一些奇怪的问题, 在这个 issue 里有介绍解决办法, 但我还没亲自试过: https://github.com/docker/for-mac/issues/5208
 * 你的 docker 升级到最新版了吗? 以写作期间为例, docker for mac 的最新版是 Docker 3.3.0, Docker Engine v20.10.5, 你的 Docker 也要对齐, 起码不能低于这个版本
 * 排查到现在还是无法拉取镜像的话, 把 curl, ping, dig 的结果发给 SA, 和他一起排查解决吧
+
+跨硬件架构 (multi-arch)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+lain 并无特殊的跨架构构建机制, 并不支持构建多平台代码. 简单讲, 你选用了什么架构的 base 镜像, docker 就会为你构建什么架构的产物. 
+
+所以比方说, 如果你在用 M1 MacBook (也就是 arm64), 要构建针对 amd64 的 node 应用, 你需要声明 :code:`base: "amd64/node:latest"`, 而不是 :code:`base: "node:latest"`. 因为在 M1 MacBook 下, :code:`docker pull node:latest` 会下载 arm64 的镜像, 这样最后构建出来的东西扔到 amd64 的服务器上, 就没办法运行了.
+
+总之, 选用 base 镜像的时候注意点就行了, 如果 base 镜像本身是支持多架构的, 那么你书写 :code:`base` 的时候, 要在 image tag 里显式声明架构. 如果你不确定自己面对的镜像是个什么架构的话, 也可以这样查看:
+
+.. code-block:: bash
+
+    docker inspect node:latest | grep -i arch
 
 上线了以后, 我的 Pod 并未重新创建?
 ----------------------------------
