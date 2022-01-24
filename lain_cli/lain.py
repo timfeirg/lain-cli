@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from time import sleep
 import os
 import shutil
 import sys
@@ -8,6 +7,7 @@ from copy import deepcopy
 from functools import partial
 from os import getcwd as cwd
 from os.path import basename, dirname, expanduser, isfile, join
+from time import sleep
 
 import click
 import packaging
@@ -22,7 +22,7 @@ from lain_cli.lint import (
     suggest_memory_limits,
     suggest_memory_requests,
 )
-from lain_cli.prometheus import Prometheus, Alertmanager
+from lain_cli.prometheus import Alertmanager, Prometheus
 from lain_cli.prompt import (
     build_app_status_command,
     display_app_status,
@@ -34,16 +34,16 @@ from lain_cli.prompt import (
 from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
-    KUBECONFIG_DIR,
-    ClusterConfigSchema,
-    tell_cherry,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
     CLUSTERS,
     DOCKER_COMPOSE_FILE_PATH,
+    ENV,
     HELM_STUCK_STATE,
+    KUBECONFIG_DIR,
     RECENT_TAGS_COUNT,
+    ClusterConfigSchema,
     KVPairType,
     banyun,
     called_by_sh,
@@ -90,6 +90,7 @@ from lain_cli.utils import (
     stern,
     tell_best_deploy,
     tell_change_from_kubectl_output,
+    tell_cherry,
     tell_cluster,
     tell_cluster_config,
     tell_grafana_url,
@@ -1369,7 +1370,11 @@ def get_values(release_name):
 )
 @click.option('--build', is_flag=True, help='run lain build if image does\'t exist')
 @click.option('--canary', is_flag=True, help='deploy as canary version')
-@click.option('--wait', is_flag=True, help='wait until all pods are up and running')
+@click.option(
+    '--wait',
+    is_flag=True,
+    help='wait until all pods are up and running, this flag is assumed when running in CI',
+)
 @click.pass_context
 def deploy(ctx, pairs, delete_after, build, canary, wait):
     """deploy this app.
@@ -1482,6 +1487,9 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
     try_to_print_job_logs()
     if delete_after:
         lain_('delete', f'--after={delete_after}')
+
+    if ENV.get('CI') == 'true':
+        wait = True
 
     if wait:
         lain_('wait')
