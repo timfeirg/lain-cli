@@ -274,9 +274,13 @@ Auto Migration
 
 为啥一个仓库会想要部署成两个 APP? 这不是故意增加维护难度吗?
 
-这么说吧, 很多应用的开发场景都有各种"难言之隐", 比如一个后端项目, 及承担 2c 的流量, 同时又作为管理后台的 API server. 作为内部系统的部分, 希望快速上线, 解决内需, 而面相客户的部分, 则需要谨慎操作, 装车发版. 这就需要两部分单独上线, 互不影响. 又或者开发者手上只有一个集群, 但也一样需要测试环境 + 生产环境, 这时候也需要考虑把一个代码仓库部署成两个 APP.
+这么说吧, 很多应用的开发场景都有各种"难言之隐", 比如一个后端项目, 及承担 2c 的流量, 同时又作为管理后台的 API server. 作为内部系统的部分, 希望快速上线, 解决内需, 而面相客户的部分, 则需要谨慎操作, 装车发版. 这就需要两部分单独上线, 互不影响.
 
-目前这件事有以下做法:
+又或者开发者手上只有一个集群, 但也一样需要测试环境 + 生产环境, 这时候也需要考虑把一个代码仓库部署成两个 APP.
+
+最后, 如果你的应用在不同集群进行定制化构建, 那么最好直接在不同的集群用不同的 appname, 让镜像存入不同的命名空间, 增加隔离程度, 减少操作错误的空间.
+
+可选的操作办法和特色, 在这里一一介绍:
 
 用 :code:`lain update-image` 单独更新 proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -313,30 +317,72 @@ Auto Migration
 * 如果 values 发生变动需要上线, 则必须用 :code:`lain deploy`, 这样就是"整体上线", web 和 web-dev 都会重新部署
 * 每一个 proc 可以单独在 values 里锁死 imageTag, 示范请参考 :ref:`values.yaml 模板 <helm-values>`, 搜索 :code:`imageTag`, 这样一来, 无论怎么 :code:`lain deploy`, lain 都会尊重写死在 values 里边的值
 
-在 values 里超载 :code:`appname`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+在 :code:`values-override.yaml` 里超载 :code:`appname`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在 chart 目录下多放一份 `values-dev.yaml`, 命名其实是任意的, 只要不与集群名称冲突就好. 这种办法灵活性更高, 当然也更复杂.
+此法用于: 在一个集群里, 将一个代码仓库部署成两个应用.
+
+在 chart 目录下多放一份 `values-override.yaml`, 命名其实是任意的, 只要不与集群名称冲突就好. 这种办法灵活性更高, 当然也更复杂.
 
 .. code-block:: yaml
 
-    # values-dev.yaml
+    # values-override.yaml
     # 这里仅仅超载了 appname, 如果需要的话, 域名也得做好相应的修改
-    appname: dummy-dev
+    appname: dummy-override
 
-让超载的 values-dev.yaml 生效, 需要给 lain 传参:
+让超载的 :code:`values-override.yaml` 生效, 需要给 lain 传参:
 
 .. code-block:: bash
 
-    lain -f chart/values-dev.yaml deploy --build
-    lain -f chart/values-dev.yaml status
+    lain -f chart/values-override.yaml deploy --build
+    lain -f chart/values-override.yaml status
     # 其他的各种命令, 也都需要加上 -f 参数
 
 此法的一些特点, 和需要注意的地方:
 
-* 灵活性大, 你可以在 :code:`values-dev.yaml` 里随心所欲地超载.
+* 灵活性大, 你可以在 :code:`values-override.yaml` 里随心所欲地超载.
 * 由于修改了 :code:`appname`, 在 lain 看来就是一个全新的 app 了, 那么自然, 镜像是没办法复用的, 你需要重新 :code:`lain build` 构建镜像. 如果想要复用镜像, 可以参考下边的办法超载 :code:`releaseName`.
-* 操作 dummy-dev 这个 app 时, 所有 lain 命令都需要加上 :code:`-f chart/values-dev.yaml`, 并不是特别方便.
+* 操作 dummy-override 这个 app 时, 所有 lain 命令都需要加上 :code:`-f chart/values-override.yaml`, 并不是特别方便.
+
+在 :code:`values-[CLUSTER].yaml` 里超载 :code:`appname`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+操作和上一小节非常类似, 但此法用于: 在不同集群使用不同的 :code:`appname`, 隔离镜像的命名空间, 便于在不同集群上线定制镜像.
+
+为啥要来这一出? 因为 lain 默认在不同集群, 使用同一个镜像仓库, 这也满足我们团队大部分后端应用的场景. 如果你的应用有集群定制构建, 推荐你按照本节要求来实践.
+
+做法非常简单, 在 :code:`values-[CLUSTER].yaml` 里超载一下 :code:`appname` 就行了, 以假想的 A / B 集群为例:
+
+.. code-block:: yaml
+
+    # values.yaml
+    appname: dummy
+    build:
+      script:
+        - echo building for a ...
+
+    # values-b.yaml
+    appname: dummy-b
+    build:
+      script:
+        - echo building for b ...
+
+效果如下:
+
+.. code-block:: bash
+
+    lain use a
+    # 用 values.yaml 中的流程构建上线
+    lain deploy --build
+    lain use b
+    # 由于在 b 集群超载了 appname, lain 用该 appname 去查询 registry api, 肯定是查不到的
+    # 因此在 lain 看来, b 集群下并未构建镜像, 因此会重新 build
+    # 这样上线的, 就是 b 集群定制化构建的镜像了
+    lain deploy --build
+
+有人就好奇, 我硬要在不同集群都用同一个 :code:`appname`, 然后每次切换集群都用 :code:`lain build --deploy` 现场构建上线, 会有问题吗?
+
+其实如果保证操作规范, 问题的确也不大. 但怕的就是误操作, 将 a 集群的镜像上线到了 b, 这种事情往往都要一大顿排查, 才能修复问题, 因此强烈建议有类似需求的各位, 用本节介绍的方法来做镜像隔离.
 
 在 values 里超载 :code:`releaseName`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -345,8 +391,8 @@ Auto Migration
 
 .. code-block:: yaml
 
-    # values-dev.yaml
+    # values-override.yaml
     # 这里仅仅超载了 releaseName, 如果需要的话, 域名也得做好相应的修改
-    releaseName: dummy-dev
+    releaseName: dummy-override
 
-类似上边超载 :code:`appname` 的方式, 为了让新的 :code:`releaseName` 生效, 需要给 lain 传参, 也就是 :code:`lain -f chart/values-dev.yaml ...`.
+类似上边超载 :code:`appname` 的方式, 为了让新的 :code:`releaseName` 生效, 需要给 lain 传参, 也就是 :code:`lain -f chart/values-override.yaml ...`.
