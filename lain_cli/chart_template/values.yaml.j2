@@ -187,12 +187,12 @@ deployments:
 # 如果啥 tests 都没写, lain deploy 过后会直接进入 lain status, 你也可以肉眼看到 url 和容器状态绿灯以后, 再结束上线任务
 # tests:
 #   simple-test:
-#     image: lain:latest
+#     image: docker.io/timfeirg/lain:latest
 #     command:
 #       - bash
-#       - -ec
+#       - -ecx
 #       - |
-#         lain -v wait dummy
+#         curl -v {{ appname }}-web
 
 # cronjob 则是 Kubernetes 管理 job 的机制, 如果你的应用需要做定时任务, 则照着这里的示范声明出来
 # 上线成功了以后, 你肯定很想试跑一次进行测试, 这个简单:
