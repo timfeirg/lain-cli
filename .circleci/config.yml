@@ -3,7 +3,31 @@ orbs:
   codecov: codecov/codecov@3.0.0
 
 jobs:
-  e2e-tests:
+
+  semgrep-scan:
+    parameters:
+      repo_path:
+        type: string
+        default: timfeirg/lain-cli
+      default_branch:
+        type: string
+        default: master
+    environment:
+      SEMGREP_RULES: >-
+        p/security-audit
+        p/secrets
+        p/ci
+        p/python
+      SEMGREP_BASELINE_REF: << parameters.default_branch >>
+    docker:
+      - image: returntocorp/semgrep-agent:v1
+    steps:
+      - checkout
+      - run:
+          name: "scan"
+          command: semgrep-agent
+
+  e2e:
     machine:
       image: ubuntu-2004:202010-01
       docker_layer_caching: true
@@ -17,6 +41,7 @@ jobs:
       CHANGE_MINIKUBE_NONE_USER: true
     steps:
       - checkout
+
       - run:
          name: "provision"
          command: |
@@ -57,4 +82,5 @@ workflows:
   version: 2.1
   tests:
     jobs:
-      - e2e-tests
+      - semgrep-scan
+      - e2e
