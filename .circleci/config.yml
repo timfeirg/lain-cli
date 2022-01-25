@@ -47,6 +47,12 @@ jobs:
 
       - codecov/upload
 
+      - run:
+         name: "build docker image"
+         command: |
+           docker build --pull -f Dockerfile -t docker.io/$DOCKERHUB_USERNAME/lain:latest .
+           docker push docker.io/$DOCKERHUB_USERNAME/lain:latest
+
 workflows:
   version: 2.1
   tests:

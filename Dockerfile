@@ -9,7 +9,7 @@ WORKDIR /srv/lain
 
 ADD docker-image/apt/sources.list /etc/apt/sources.list
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tzdata locales gnupg2 curl ca-certificates python${PYTHON_VERSION_SHORT} python3-pip && \
+    apt-get install -y --no-install-recommends tzdata locales gnupg2 curl jq ca-certificates python${PYTHON_VERSION_SHORT} python3-pip && \
     ln -s -f /usr/bin/python${PYTHON_VERSION_SHORT} /usr/bin/python3 && \
     ln -s -f /usr/bin/python${PYTHON_VERSION_SHORT} /usr/bin/python && \
     ln -s -f /usr/bin/pip3 /usr/bin/pip && \
