@@ -1478,7 +1478,6 @@ def git_remote(**kwargs):
     cmd = ['git', 'remote', '-v']
     completed = subprocess_run(cmd, env=ENV, capture_output=True, check=True, **kwargs)
     output = ensure_str(completed.stdout)
-    remotes = set()
     for line in output.splitlines():
         _, url, *_ = line.split()
         return url
@@ -1488,12 +1487,12 @@ def git_remote(**kwargs):
 def try_to_label_nodes():
     ctx = context()
     appname = ctx.obj['appname']
-    deploys = ctx.obj['values']['deployments']
-    for deploy_name, deploy in deploys.items():
-        nodes = deploy.get('nodes')
+    procs = ctx.obj['values']['procs']
+    for proc_name, proc in procs.items():
+        nodes = proc.get('nodes')
         if not nodes:
             continue
-        label_name = f'{appname}-{deploy_name}'
+        label_name = f'{appname}-{proc_name}'
         kubectl('label', 'node', '--all', f'{label_name}-', '--overwrite')
         for node in nodes:
             kubectl('label', 'node', f'{node}', f'{label_name}=true', '--overwrite')
@@ -2152,17 +2151,23 @@ class HelmValuesSchema(LenientSchema):
     def finalize(self, data, **kwargs):
         self.merge_aliases(data, 'deployments', aliases=('deploy', 'deployment'))
         self.merge_aliases(data, 'cronjobs', aliases=['cronjob'])
-        for k in ['deployments', 'cronjobs']:
+        for k in ['deployments', 'cronjobs', 'statefulSets']:
             if not data.get(k):
                 data[k] = {}
 
         data['procs'] = data['deployments'].copy()
         data['procs'].update(data['cronjobs'])
+        data['procs'].update(data['statefulSets'])
         # check for duplicate proc names
         deploy_names = set(data['deployments'] or [])
         cronjob_names = set(data['cronjobs'] or [])
-        duplicated_names = deploy_names.intersection(cronjob_names)
-        if duplicated_names:
+        sts_names = set(data['statefulSets'] or [])
+        duplicated_names = [
+            deploy_names.intersection(cronjob_names),
+            deploy_names.intersection(sts_names),
+            cronjob_names.intersection(sts_names),
+        ]
+        if any(duplicated_names):
             raise ValidationError(
                 f'proc names should not duplicate: {duplicated_names}'
             )
