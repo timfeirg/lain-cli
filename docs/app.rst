@@ -482,12 +482,12 @@ Review 与审计
 项目配置的维护和 Review
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-这点在 :ref:`lain-env`, :ref:`lain-secret` 里也有介绍到, 非敏感信息尽量在代码库里维护, 方便团队 Review. 当然, 若你是 One Man Project, 自己看着办即可, 不一定要遵循最佳实践.
+简单讲, 就是尽量把配置放在代码仓库, 这样就能随着 MR 进行 Review. 如果各种环境变量和应用配置都存放在 :code:`lain [env|secret]`, 那就没有审查的机会了, 这点在 :ref:`lain-env`, :ref:`lain-secret` 里也有介绍到. 总而言之, 非敏感信息尽量在代码库里维护. 当然, 若你是 One Man Project, 自己看着办即可, 不一定要遵循最佳实践.
 
-因为都是敏感信息, :code:`lain (secret|env)` 里的内容修改了, 自然没办法在公开场合进行 Review 了, 但如果你的项目设置了 webhook, 那么 lain 会将修改的部分 (只有 keys, 没有 values) 发送到 webhook notification, 让团队知悉你的改动.
+那么 :code:`lain secret / env` 就完全无法审计了吗? 那也不至于, lain 做了简易的修改通知功能: 在 :code:`values.yaml` 里设置 webhook, 那么后续有人操作 :code:`lain secret / env` 的时候, lain 会将修改的部分 (只有 keys, 没有携带敏感内容的 values) 发送 webhook notification, 让团队知悉你的改动.
 
-定位某次部署的操作者
-^^^^^^^^^^^^^^^^^^^^
+定位某次部署的操作者(是谁上线的)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 作为最佳实践, 所有生产性质的项目都应该声明 webhook, 这样一来, 每次 :code:`lain deploy`, :code:`lain (secret|env) edit` 都会发送通知, 记录操作者和其他信息.
 
@@ -496,7 +496,8 @@ Review 与审计
 .. code-block:: bash
 
     # 查看最近的一次部署是谁操作的
-    helm get values APPNAME | ack user
-    # 查看某一次历史部署是谁操作的
+    helm get values APPNAME | grep "^user: "
+    # 如果要查看某一次历史部署是谁操作的, 则需用这个命令先罗列出所有的 helm release
     helm history APPNAME
-    helm get values --revision=15 APPNAME | ack user
+    # 选择自己感兴趣的 release, 用 id 进行查询, user 这个字段就是上线人的本地 $USER 环境变量
+    helm get values --revision=15 APPNAME | grep "^user: "

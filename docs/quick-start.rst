@@ -107,8 +107,8 @@ lain 如何工作?
 这里对 lain 做一番最为基本的介绍, 如果你刚接触 lain, 请务必阅读参考.
 
 * :code:`lain use [cluster]` 其实仅仅是给 :code:`~/.kube/config` 做个软链, 指向对应集群的 :code:`kubeconfig`. 如果你为此觉得困惑, 请阅读 :ref:`lain-use-design`.
-* :code:`lain build` 算是对 :code:`docker build` 的易用性封装, 你只需要在 :code:`values.yaml` 里书写 build 相关的配置块, lain 便会帮你进行 Dockerfile 的渲染, 和镜像的构建. 具体请阅读 :ref:`lain-build`.
-* lain 支持各种不同的方式对应用进行配置管理, 既可以直接书写在 :code:`values.yaml`, 也可以使用 lain env / secret 命令, 将应用配置写进 Kubernetes 集群内. 详细请阅读 :ref:`lain-env`, :ref:`lain-secret`.
+* :code:`lain build` 算是对 :code:`docker build` 的易用性封装, 你只须在 :code:`values.yaml` 里书写 build 相关的配置块, lain 便会帮你进行 Dockerfile 的渲染, 和镜像的构建. 具体请阅读 :ref:`lain-build`.
+* lain 支持各种不同的方式对应用进行配置管理, 既可以直接书写在 :code:`values.yaml`, 也可以使用 :code:`lain [env|secret]`, 将应用配置写进 Kubernetes 集群内. 详细请阅读 :ref:`lain-env`, :ref:`lain-secret`.
 * :code:`lain deploy` 背后的实现是 :code:`helm upgrade --install`, lain 会以 subprocess 的方式进行这个调用, 如果缺少可执行文件或者版本不符合要求, 将会从 CDN 上下载.
 * 容器管理等功能由 kubectl 来实现, 比如 :code:`lain logs; lain status`, 如果你有需要, 完全可以直接使用 Kubectl / Helm 来进行 lain 没有覆盖到的特殊操作.
 
