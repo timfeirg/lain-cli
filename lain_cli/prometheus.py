@@ -126,9 +126,7 @@ class Prometheus(RequestClientMixin):
         try:
             responson = res.json()
         except json.decoder.JSONDecodeError as e:
-            raise ValueError(
-                'cannot decode this shit: {}'.format(ensure_str(res.text))
-            ) from e
+            raise ValueError(f'cannot decode: {ensure_str(res.text)}') from e
         if responson.get('status') == 'error':
             err_msg = responson['error']
             if 'query timed out' in err_msg:

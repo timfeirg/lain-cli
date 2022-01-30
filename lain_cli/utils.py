@@ -890,7 +890,7 @@ def tell_executor():
         gitlab_user_name = ENV.get('GITLAB_USER_NAME') or ''
         ci_job_url = ENV.get('CI_JOB_URL') or ''
         if gitlab_user_name:
-            exe = '{} via {}'.format(gitlab_user_name, ci_job_url)
+            exe = f'{gitlab_user_name}-via-{ci_job_url}'
         else:
             exe = ci_job_url
 
@@ -1771,7 +1771,7 @@ def download_binary(url, dest, extract=None):
     '''
     click.echo(headsup, err=True)
     if extract:
-        download_path = '/tmp/{}'.format(basename(url))
+        download_path = f'/tmp/{basename(url)}'
     else:
         download_path = dest
 
@@ -1884,7 +1884,7 @@ def jalo(s):
     try:
         return json.loads(s)
     except ValueError as e:
-        raise ValueError('cannot decode this shit: {}'.format(ensure_str(s))) from e
+        raise ValueError(f'cannot decode: {ensure_str(s)}') from e
 
 
 def brief(s):
@@ -2391,7 +2391,7 @@ KUBERNETES_DISK_SIZE_UNITS = (
 def pluralize_compact(count, singular, plural=None):
     if not plural:
         plural = singular + 's'
-    return '%s%s' % (count, singular if math.floor(float(count)) == 1 else plural)
+    return f'{count}{singular if math.floor(float(count)) == 1 else plural}'
 
 
 def format_kubernetes_memory(num_bytes):
@@ -2805,6 +2805,30 @@ def tell_cluster_config(cluster=None, is_current=None):
                         error(f'you should add this to /etc/hosts: {ip} {name}')
 
     return cc
+
+
+def must_override_appname_when_cluster_specific_build():
+    ctx = context()
+    cluster = ctx.obj['cluster']
+    cluster_values_file = tell_cluster_values_file(cluster=cluster)
+    values = {}
+    override_values_file = ''
+    if cluster_values_file:
+        override_values_file = cluster_values_file
+        values = yalo(cluster_values_file)
+
+    extra_values_file = ctx.obj.get('extra_values_file')
+    if extra_values_file:
+        override_values_file += f' / {extra_values_file}'
+        recursive_update(values, yalo(extra_values_file))
+
+    if 'build' in values:
+        appname = ctx.obj['appname']
+        if appname != values.get('appname'):
+            error(
+                f'you are using cluster-specific build, you must override appname in {override_values_file}',
+                exit=1,
+            )
 
 
 def tell_all_clusters():

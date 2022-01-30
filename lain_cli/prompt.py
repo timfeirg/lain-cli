@@ -97,19 +97,19 @@ def build_app_status_command():
     ctx.obj['watch_pod_command'] = pod_cmd
     if tell_pods_count() > 13:
         ctx.obj['too_many_pods'] = True
-        ctx.obj['watch_pod_title'] = '(digested, only showing weird pods) k {}'.format(
-            list2cmdline(pod_cmd)
-        )
+        ctx.obj[
+            'watch_pod_title'
+        ] = f'(digested, only showing weird pods) k {list2cmdline(pod_cmd)}'
     else:
         ctx.obj['too_many_pods'] = False
-        ctx.obj['watch_pod_title'] = 'k {}'.format(list2cmdline(pod_cmd))
+        ctx.obj['watch_pod_title'] = f'k {list2cmdline(pod_cmd)}'
 
     top_cmd = ['top', 'po', '-l', f'app.kubernetes.io/name={appname}']
     ctx.obj['watch_top_command'] = top_cmd
     if ctx.obj['too_many_pods']:
-        ctx.obj['watch_top_title'] = '(digested) k {}'.format(list2cmdline(top_cmd))
+        ctx.obj['watch_top_title'] = f'(digested) k {list2cmdline(top_cmd)}'
     else:
-        ctx.obj['watch_top_title'] = 'k {}'.format(list2cmdline(top_cmd))
+        ctx.obj['watch_top_title'] = f'k {list2cmdline(top_cmd)}'
 
 
 def pod_text(too_many_pods=None):
@@ -352,7 +352,7 @@ def build_cluster_status_command():
         '--all-namespaces',
         '-owide',
     ]
-    ctx.obj['watch_bad_pod_title'] = 'k {}'.format(list2cmdline(pod_cmd))
+    ctx.obj['watch_bad_pod_title'] = f'k {list2cmdline(pod_cmd)}'
 
 
 async def refresh_bad_pod_text():

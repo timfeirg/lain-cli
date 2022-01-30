@@ -83,6 +83,7 @@ from lain_cli.utils import (
     make_canary_name,
     make_image_str,
     make_job_name,
+    must_override_appname_when_cluster_specific_build,
     open_kibana_url,
     parse_kubernetes_cpu,
     pick_pod,
@@ -146,13 +147,13 @@ from lain_cli.webhook import tell_webhook_client
 @click.option(
     '--use',
     type=click.Choice(CLUSTERS),
-    help='run lain use first, and then proceed. use this if you are afraid of accidentally execute command towards the wrong cluster',
+    help='same as lain use, use this if you are afraid of accidentally execute command against the wrong cluster',
 )
 @click.option(
     '--auto-pilot',
     '-a',
     is_flag=True,
-    help='''automatically does the best thing (if there is one).''',
+    help='automatically does the best thing (if there is one).',
 )
 @click.pass_context
 def lain(ctx, silent, verbose, ignore_lint, remote_docker, values, use, auto_pilot):
@@ -507,6 +508,7 @@ def lint(ctx, simple):
             exit=True,
         )
 
+    must_override_appname_when_cluster_specific_build()
     if simple:
         ctx.exit(0)
 

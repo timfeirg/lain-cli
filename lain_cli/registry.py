@@ -38,7 +38,7 @@ class Registry(RequestClientMixin, RegistryUtils):
             data={
                 'grant_type': 'password',
                 'service': 'registry.docker.io',
-                'scope': f'repository:{self.namespace}/dummy:pull,push',
+                'scope': scope,
                 'client_id': 'dockerengine',
                 'username': self.dockerhub_username,
                 'password': self.dockerhub_password,
@@ -78,7 +78,7 @@ class Registry(RequestClientMixin, RegistryUtils):
     def list_tags(self, repo_name, n=None, timeout=90):
         repo = f'{self.namespace}/{repo_name}' if self.namespace else repo_name
         path = f'/v2/{repo}/tags/list'
-        self.prepare_token(scope=f'repository:{repo}:pull')
+        self.prepare_token(scope=f'repository:{repo}:pull,push')
         responson = self.get(path, params={'n': 99999}, timeout=timeout).json()
         if 'tags' not in responson:
             return []
