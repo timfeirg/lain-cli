@@ -44,8 +44,9 @@ from humanfriendly import (
 from humanfriendly.text import tokenize
 from jinja2 import Environment, FileSystemLoader
 from marshmallow import INCLUDE, Schema, ValidationError, post_load, validates
-from marshmallow.fields import Dict, Function, Int, List, Nested, Raw, Str
-from marshmallow.validate import OneOf
+from marshmallow.fields import Dict, Function, Int, List, Nested, Raw, Str, Field
+from marshmallow.validate import OneOf, NoneOf
+from marshmallow.schema import SchemaMeta
 from packaging import version
 from pip._internal.index.collector import LinkCollector
 from pip._internal.index.package_finder import PackageFinder
@@ -1908,7 +1909,24 @@ def brief(s):
     return single_line
 
 
-class LenientSchema(Schema):
+RESERVED_WORDS = set()
+
+
+class ReserveWord(SchemaMeta):
+    """collect reserved words"""
+
+    def __new__(mcs, name, bases, attrs):
+        for fname, field in attrs.items():
+            if isinstance(field, Field):
+                RESERVED_WORDS.add(fname)
+
+        return super().__new__(mcs, name, bases, attrs)
+
+
+ReservedWord = NoneOf(RESERVED_WORDS, error='this is a reserved word, please change')
+
+
+class LenientSchema(Schema, metaclass=ReserveWord):
     class Meta:
         unknown = INCLUDE
 
@@ -2111,20 +2129,34 @@ class HelmValuesSchema(LenientSchema):
     """
 
     # app config goes here
-    appname = Str(required=True)
-    releaseName = Str(required=False)
+    appname = Str(validate=ReservedWord, required=True)
+    releaseName = Str(validate=ReservedWord, required=False)
     env = env_schema
     volumeMounts = List(Nested(VolumeMountSchema), allow_none=True)
     deployments = deploy = deployment = Dict(
-        keys=Str(), values=Nested(DeploymentSchema), required=False, allow_none=True
+        keys=Str(validate=ReservedWord),
+        values=Nested(DeploymentSchema),
+        required=False,
+        allow_none=True,
     )
     jobs = job = Dict(
-        keys=Str(), values=Nested(JobSchema), required=False, allow_none=True
+        keys=Str(validate=ReservedWord),
+        values=Nested(JobSchema),
+        required=False,
+        allow_none=True,
     )
     cronjobs = cronjob = Dict(
-        keys=Str(), values=Nested(CronjobSchema), required=False, allow_none=True
+        keys=Str(validate=ReservedWord),
+        values=Nested(CronjobSchema),
+        required=False,
+        allow_none=True,
     )
-    tests = Raw(load_default={}, allow_none=True)
+    statefulSets = statefulSet = statefulset = sts = Dict(
+        keys=Str(validate=ReservedWord), values=Raw(), required=False, allow_none=True
+    )
+    tests = Dict(
+        keys=Str(validate=ReservedWord), values=Raw, required=False, allow_none=True
+    )
     ingresses = ingress = ing = List(
         Nested(IngressSchema), required=False, allow_none=True
     )
@@ -2151,7 +2183,10 @@ class HelmValuesSchema(LenientSchema):
     def finalize(self, data, **kwargs):
         self.merge_aliases(data, 'deployments', aliases=('deploy', 'deployment'))
         self.merge_aliases(data, 'cronjobs', aliases=['cronjob'])
-        for k in ['deployments', 'cronjobs', 'statefulSets']:
+        self.merge_aliases(
+            data, 'statefulSets', aliases=['sts', 'statefulSet', 'statefulset']
+        )
+        for k in ['deployments', 'cronjobs', 'statefulSets', 'tests']:
             if not data.get(k):
                 data[k] = {}
 

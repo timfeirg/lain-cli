@@ -38,3 +38,4 @@ disable=
     abstract-class-instantiated,
     unspecified-encoding,
     abstract-method,
+    bad-mcs-classmethod-argument,
