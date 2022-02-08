@@ -177,6 +177,18 @@ def test_duplicate_proc_names():
 
 
 @pytest.mark.usefixtures('dummy_helm_chart')
+def test_reserved_words():
+    # test reserved words
+    bare_values = load_dummy_values()
+    web_proc = bare_values['deployments']['web']
+    bare_values['deployments'] = {'cronjobs': web_proc}
+    with pytest.raises(ValidationError) as e:
+        HelmValuesSchema().load(bare_values)
+
+    assert 'this is a reserved word' in str(e)
+
+
+@pytest.mark.usefixtures('dummy_helm_chart')
 def test_schemas():
     bare_values = load_dummy_values()
     web_proc = bare_values['deployments']['web']
