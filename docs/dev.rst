@@ -6,17 +6,17 @@
 为你的团队启用 lain
 -------------------
 
-使用 lain 是轻松高效的, 但为你的团队启用 lain, 却不是一件轻松的事情. 这是由 lain 本身的设计决定的: lain 没有 server side component (因为功能都基于 helm), 而且不需要用户维护集群配置(可以写死在 :code:`lain_cli/cluster_values/values-*.yaml` 里, 随包发布). 这是 lain 的重要特点与卖点, 针对用户的易用性都不是免费的, 都要靠 SA 的辛勤劳作才能挣得.
+使用 lain 是轻松高效的, 但为你的团队启用 lain, 却不是一件轻松的事情. 这是由 lain 本身的设计决定的: lain 没有 server side component (因为功能都基于 helm), 而且不需要用户维护集群配置(可以写死在 :ref:`集群配置 <cluster-values>` 里, 随包发布). 这是 lain 的重要特点与卖点, 针对用户的易用性都不是免费的, 都要靠 SA 的辛勤劳作才能挣得.
 
 目前而言, 在你的团队启用 lain, 需要满足以下条件:
 
 * Kubernetes 集群, Apiserver 服务向内网暴露, kubeconfig 发布给所有团队成员
-* Docker Registry, 云原生时代, 这应该是每一家互联网公司必不可少的基础设施, lain 目前支持一系列 Registry: Harbor, 阿里云, 腾讯云, 以及原生的 Docker Registry.
+* Docker Registry, 云原生时代, 这应该是每一家互联网公司必不可少的基础设施, lain 目前支持一系列 Registry: `Harbor <https://goharbor.io/>`_, `阿里云 <https://www.aliyun.com/product/acr>`_, `腾讯云 <https://cloud.tencent.com/product/tcr>`_, 以及原生的 `Docker Registry <https://docs.docker.com/registry/>`_.
 * [可选] 你熟悉 Python, 有能力维护 lain 的内部分支. lain 是一个内部性很强的软件, 有很多定制开发的可能性.
 * [可选] 打包发版, 这就需要有内部 PyPI, 比如 `GitLab Package Registry <https://docs.gitlab.com/ee/user/packages/pypi_repository/>`_, lain 的代码里实现了检查新版, 自动提示升级. 如果你们是一个快节奏的开发团队, lain 的使用必定会遇到各种需要维护的情况, 因此应该尽量有一个内网 Package Index.
 * [可选] Prometheus, Grafana, Kibana, 这些将会给 lain 提供强大的周边服务, 具体有什么用? 那就任君想象了, 云平台和监控/日志系统整合以后, 能做的事情那可太多了.
 * [可选] 你的团队使用 GitLab 和 GitLab CI, 以我们内部现状, 大部分 DevOps 都基于 GitLab CI + lain, 如果你也恰好如此, 那便有很多工作可以分享.
-* [可选] 你的团队对 Kubernetes + Helm 有着基本的了解, 明白 Kubernetes 的基本架构, 以及 Pod / Deploy / Service / Ingress / Ingress Controller 的基本概念.
+* [可选] 你的团队对 Kubernetes + Helm 有着基本的了解, 明白 Kubernetes 的基本架构, 以及 Pod / Deploy / Service / Ingress / Ingress Controller 等基本概念.
 
 假设你满足以上条件, 并且对路上的麻烦事有足够心理准备, 可以按照以下步骤, 让 lain 能为你的团队所用.
 

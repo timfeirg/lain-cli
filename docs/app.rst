@@ -437,6 +437,27 @@ lain 和 SCM 打交道 (虽然目前仅支持 GitLab), 因此也实现了不少 
         - lain wait-mr-approval $CI_PROJECT_PATH $CI_MERGE_REQUEST_IID
       interruptible: true
 
+打开 Docker daemon 的 TCP 监听, 支持 --remote-docker
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CI 机器上做了这么多构建, 天然有不少镜像缓存, 因此十分适合开启 TCP 监听, 允许远程调用. 如果集群的网络状况合适(指的是网络安全方面), 可以仿照下方的示范开启:
+
+.. code-block:: shell-session
+
+    $ systemctl cat docker | grep -i execstart
+    ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock  -H tcp://0.0.0.0:2375
+    # 确认开启监听
+    $ telnet localhost 2375
+
+确认开启以后, 还需要在 :ref:`集群配置 <cluster-values>` 添加相应的设置, 也就是:
+
+.. code-block:: yaml
+
+    # lain_cli/cluster_values/values-test.yaml
+    remote_docker: xxx.xxx.xxx.xxx:2375
+
+添加完毕以后, 发版更新 lain, 然后就能用 :code:`lain --remote-docker` 了, 各种与 docker 相关的操作, 都会自动用 CI 机器上的 docker daemon, 极大节约本地资源.
+
 lain 镜像的其他用途
 ^^^^^^^^^^^^^^^^^^^
 
