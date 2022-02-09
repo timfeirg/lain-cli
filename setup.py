@@ -8,7 +8,7 @@ ENTRY_POINTS = """
 lain = lain_cli.lain:main
 """
 requirements = [
-    'pip>=20.2',
+    'pip>=22.0',
     'ruamel.yaml>=0.17.10',
     'requests',
     'humanfriendly>=4.16.1',
