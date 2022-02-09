@@ -2196,8 +2196,12 @@ def version(ctx, images_count):
 
 @lain.command()
 @click.pass_context
-def meta(ctx):
-    echo(lain_meta())
+def image(ctx):
+    tag = lain_meta()
+    cc = tell_cluster_config()
+    registry_addr = cc['registry']
+    image_tag = f'{registry_addr}:{tag}'
+    echo(image_tag)
 
 
 def main():

@@ -179,8 +179,8 @@ def test_workflow(registry):
     ensure_absent(join(KUBECONFIG_DIR, 'config'))
     run(lain, args=['use', TEST_CLUSTER])
     # see if this image is actually present on registry
-    res = run(lain, args=['meta'])
-    image_tag = res.stdout.strip()
+    res = run(lain, args=['image'])
+    image_tag = res.stdout.strip().split(':')[-1]
     # should fail when using a bad image tag
     res = run(lain, args=['deploy', '--set', 'imageTag=noway'], returncode=1)
     assert 'image not found' in ensure_str(res.output).lower()

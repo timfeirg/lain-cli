@@ -629,7 +629,7 @@ class RegistryUtils:
     def sort_and_filter(tags, n=None):
         n = n or RECENT_TAGS_COUNT
         cleaned = [
-            s for s in tags if not s.startswith('meta') and not s.startswith('prepare')
+            s for s in tags if not s.startswith('prepare')
         ]
         if n:
             return cleaned[:n]
