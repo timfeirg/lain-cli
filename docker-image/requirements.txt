@@ -4,13 +4,14 @@
 #
 #    pip-compile --output-file=docker-image/requirements.txt docker-image/requirements.in
 #
+
 -e file:.
     # via -r docker-image/requirements.in
 alabaster==0.7.12
     # via sphinx
-alembic==1.7.5
+alembic==1.7.6
     # via -r docker-image/requirements.in
-aliyun-python-sdk-core==2.13.35
+aliyun-python-sdk-core==2.13.36
     # via
     #   aliyun-python-sdk-cr
     #   lain-cli
@@ -33,7 +34,7 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.10.0
     # via furo
-black==21.12b0
+black==22.1.0
     # via ipython
 bleach==4.1.0
     # via readme-renderer
@@ -52,7 +53,7 @@ cffi==1.15.0
     # via cryptography
 cfgv==3.3.1
     # via pre-commit
-charset-normalizer==2.0.10
+charset-normalizer==2.0.11
     # via requests
 check-manifest==0.47
     # via devpi-client
@@ -74,7 +75,7 @@ colorama==0.4.4
     #   twine
 configargparse==1.5.3
     # via locust
-coverage[toml]==6.2
+coverage[toml]==6.3.1
     # via pytest-cov
 cryptography==36.0.1
     # via aliyun-python-sdk-core
@@ -123,7 +124,7 @@ greenlet==1.1.2
     #   sqlalchemy
 humanfriendly==10.0
     # via lain-cli
-identify==2.4.5
+identify==2.4.8
     # via pre-commit
 idna==3.3
     # via requests
@@ -161,7 +162,7 @@ lazy==1.4
     # via devpi-common
 lazy-object-proxy==1.7.1
     # via astroid
-locust==2.6.0
+locust==2.7.3
     # via -r docker-image/requirements.in
 mako==1.1.6
     # via alembic
@@ -206,7 +207,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pip-tools==6.4.0
+pip-tools==6.5.1
     # via -r docker-image/requirements.in
 pkginfo==1.8.2
     # via
@@ -224,7 +225,7 @@ pluggy==1.0.0
     #   tox
 pre-commit==2.17.0
     # via -r docker-image/requirements.in
-prompt-toolkit==3.0.24
+prompt-toolkit==3.0.27
     # via
     #   ipython
     #   lain-cli
@@ -260,7 +261,7 @@ pyparsing==3.0.7
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-pytest==6.2.5
+pytest==7.0.0
     # via
     #   -r docker-image/requirements.in
     #   lain-cli
@@ -274,11 +275,11 @@ pytest-cov==3.0.0
     #   lain-cli
 pytest-env==0.6.2
     # via lain-cli
-pytest-mock==3.6.1
+pytest-mock==3.7.0
     # via lain-cli
 pytest-ordering==0.6
     # via lain-cli
-python-gitlab==3.1.0
+python-gitlab==3.1.1
     # via lain-cli
 pytz==2021.3
     # via babel
@@ -314,9 +315,9 @@ ruamel.yaml==0.17.20
     #   semgrep
 ruamel.yaml.clib==0.2.6
     # via ruamel.yaml
-semgrep==0.79.0
+semgrep==0.81.0
     # via -r docker-image/requirements.in
-sentry-sdk==1.5.3
+sentry-sdk==1.5.4
     # via
     #   -r docker-image/requirements.in
     #   lain-cli
@@ -354,22 +355,22 @@ stack-data==0.1.4
     # via ipython
 tenacity==8.0.1
     # via lain-cli
-tencentcloud-sdk-python==3.0.574
+tencentcloud-sdk-python==3.0.575
     # via lain-cli
 toml==0.10.2
     # via
     #   check-manifest
     #   pre-commit
     #   pylint
-    #   pytest
     #   tox
     #   vulture
-tomli==1.2.3
+tomli==2.0.1
     # via
     #   black
     #   build
     #   coverage
     #   pep517
+    #   pytest
 tox==3.24.5
     # via devpi-client
 tqdm==4.62.3
@@ -380,7 +381,7 @@ traitlets==5.1.1
     # via
     #   ipython
     #   matplotlib-inline
-twine==3.7.1
+twine==3.8.0
     # via -r docker-image/requirements.in
 typing-extensions==4.0.1
     # via
@@ -392,7 +393,8 @@ urllib3==1.26.8
     # via
     #   requests
     #   sentry-sdk
-virtualenv==20.13.0
+    #   twine
+virtualenv==20.13.1
     # via
     #   pre-commit
     #   tox
@@ -406,7 +408,7 @@ webencodings==0.5.1
     # via bleach
 websocket-client==1.2.3
     # via docker
-werkzeug==2.0.2
+werkzeug==2.0.3
     # via
     #   flask
     #   locust
