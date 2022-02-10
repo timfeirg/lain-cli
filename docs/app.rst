@@ -458,6 +458,15 @@ CI 机器上做了这么多构建, 天然有不少镜像缓存, 因此十分适�
 
 添加完毕以后, 发版更新 lain, 然后就能用 :code:`lain --remote-docker` 了, 各种与 docker 相关的操作, 都会自动用 CI 机器上的 docker daemon, 极大节约本地资源.
 
+用三方安全检查工具进行镜像扫描
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+lain 本身没有什么漏扫的功能, 但你可以用 :code:`$(lain image)` 轻松获得镜像 tag, 然后传参给第三方漏扫工具, 比如 `trivy <https://aquasecurity.github.io/trivy/dev/advanced/integrations/gitlab-ci/>`_:
+
+.. code-block:: bash
+
+    trivy --exit-code 1 --cache-dir .trivycache/ --severity CRITICAL --no-progress "$(lain image)"
+
 lain 镜像的其他用途
 ^^^^^^^^^^^^^^^^^^^
 
