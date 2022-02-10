@@ -49,6 +49,7 @@ from tests.conftest import (
 )
 
 
+@pytest.mark.first
 @pytest.mark.usefixtures('dummy_helm_chart')
 def test_build(registry):
     stage = 'prepare'
@@ -163,7 +164,7 @@ def test_build(registry):
     assert f'release_env={BUILD_TREASURE_NAME}' in ensure_str(res.stdout)
 
 
-@pytest.mark.first  # being e2e, some tests just cannot run together
+@pytest.mark.second
 @pytest.mark.usefixtures('dummy')
 def test_workflow(registry):
     # lain init should failed when chart directory already exists
@@ -343,7 +344,7 @@ def test_workflow(registry):
     assert dummy_resp['env']['treasure'] == RANDOM_STRING
 
 
-@pytest.mark.second
+@pytest.mark.run(after='test_workflow')
 @pytest.mark.usefixtures('dummy')
 def test_canary():
     res = run(lain, args=['deploy', '--canary'], returncode=1)
