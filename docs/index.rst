@@ -3,7 +3,7 @@
 lain
 ====
 
-往高了说, lain 是一个 DevOps 方案. 但其实, lain 只是帮你封装了 helm 和 kubectl, 让开发者更便捷地管理自己的 Kubernetes 应用. 大致效果如下:
+往高了说, lain 是一个 DevOps 方案. 但其实, lain 只是帮你封装了 helm, docker 和 kubectl, 让开发者更便捷地管理自己的 Kubernetes 应用. 大致效果如下:
 
 .. raw:: html
 
