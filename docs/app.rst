@@ -463,9 +463,12 @@ CI 机器上做了这么多构建, 天然有不少镜像缓存, 因此十分适�
 
 lain 本身没有什么漏扫的功能, 但你可以用 :code:`$(lain image)` 轻松获得镜像 tag, 然后传参给第三方漏扫工具, 比如 `trivy <https://aquasecurity.github.io/trivy/dev/advanced/integrations/gitlab-ci/>`_:
 
-.. code-block:: bash
+.. code-block:: yaml
 
-    trivy --exit-code 1 --cache-dir .trivycache/ --severity CRITICAL --no-progress "$(lain image)"
+    # 此处以 gitlab-ci 为例, 默认使用 lain image 作为 executor, 里边预装了 trivy
+    script:
+    - export IMAGE="$(lain image)"
+    - trivy --exit-code 1 --cache-dir .trivycache/ --severity CRITICAL --no-progress "$IMAGE"
 
 lain 镜像的其他用途
 ^^^^^^^^^^^^^^^^^^^
