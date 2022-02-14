@@ -628,9 +628,7 @@ class RegistryUtils:
     @staticmethod
     def sort_and_filter(tags, n=None):
         n = n or RECENT_TAGS_COUNT
-        cleaned = [
-            s for s in tags if not s.startswith('prepare')
-        ]
+        cleaned = [s for s in tags if not s.startswith('prepare')]
         if n:
             return cleaned[:n]
         return cleaned
@@ -2418,7 +2416,7 @@ def top_procs(appname):
 
 KUBERNETES_DISK_SIZE_UNITS = (
     CombinedUnit(
-        SizeUnit(1000 ** 2, 'MB', 'megabyte'), SizeUnit(1024 ** 2, 'Mi', 'mebibyte')
+        SizeUnit(1000**2, 'MB', 'megabyte'), SizeUnit(1024**2, 'Mi', 'mebibyte')
     ),
 )
 

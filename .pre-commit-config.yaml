@@ -6,6 +6,7 @@ repos:
       - id: check-useless-excludes
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
     hooks:
       - id: check-yaml
         exclude: lain_cli/chart_template
@@ -13,11 +14,13 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/psf/black
+    rev: 22.1.0
     hooks:
       - id: black
         args: ['--skip-string-normalization']
 
   - repo: https://github.com/jendrikseipp/vulture
+    rev: v2.3
     hooks:
       - id: vulture
         types: [python]
@@ -25,6 +28,7 @@ repos:
           - lain_cli
 
   - repo: https://gitlab.com/pycqa/flake8
+    rev: 4.0.1
     hooks:
       - id: flake8
         additional_dependencies:
@@ -33,15 +37,18 @@ repos:
           - flake8-logging-format
 
   - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.2
     hooks:
       - id: bandit
         args: ["-ll", "-c", ".bandit.yml"]
 
   - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.17.0
     hooks:
       - id: gitlint
 
   - repo: https://github.com/PyCQA/pylint
+    rev: v2.12.2
     hooks:
       - id: pylint
         name: pylint
