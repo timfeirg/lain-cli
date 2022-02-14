@@ -2200,7 +2200,8 @@ def image(ctx):
     tag = lain_meta()
     cc = tell_cluster_config()
     registry_addr = cc['registry']
-    image_tag = f'{registry_addr}:{tag}'
+    appname = ctx.obj['appname']
+    image_tag = f'{registry_addr}/{appname}:{tag}'
     echo(image_tag)
 
 
