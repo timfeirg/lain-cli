@@ -1,4 +1,5 @@
 -e file:.[all]
+pip>=22.0.3
 docker
 devpi-client
 flake8
