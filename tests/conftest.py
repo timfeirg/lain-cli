@@ -49,6 +49,7 @@ def run(*args, returncode=0, obj=None, **kwargs):
     env = environ.copy()
     env['LAIN_IGNORE_LINT'] = 'false'
     obj = obj or {}
+    print(f"Invoke: {args} {kwargs.get('args', [])}")
     res = runner.invoke(*args, obj=obj, env=env, **kwargs)
     if returncode is not None:
         real_code = rc(res)
