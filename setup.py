@@ -3,10 +3,6 @@ from setuptools import find_packages, setup
 
 from lain_cli import __version__
 
-ENTRY_POINTS = """
-[console_scripts]
-lain = lain_cli.lain:main
-"""
 requirements = [
     'pip>=22.0',
     'ruamel.yaml>=0.17.10',
@@ -36,12 +32,12 @@ all_requirements = tests_requirements
 
 setup(
     name='lain_cli',
-    url='https://github.com/yashihq/lain-cli',
+    url='https://github.com/timfeirg/lain-cli',
     python_requires='>=3.8',
     version=__version__,
     packages=find_packages(),
     include_package_data=True,
-    entry_points=ENTRY_POINTS,
+    entry_points={'console_scripts': ['lain=lain_cli.lain:main']},
     install_requires=requirements,
     zip_safe=False,
     extras_require={

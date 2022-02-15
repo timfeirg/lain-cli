@@ -1543,11 +1543,10 @@ def set_canary_group(ctx, canary_group_name, abort, final):
         helm('upgrade', *options, appname, f'./{CHART_DIR_NAME}')
         selector = f'app.kubernetes.io/name={appname}'
         wait_for_pod_up(selector)
-        helm('delete', canary_name)
-        wait_res = wait_for_pod_up(selector)
+        delete_res = helm('delete', canary_name)
         webhook = tell_webhook_client()
         webhook and webhook.send_deploy_message()
-        ctx.exit(int(not bool(wait_res)))
+        ctx.exit(rc(delete_res))
 
     if canary_group_name and len(canary_group_name) == 1:
         canary_group_name = canary_group_name[0]

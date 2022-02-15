@@ -395,6 +395,7 @@ def test_canary():
     tag = 'latest'
     run(lain, args=['deploy', '--set', f'imageTag={tag}', '--canary'])
     run(lain, args=['set-canary-group', '--final'])
+    run(lain, args=['wait'])
     assert f'{DUMMY_CANARY_NAME}-web' not in get_dummy_pod_names()
     image = get_deploy_image(f'{DUMMY_APPNAME}-web')
     assert image.endswith(f':{tag}')
