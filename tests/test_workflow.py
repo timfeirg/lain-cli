@@ -43,6 +43,7 @@ from tests.conftest import (
     TEST_CLUSTER_CONFIG,
     load_dummy_values,
     run,
+    run_lain_init,
     run_under_click_context,
     tell_deployed_images,
     tell_ing_name,
@@ -168,9 +169,9 @@ def test_build(registry):
 @pytest.mark.usefixtures('dummy')
 def test_workflow(registry):
     # lain init should failed when chart directory already exists
-    run(lain, args=['init'], returncode=1)
+    run_lain_init(returncode=1)
     # use -f to remove chart directory and redo
-    run(lain, args=['init', '-f'])
+    run_lain_init('-f')
     # lain use will switch current context switch to [TEST_CLUSTER]
     run(lain, args=['use', TEST_CLUSTER])
     # lain use will print current cluster

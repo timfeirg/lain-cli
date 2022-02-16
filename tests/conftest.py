@@ -28,6 +28,7 @@ from lain_cli.utils import (
     rc,
     tell_cluster_config,
     tell_registry_client,
+    yadu,
     yalo,
 )
 
@@ -233,7 +234,7 @@ def dummy(request):
         chdir(DUMMY_REPO)
 
     tear_down()
-    run(lain, args=['init'])
+    run_lain_init()
     # `lain secret show` will create a dummy secret
     run(lain, args=['secret', 'show'])
     request.addfinalizer(tear_down)
@@ -249,3 +250,13 @@ def dic_contains(big, small):
     left = big.copy()
     left.update(small)
     assert left == big
+
+
+def run_lain_init(*args, **kwargs):
+    """Run `lain init` and modify values to speed up tests."""
+    res = run(lain, args=['init'] + list(args), **kwargs)
+    # Speed up pod termination
+    values = load_dummy_values()
+    values['deployments']['web']['terminationGracePeriodSeconds'] = 1
+    yadu(values, DUMMY_VALUES_PATH)
+    return res
