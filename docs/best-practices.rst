@@ -3,6 +3,102 @@
 
 值得一提的最佳实践和窍门, 在这里进行罗列.
 
+构建基础镜像体系
+----------------
+
+出于各方面的考虑, 不能让开发者自己直接用开源基础镜像, 这么做内耗大, 复用低 (每个人都要自行调教镜像, 他们还不一定熟悉最佳实践), 所以后端开发的常用运行环境, SA 要帮他们准备好. 要基于开源世界的镜像, 构建发展出适合自己团队用的镜像体系. 比如我们团队目前用的是 Ubuntu, 这也是我们认为最易用的发行版. 以下就是我们做的 :code:`ubuntu-base:latest` 镜像:
+
+.. code-block:: Dockerfile
+
+    FROM ubuntu:focal
+
+    ENV DEBIAN_FRONTEND=noninteractive LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
+    ADD apt/sources.list /etc/apt/sources.list
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends tzdata locales && \
+        ln -s -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+        sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+        dpkg-reconfigure --frontend=noninteractive locales && \
+        update-locale LANG=en_US.UTF-8 && \
+        apt-get clean
+
+    CMD ["bash"]
+
+可以看到, 里边并没做什么神秘的事情, 只是做了些本地化, 以及提前做好一些合理默认值的设定. 毕竟这只是 base 镜像, 下一步我们还要基于 base 构建出适用于开发的应用镜像, 以 :code:`ubuntu-python:3.9` 为例:
+
+.. code-block:: Dockerfile
+
+    ARG REGISTRY
+    FROM ${REGISTRY}/ubuntu-base:latest
+
+    ARG PYTHON_VERSION_SHORT=3.9
+
+    RUN apt-get update && \
+        apt-get install -y python${PYTHON_VERSION_SHORT} python3-pip && \
+        apt-get clean && \
+        ln -s -f /usr/bin/python${PYTHON_VERSION_SHORT} /usr/bin/python3 && \
+        ln -s -f /usr/bin/python${PYTHON_VERSION_SHORT} /usr/bin/python && \
+        ln -s -f /usr/bin/pip3 /usr/bin/pip
+
+    ADD .pip /root/.pip
+    WORKDIR /root
+
+要注意, `这里安装 Python 3.9 的姿势是个 hack <https://stackoverflow.com/questions/65644782/how-to-install-pip-for-python-3-9-on-ubuntu-20-04/70681853#70681853>`_ , 请酌情参考. 除此之外, 可以发现构建应用影响时做的事情, 也是一些默认值的设定, 以及少量易用性改善.
+
+那么现在我们有了 :code:`ubuntu-base:latest`, 以及基于其上的 :code:`ubuntu-python:3.9`, 用是可以用了, 但还得保证镜像沿着依赖树持续更新才行, 比方说 :code:`ubuntu-base:latest` 有所更新, 那么 :code:`ubuntu-python:3.9` 也要安排重新构建. 这件事我们也用 gitlab-ci 来做, 通过书写恰当的触发条件, 来实现镜像的依赖构建:
+
+.. code-block:: yaml
+
+    variables:
+      REGISTRY: registry.example.com
+      PYTHON_VERSION_SHORT: '3.9'
+
+    stages:
+      - build_bases
+      - build_apps
+
+    .build_ubuntu_template: &build_ubuntu_template
+      only:
+        changes:
+          - ubuntu-*.dockerfile
+          - apt/*
+
+    build_ubuntu_base:
+      stage: build_bases
+      script:
+        - docker build --squash --pull -f ubuntu-base.dockerfile -t $REGISTRY/ubuntu-base:latest .
+        - docker push $REGISTRY/ubuntu-base:latest
+      <<: *build_ubuntu_template
+
+    build_ubuntu_python:
+      only:
+        changes:
+          - ubuntu-*.dockerfile
+          - apt/*
+          - .pip/*
+      stage: build_apps
+      retry: 2
+      variables:
+        IMAGE_TAG: 'latest'
+      script:
+        - >
+          docker build --squash --pull -f ubuntu-python.dockerfile
+          -t $REGISTRY/ubuntu-python:${PYTHON_VERSION_SHORT} .
+          --build-arg PYTHON_VERSION_SHORT=${PYTHON_VERSION_SHORT}
+          --build-arg REGISTRY=${REGISTRY}
+        - docker push $REGISTRY/ubuntu-python:${PYTHON_VERSION_SHORT}
+        - docker tag $REGISTRY/ubuntu-python:${PYTHON_VERSION_SHORT} $REGISTRY/ubuntu-python:${IMAGE_TAG}
+        - docker push $REGISTRY/ubuntu-python:${IMAGE_TAG}
+      <<: *build_ubuntu_template
+
+以下开始技术总结:
+
+* 力求精简, 不要在基础镜像里安装多余的东西, 只有确定全栈都要用到, 才考虑纳入基础镜像
+* 所有事情都要做好分级, 在合适的镜像层来做, 让镜像内容达到最大化复用
+* CI 的构建流程, 可以设定为每周全量重新构建, 保证上游的开源镜像持续更新, 享受最新安全补丁
+* base 层推荐用 latest tag, 毕竟这一层没多少兼容性问题. 而应用层则应该用带有版本号的镜像 tag, 避免使用 latest
+
 标准化操作流程 (SOP)
 --------------------
 
