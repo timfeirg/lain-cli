@@ -1074,7 +1074,7 @@ def lain_meta():
         if 'not a git' in stderr.lower():
             return 'latest'
         error(stderr, exit=returncode)
-        error('cannot calculate lain meta, using latest tag')
+        error('cannot calculate image tag, using latest')
 
     stdout = ensure_str(res.stdout)
     image_tag = stdout.strip()

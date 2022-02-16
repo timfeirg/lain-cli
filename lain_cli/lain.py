@@ -764,7 +764,7 @@ def logs(ctx, proc, tail, use_stern, use_kibana):
 @click.option(
     '--head',
     is_flag=True,
-    help='use current git HEAD as imageTag, same as --imageTag=$(lain meta)',
+    help='use current git HEAD as imageTag',
 )
 @click.option('--wait', is_flag=True, help='wait until job exits')
 @click.option(
@@ -1151,7 +1151,7 @@ def restart(ctx, procs_or_release_name, selectors, wait, graceful):
 @click.option(
     '--deduce',
     is_flag=True,
-    help='use the most recent imageTag from registry rather than `lain meta`',
+    help='use the most recent imageTag from registry',
 )
 @click.pass_context
 def update_image(ctx, procs, deduce):
