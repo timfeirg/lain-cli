@@ -157,5 +157,6 @@ Eviction 容器其实就是 Kubernetes 在"收拾自己的抽屉", 而 Evicted P
 
 请求失败/超时的排查是个大话题, 各种技术框架下排查的操作都有所不同. Kubernetes 下的排查尤为复杂, 有兴趣可以详读 `A visual guide on troubleshooting Kubernetes deployments <https://learnk8s.io/troubleshooting-deployments>`_. 此处仅罗列一些 lain 下常见的不易排查的问题:
 
-* 钻进容器里直接对服务端口进行 curl 请求, 能正常响应吗? 如果在容器里都无法访问, 那摆明是应用空间的问题了, 如果你认为 web server 的配置和启动都正常, 不妨先检查下资源声明: 如果你的 memory / cpu limits 写得太小, 进程拿不到足够的资源, 可能会响应非常慢, 造成超时.
-* 你在 :code:`values.yaml` 里声明的 :code:`containerPort`, 真的是进程实际监听的端口吗? 有些人声明了 :code:`containerPort: 9000`, 结果 web server 实际在监听 :code:`8000`, 这就怪不得会发生 Connection refused 了.
+* 用 :code:`lain x` 钻进容器里, 直接对服务端口进行 curl 请求, 能正常响应吗? 如果在容器里都无法访问, 那摆明是应用空间的问题了
+* 如果你认为 web server 的配置和启动都正常, 不妨先检查下资源声明: 如果 CPU / Memory limits 太小, 进程拿不到足够的资源, 可能会响应非常慢, 造成超时
+* :code:`values.yaml` 里声明的 :code:`containerPort`, 是不是写错了? 真的是进程实际监听的端口吗? 有些人声明了 :code:`containerPort: 9000`, 结果 web server 实际在监听 :code:`8000`, 这就怪不得会发生 Connection refused 了

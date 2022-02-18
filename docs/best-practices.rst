@@ -99,6 +99,13 @@
 * CI 的构建流程, 可以设定为每周全量重新构建, 保证上游的开源镜像持续更新, 享受最新安全补丁
 * base 层推荐用 latest tag, 毕竟这一层没多少兼容性问题. 而应用层则应该用带有版本号的镜像 tag, 避免使用 latest
 
+开发前后端分离的应用 (前后端对接)
+---------------------------------
+
+千言万语汇成一句话, 就是集群内应用间互相访问, 建议别用域名, 而是直接走 `Kubernetes Service <https://kubernetes.io/zh/docs/concepts/services-networking/connect-applications-service/>`_ . 以 :ref:`dummy <helm-values>` 为例, 如果你的应用和 dummy 共处一个集群, 那么就可以通过 :code:`dummy-web` 这个域名直接访问. 最好不要通过域名访问, 不仅网络开销大, 有时候还会因为各种安全策略, 导致压根无法访问. 当然啦, 如果有特殊需要的话, 忽略本提示.
+
+上述建议要写成 Nginx 配置, 大概就是 :code:`proxy_pass http://dummy-web/;`, 注意 scheme 必须设定为 http, 毕竟 Service 层面没有 TLS 截断.
+
 标准化操作流程 (SOP)
 --------------------
 
