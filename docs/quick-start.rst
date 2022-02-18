@@ -8,8 +8,27 @@ lain 需要调用 kubectl, docker, helm. 这些工具都需要你自行安装. �
 提前准备
 --------
 
-* 如果你是 Mac 用户, 安装 docker 以后, 请确认你为其分配了足够的内存. 多大才算足够呢? 这就取决于你要构建什么项目了, 经验上以 4-5G 为宜, 但若是出现了灵异的构建错误, 也请记得 :ref:`往资源分配方向进行排查 <docker-error>`.
 * 安装了 docker 以后, 你还需要进行 :code:`docker login`, 登录对应集群的 registry.
+
+Windows
+^^^^^^^
+
+* lain 支持在 PowerShell 下使用, 但建议尽量不要, 首选 WSL 里使用
+* 如果你有难言之隐, 必须要在 PowerShell 下安装和使用 lain, 这里是一些安装流程的备忘:
+  * 记得将 lain 的 cli 执行文件所在的目录加入 :code:`$PATH`, 如果你没有使用 virtualenv, 那么这个路径一般是 :code:`c:\users\$UESR\appdata\roaming\python\python310\Scripts`
+  * 添加 env: :code:`PYTHONUTF8=1`, 在 Windows 上算是一个最佳实践, 告诉 Python 使用 UTF8 作为默认编码
+* lain 依赖的各种第三方程序, 都需要在 PowerShell 里安装好, 以 choco 为例, 可以这样安装:
+
+.. code-block:: powershell
+
+  choco install git
+  choco install kubernetes-helm
+  choco install kubernetes-cli
+
+Mac OS
+^^^^^^
+
+* Docker for Mac 的 Docker Daemon 是放在虚拟机里边的, 因此安装 docker 以后, 请确认你为其分配了足够的内存. 多大才算足够呢? 这就取决于你要构建什么项目了, 经验上以 4-5G 为宜, 但若是出现了灵异的构建错误, 也请记得 :ref:`往资源分配方向进行排查 <docker-error>`.
 
 安装 lain
 ---------
