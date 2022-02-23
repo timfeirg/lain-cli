@@ -35,6 +35,8 @@ RUN apt-get update && \
     chsh -s /usr/bin/zsh root && \
     apt-get clean
 ADD docker-image/.pip /root/.pip
+COPY docker-image/git_askpass.sh /usr/local/bin/git_askpass.sh
+ENV GIT_ASKPASS=/usr/local/bin/git_askpass.sh
 COPY docker-image/.zshrc /root/.zshrc
 COPY docker-image/requirements.txt /tmp/requirements.txt
 COPY .pre-commit-config.yaml ./.pre-commit-config.yaml
