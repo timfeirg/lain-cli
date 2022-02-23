@@ -773,10 +773,12 @@ def kubectl_edit(f, capture_output=False, notify_diff=True, **kwargs):
             new = deepcopy(secret_dic)
 
         cluster = tell_cluster()
+        ctx = context()
         if cluster != current_cluster:
+            will_exit = not ctx.obj.get('ignore_lint')
             error(
-                f'you have switched from {current_cluster} to {cluster}, this is not allowed, abort',
-                exit=1,
+                f'during editing, you have switched from {current_cluster} to {cluster}',
+                exit=will_exit,
             )
 
         res = kubectl_apply(secret_dic, capture_output=capture_output, **kwargs)
