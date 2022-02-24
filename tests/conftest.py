@@ -12,6 +12,7 @@ from click.testing import CliRunner
 
 from lain_cli.lain import lain
 from lain_cli.utils import (
+    yadu,
     CHART_DIR_NAME,
     CLUSTERS,
     DOCKERFILE_NAME,
@@ -233,6 +234,11 @@ def dummy(request):
 
     tear_down()
     run(lain, args=['init'])
+    override_values_for_e2e = {
+        'deployments': {'web': {'terminationGracePeriodSeconds': 1}}
+    }
+    override_values_file = f'values-{TEST_CLUSTER}.yaml'
+    yadu(override_values_for_e2e, join(CHART_DIR_NAME, override_values_file))
     # `lain secret show` will create a dummy secret
     run(lain, args=['secret', 'show'])
     request.addfinalizer(tear_down)

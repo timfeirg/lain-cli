@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=docker-image/requirements.txt docker-image/requirements.in
 #
---index-url https://mirrors.aliyun.com/pypi/simple/
-
 -e file:.
     # via -r docker-image/requirements.in
 alabaster==0.7.12

@@ -618,8 +618,6 @@ def assign_mr(project, mr_id):
 @click.pass_context
 def init(ctx, appname, force, template_only, commit):
     """generate a helm chart for your app."""
-    # just using this command to ensure kubectl is downloaded
-    kubectl('version', '--client=true', capture_output=True)
     ctx.obj['appname'] = appname
     if force:
         ensure_absent(CHART_DIR_NAME)
