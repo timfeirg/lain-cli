@@ -628,7 +628,7 @@ class RegistryUtils:
     @staticmethod
     def sort_and_filter(tags, n=None):
         n = n or RECENT_TAGS_COUNT
-        cleaned = [s for s in tags if not s.startswith('prepare')]
+        cleaned = sorted((s for s in tags if not s.startswith('prepare')), reverse=True)
         if n:
             return cleaned[:n]
         return cleaned

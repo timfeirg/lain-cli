@@ -39,12 +39,10 @@ COPY docker-image/git_askpass.sh /usr/local/bin/git_askpass.sh
 ENV GIT_ASKPASS=/usr/local/bin/git_askpass.sh
 COPY docker-image/.zshrc /root/.zshrc
 COPY docker-image/requirements.txt /tmp/requirements.txt
-COPY .pre-commit-config.yaml ./.pre-commit-config.yaml
 COPY setup.py ./setup.py
 COPY lain_cli ./lain_cli
 RUN pip3 install -U -r /tmp/requirements.txt && \
     git init && \
-    pre-commit install-hooks && \
-    rm -rf /tmp/* ./.pre-commit-config.yaml .git
+    rm -rf /tmp/* .git
 
 CMD ["bash"]

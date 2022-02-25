@@ -479,7 +479,7 @@ def test_lain_job_in_non_lain_app_directory():
     assert ensure_str(logs_res.stdout).strip() == '/usr/local/bin/lain'
 
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(6))
+@retry(reraise=True, wait=wait_fixed(3), stop=stop_after_attempt(6))
 def url_get_json(url, **kwargs):
     sleep(4)
     res = requests.get(url, **kwargs)
