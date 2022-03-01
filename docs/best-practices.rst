@@ -165,7 +165,7 @@ Auto Migration
                 mountPath: /jfs/backup/{{ appname }}/  # 这个目录需要你手动创建好
         # 以下 annotation 能保证 helm 在 upgrade 之前运行该 job, 不成功不继续进行 deploy
         annotations:
-          "helm.sh/hook": pre-upgrade
+          "helm.sh/hook": post-install,pre-upgrade
           "helm.sh/hook-delete-policy": before-hook-creation
         command:
           - 'bash'
