@@ -62,10 +62,12 @@ def test_build(registry):
             'prepare_env': BUILD_TREASURE_NAME,
             'escape_test': 'space test & newline \n test',
         }
-        build_clause['prepare']['keep'].extend([
-            'foo/thing.txt',
-            'bar',
-        ])
+        build_clause['prepare']['keep'].extend(
+            [
+                'foo/thing.txt',
+                'bar',
+            ]
+        )
         build_clause['prepare']['script'].extend(
             [
                 f'echo {RANDOM_STRING} > {BUILD_TREASURE_NAME}',

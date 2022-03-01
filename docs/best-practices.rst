@@ -249,7 +249,7 @@ Auto Migration
 * :code:`periodSeconds`: 多久执行一次健康检查, 这个视情况写 1-5s 均可, 但如果你的健康检查接口需要消耗比较多的资源, 也可以适量放松, 否则过于频繁的健康检查, 将有可能压垮容器.
 * :code:`failureThreshold`: 失败多少次, 才标记为"不健康", 对于 readinessProbe, 我们尽量填 1. 而对于 livenessProbe, 一般而言还是放松一些, 多给他几次机会, 否则一遇到失败就造成容器重启, 在大流量场景下反而容易引起"雪崩".
 
-.. _deploy-strategy:
+.. _gitlab-ci-build:
 
 应用镜像的构建, 以及 CI 配置
 ----------------------------
@@ -350,6 +350,8 @@ Auto Migration
         # 因为 GitLab CI 每次执行完都会更新上传缓存, 而 prepare 镜像只会在重新 :code:`lain prepare` 后, 才会更新
         - yarn install --frozen-lockfile
         - yarn test -- --coverage --collectCoverage
+
+.. _deploy-strategy:
 
 滚动上线
 --------

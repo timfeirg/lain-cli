@@ -381,18 +381,8 @@ lain 镜像构建好了, 接下来需要在 GitLab CI Runner 配置里执行成�
 .. code-block:: yaml
 
     stages:
-      - prepare
       - test
       - deploy
-
-    prepare_job:
-      stage: prepare
-      only:
-        changes:
-          - requirements*
-      script:
-        - lain use test
-        - lain prepare
 
     test_job:
       image: [APPNAME]:prepare
@@ -406,7 +396,17 @@ lain 镜像构建好了, 接下来需要在 GitLab CI Runner 配置里执行成�
         - lain use test
         - lain deploy --build
 
-上边三个 Job, 每一个都仅有短短几行配置, 便完成了 CI 构建, 测试和上线的工作. 如果你能想到 CI 里还有什么 lain 的妙用, 也可以轻松仿照上边的配置文件来书写.
+    prepare_job:
+      # 依赖发生修改的时候, 重新 prepare, 为之后的构建做缓存
+      stage: .post
+      only:
+        changes:
+          - requirements*
+      script:
+        - lain use test
+        - lain prepare
+
+上边三个 Job, 每一个都仅有短短几行配置, 便完成了 CI 构建, 测试和上线的工作. 不过这仅仅是简单的示范, 你还可以参考 :ref:`gitlab-ci-build`.
 
 SCM MR 的功能补充
 ^^^^^^^^^^^^^^^^^
