@@ -2164,6 +2164,8 @@ def edit(ctx, name):
 def version(ctx, images_count):
     """print version for lain and current lain app."""
     echo(f'lain: {__version__}')
+    helm('version', '--short')
+    kubectl('version', '--short', '--client')
     appname = ctx.obj.get('appname')
     if appname:
         kubectl(
