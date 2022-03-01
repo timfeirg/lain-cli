@@ -2,13 +2,14 @@
 FROM {{ values.build.base }} AS prepare
 WORKDIR {{ values.build.workdir }}
 ADD --chown=1001:1001 . {{ values.build.workdir }}
-{% for l in values.build.prepare.script %}
-RUN {{ l }}
-{% endfor %}
 
 {% if values.build.prepare.env %}
 ENV {% for k, v in values.build.prepare.env.items() %}{{ k }}={{ v | to_json }} {% endfor %}
 {% endif %}
+
+{% for l in values.build.prepare.script %}
+RUN {{ l }}
+{% endfor %}
 
 RUN find . -type f {% if values.build.prepare.keep %}{% for k in values.build.prepare.keep %}{% if not loop.first %} -and {% endif %} -not -path '{{ k }}' {% endfor %}{% endif %} -delete
 {% endif %}

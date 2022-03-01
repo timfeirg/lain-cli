@@ -1560,15 +1560,17 @@ def fix_kubectl_link(cv=None, sv=None):
 
 
 @lru_cache(maxsize=None)
-def kubectl_version_challenge():
+def kubectl_version_challenge(check=True):
     try:
         res = subprocess_run(
             ['kubectl', 'version', '--short'],
             capture_output=True,
             env=ENV,
             silent=True,
-            check=True,
+            check=check,
         )
+        if rc(res):
+            return
         # https://kubernetes.io/releases/version-skew-policy/#kubectl
         cr, sr = ensure_str(res.stdout).splitlines()
         cv = version.parse(cr.rsplit(None, 1)[-1])
@@ -1585,7 +1587,7 @@ def kubectl_version_challenge():
 
 
 def kubectl(*args, exit=None, check=True, dry_run=False, **kwargs):
-    kubectl_version_challenge()
+    kubectl_version_challenge(check=check)
     cmd = ['kubectl', *args]
     kwargs.setdefault('timeout', 20)
     completed = subprocess_run(cmd, env=ENV, check=check, dry_run=dry_run, **kwargs)

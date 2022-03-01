@@ -125,7 +125,7 @@ def test_build(registry):
     assert 'run.py' in ls_result
     run(lain, args=['push'])
     recent_tags = registry.list_tags(DUMMY_APPNAME)
-    latest_tag = next(t for t in recent_tags if t != 'latest')
+    latest_tag = max(t for t in recent_tags if t != 'latest')
     assert build_image.rsplit(':', 1)[-1] == latest_tag
 
     stage = 'release'
