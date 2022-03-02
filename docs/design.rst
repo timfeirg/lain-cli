@@ -65,28 +65,26 @@ lain 本身并不管理资源, `Kubernetes 已经出色地完成了这项工作 
     celery-flower-web memory limits: current 256Mi, suggestion 637Mi
     sync-wx-group cpu requests: current 1000m, suggestion 5m
 
-如上所示, lain 会根据 Prometheus 查询到的 CPU / Memory 数据, 计算其 P95, 然后以此作为 requests 的建议值, 而 limits 则以一个固定系数进行放大. 这个策略当然无法放之四海皆准, 但以我们目前的应用特性, 是比较合适的做法.
+如上所示, lain 会根据 Prometheus 查询到的 CPU / Memory 数据, 计算其 P95, 然后以此作为 requests 的建议值, 而 limits 则以一个固定系数进行放大. 这个策略当然无法放之四海皆准, 所以对应的 PromQL 查询语句是可以在集群配置中定制的(详见 cluster-values 的 :code:`pql_template` 字段), 你可以按照你们团队应用的特性进行修改.
 
-但是 `requests / limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits>`_ 到底是个啥? 这个简单的概念在 Kubernetes 文档上似乎并没有直观的解释, 导致我们 RD 团队其实一直都不太理解如何恰当地声明资源占用. 简单来说也许可以这样比喻: 你去同学家里吃饭, 叔叔阿姨提前问你平日饭量如何, 并且特意嘱咐, 如果聚餐当天玩太疯, 食量比较大, 也要告知你的最大食量, 叔叔阿姨好备菜. 这个例子当中, :code:`resources.requests` 便是你平日的食量, :code:`resources.limits` 则是你的最大食量, 一旦超过了, 就绝对无法供给, 翻译到应用空间发生的事情, 就是 OOM Kill.
+但是 `requests / limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits>`_ 到底是个啥? 这个简单的概念在 Kubernetes 文档上似乎并没有直观的解释, 导致我们业务研发同事们其实一直都不太理解如何恰当地声明资源占用. 简单来说也许可以这样比喻: 你去同学家里吃饭, 叔叔阿姨提前问你平日饭量如何, 并且特意嘱咐, 如果聚餐当天玩太疯, 食量比较大, 也要告知你的最大食量, 叔叔阿姨好备菜. 这个例子当中, :code:`resources.requests` 便是你平日的食量, :code:`resources.limits` 则是你的最大食量, 一旦超过了, 就绝对无法供给, 翻译到应用空间发生的事情, 就是 OOM Kill.
 
-声明资源占用就是这么一回事, 如果你对叔叔阿姨虚报了平日食量, 报太大, 就浪费了吃不完, 报太小, 就不够吃. 所以平日食量(也就是 :code:`resources.requests`)一定要准确报备, 如果你担心当天异常饥饿, 那也没关系, 提前报备一下自己偶尔喜欢多吃点, 比如平日的两倍, 那么同学家里就会准备好富余的食材, 让你不至于饿肚子. 这就是 :code:`requests.limits` 的作用.
+声明资源占用就是这么一回事, 如果你对叔叔阿姨虚报了平日食量, 报太大, 就浪费了吃不完, 报太小, 就不够吃. 所以平日食量(也就是 :code:`resources.requests`)一定要准确报备, 如果你担心当天异常饥饿, 那也没关系, 提前说好自己偶尔喜欢多吃点(放大 :code:`requests.limits`), 那么同学家里就会准备好富余的食材, 让你不至于饿肚子.
 
-可想而知, 大多数应用的 limits 肯定是大于 requests 的, 这种情况我们称作资源超售. 超售是一个很好的策略, 能有效压榨机器资源, 但前提是要准确声明 requests, 并且在 Kubernetes worker 留好足够的资源冗余, 让应用在资源占用突然飙升的时候不至于拖垮机器.
+可想而知, 大多数应用的 limits 肯定是大于 requests 的, 这就叫资源超售. 超售对压榨机器资源是非常好的, 但前提是要准确声明 requests, 并且集群需要有足够的资源冗余, 让应用在资源占用突然飙升的时候, 不至于拖垮机器.
 
 根据实践, 我们总结了以下原则和注意事项:
 
-* 即便你的 CPU 静息用量很低, 也不要把 CPU limits 锁死在最低用量, 很容易发生 CPU Throttle. 比如一个 Python Web Server 的静息 CPU 用量是 5m, 那么最好写成 5m / 1000m, 确保需要的时候, 总能用到一整个核. 至少对于 Python 应用而言, 一定要遵循这个原则, 你在监控上看到 CPU 只有 5m, 但事实上可能在微观时间里, 瞬时 CPU 用量要远大于这个数.
+* 即便你的 CPU 静息用量很低, 也建议别把 CPU limits 锁死在最低用量, 容易发生 CPU Throttle. 比如一个 Python Web Server 的静息 CPU 用量是 5m, 那么最好写成 5m / 1000m, 确保需要的时候, 总能用到一整个核. 至少对于 Python 应用而言, 一定要遵循这个原则, 你在监控上看到 CPU 只有 5m, 但事实上可能在微观时间里, 瞬时 CPU 用量要大于这个数.
 * Memory 一般不作超售, 应用摸到了内存上界, 系统就直接给 OOM Kill 了, 造成灾难. CPU 则不然, 只是运算慢点.
 * 关于 OOM Killed, `Kubernetes 视角并不总是准确的 <https://medium.com/back-market-engineering/a-story-of-kubernetes-celery-resource-and-a-rabbit-ec2ef9e37e9f>`_, 我们建议在集群里同时对系统日志的 OOM 事件做好监控(比如 `grok_exporter <https://github.com/fstab/grok_exporter>`_), 这样才能对 OOM 报警做到滴水不漏.
 * 对于 CronJob, 如无必要, 最好不要做资源超售. CronJob 的运行往往是瞬间完成的, 因此对于资源监控的采样也是瞬时的, 因此对于 CronJob 应用的资源监控无法像长期运行的容器一样准确, 如果在资源声明的时候进行超售, 反而增加了 Job 失败的风险. 考虑到 CronJob 对于集群资源的占用也是瞬时的, 所以在运维的时候, 就不必那么在意节省资源.
 
-lain 希望把最佳实践的方方面面都落实到工具层面, 以工具作为标准, 所以上边讲到的各项原则和建议, 也都已经在 :code:`lain lint` 的代码层面进行实现.
-
 .. note::
 
-   :code:`lain lint` 再怎么聪明, 给出的建议都是基于 Prometheus 的历史监控数据. 不过随着应用的开发迭代, 资源占用可能会变得越来越高, 如果发生这种情况, 你需要手动调整资源声明.
+   :code:`lain lint` 再怎么聪明, 给出的建议都是基于 Prometheus 的历史监控数据. 随着业务长大, 以及应用开发迭代, 资源占用往往会变得越来越高, 如果发生这种情况, 你需要手动调整资源声明.
 
-   这些调整如果和 :code:`lain lint` 发生冲突, 你可以用 :code:`lain --ignore-lint deploy` 来跳过检查, 但也请注意, 切勿滥用这个选项, 因为 :code:`lain lint` 还包括许许多多其他的正确性检查, 如果你习惯性使用 :code:`--ignore-lint` 来上线, 总有一天会出问题.
+   这些调整如果和 :code:`lain lint` 发生冲突, 你可以临时地用 :code:`lain --ignore-lint deploy` 来跳过检查, 但也请注意, 切勿滥用这个选项, 因为 :code:`lain lint` 还包括许许多多其他的正确性检查, 如果你习惯性使用 :code:`--ignore-lint` 来上线, 总有一天会出问题.
 
 .. _lain-auto-pilot:
 

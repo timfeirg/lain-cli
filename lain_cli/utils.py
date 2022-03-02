@@ -2942,4 +2942,13 @@ def tell_all_clusters():
     return ccs
 
 
+def lain_docs(path):
+    cc = tell_cluster_config()
+    sphinx_docs_url = (
+        cc.get('sphinx_docs_url') or 'https://lain-cli.readthedocs.io/en/latest'
+    )
+    url = join(sphinx_docs_url, path)
+    return url
+
+
 CLUSTERS = tell_all_clusters()
