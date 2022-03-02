@@ -57,9 +57,10 @@ Mac OS
 .. code-block:: bash
 
     # 如果面前是一个还未用 lain 上线的项目, 需要先执行 lain init, 为项目渲染出一份默认的 helm chart
-    lain init
+    lain init --commit
     # 如果项目下已经有 chart 目录, 说明该项目已经是一个 lain app 了, 这时候考虑更新一下 helm chart
-    lain init --template-only
+    lain init --template-only --commit
+    # 如果你不希望立刻做 git add / commit, 你也可以去掉 --commit 参数, 自己控制. 但千万别忘了, chart 一定要进入代码仓库才行
 
     # 接下来需要对 values 进行完整的 review, 做必要的修改, 具体参考本文档"应用管理 - 撰写 Helm Values"一节
     vi chart/values.yaml
