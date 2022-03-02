@@ -553,14 +553,12 @@ def too_much_logs_headsup():
 
 
 init_done_str = f'''a helm chart is generated under the ./{CHART_DIR_NAME} directory. what's next?
-* review ./{CHART_DIR_NAME}/values.yaml
-* if this app needs cluster-specific secret files or env, you should create them:
+* review and edit ./{CHART_DIR_NAME}/values.yaml
+* add helm chart to git repo: git add ./{CHART_DIR_NAME}
+* if this app needs secret files or env, you should create them:
     lain use [CLUSTER]
-    # add env to Kubernetes Secret
-    lain env edit
-    # add secret files to Kubernetes Secret
-    lain secret add [FILE]
-* lain deploy
+    lain [secret|env] edit
+* lain deploy --build
 '''
 
 
