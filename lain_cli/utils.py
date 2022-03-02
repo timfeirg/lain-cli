@@ -1464,6 +1464,41 @@ def docker_save(image, output_dir, retag=None, pull=False, exit=False):
     return res
 
 
+def asdf(*args, exit=None, check=True, **kwargs):
+    cmd = ['asdf', *args]
+    completed = subprocess_run(cmd, env=ENV, check=check, **kwargs)
+    if exit:
+        context().exit(rc(completed))
+
+    return completed
+
+
+def has_asdf():
+    try:
+        res = asdf('--version', check=False)
+    except FileNotFoundError:
+        if tell_platform() != 'windows':
+            warn(
+                'strongly encourage you to use asdf to manage kubectl, otherwise you\'ll have to manually download multiple versions of kubectl'
+            )
+        return False
+    if rc(res):
+        error(f'weird asdf error: {res.stderr}')
+        return False
+    return True
+
+
+def asdf_global(bin, v):
+    res = asdf('global', bin, v, check=False, capture_error=True)
+    code = rc(res)
+    if code:
+        stderr = ensure_str(res.stderr)
+        if 'is not installed' in stderr:
+            asdf('install', bin, v)
+            return asdf_global(bin, v)
+        error(f'weird asdf error: {stderr}', exit=code)
+
+
 def git(*args, exit=None, check=True, **kwargs):
     cmd = ['git', *args]
     completed = subprocess_run(cmd, env=ENV, check=check, **kwargs)
@@ -1530,8 +1565,9 @@ def try_to_cleanup_job(job_name=None):
                 error(stderr, exit=1)
 
 
-def fix_kubectl_link(cv=None, sv=None):
-    """link correct kubectl version to LAIN_EXBIN_PREFIX"""
+def fix_kubectl(cv=None, sv=None):
+    if has_asdf():
+        return asdf_global('kubectl', str(sv))
     if sv:
         kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
     else:
@@ -1572,16 +1608,16 @@ def kubectl_version_challenge(check=True):
         # https://kubernetes.io/releases/version-skew-policy/#kubectl
         cr, sr = ensure_str(res.stdout).splitlines()
         cv = version.parse(cr.rsplit(None, 1)[-1])
-        # TKE Kubernetes verion look like v1.18.4-tke.13
+        # TKE Kubernetes verions look like v1.18.4-tke.13
         sv = version.parse(sr.rsplit(None, 1)[-1].split('-', 1)[0])
     except FileNotFoundError:
-        fix_kubectl_link()
+        fix_kubectl()
         return kubectl_version_challenge()
     except PermissionError:
         error('Bad binary: kubectl, please reinstall', exit=1)
 
     if cv.major != sv.major or abs(sv.minor - cv.minor) >= 2:
-        fix_kubectl_link(cv, sv)
+        fix_kubectl(cv, sv)
 
 
 def kubectl(*args, exit=None, check=True, dry_run=False, **kwargs):
@@ -1760,8 +1796,10 @@ def tell_platform():
         return 'darwin'
     if platform_.startswith('linux'):
         return 'linux'
+    if platform_.startswith('win'):
+        return 'windows'
     raise ValueError(
-        f'Sorry, never seen this platform: {platform_}. Use a Mac or Linux for lain'
+        f'Sorry, never seen this platform: {platform_}. Use a Mac / Linux / Windows for lain'
     )
 
 
