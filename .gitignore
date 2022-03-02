@@ -12,3 +12,4 @@ kubeconfig-*
 docker-image/config.json
 .cache
 public
+values-test.yaml
