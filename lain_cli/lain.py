@@ -79,6 +79,7 @@ from lain_cli.utils import (
     kubectl_edit,
     lain_,
     lain_build,
+    lain_docs,
     lain_meta,
     make_canary_name,
     make_image_str,
@@ -557,8 +558,9 @@ def lint(ctx, simple):
 
     last_error = ctx.obj.get('last_error')
     if last_error:
-        debug(f'last error: {last_error}')
-        echo('', exit=1)
+        url = lain_docs('design.html#lain-resource-design')
+        echo('')
+        error(f'📖 learn about resource management: {url}', exit=1)
 
 
 @lain.command()

@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta, timezone
+from math import ceil
 from statistics import StatisticsError, quantiles
 
 import click
@@ -8,11 +9,11 @@ from requests.exceptions import ReadTimeout
 
 from lain_cli.utils import (
     RequestClientMixin,
+    context,
     ensure_str,
     error,
     tell_cluster_config,
     warn,
-    context,
 )
 
 
@@ -59,7 +60,7 @@ class Prometheus(RequestClientMixin):
         cpu_result = self.query_cpu(appname, proc_name)
         # [{'metric': {}, 'value': [1595486084.053, '4.990567343235413']}]
         if cpu_result:
-            cpu_top_list = [int(float(p[-1])) for p in cpu_result[0]['values']]
+            cpu_top_list = [ceil(float(p[-1])) for p in cpu_result[0]['values']]
             cnt = len(cpu_top_list)
             if cpu_top_list.count(0) / cnt > 0.7:
                 accurate = False
