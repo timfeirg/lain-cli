@@ -84,7 +84,7 @@ LAIN_EXBIN_PREFIX = (
     ENV.get('LAIN_EXBIN_PREFIX') or ENV.get('HOMEBREW_PREFIX') or '/usr/local/bin'
 )
 KUBECONFIG_DIR = expanduser('~/.kube')
-HELM_MIN_VERSION_STR = 'v3.7.1'
+HELM_MIN_VERSION_STR = 'v3.8.0'
 HELM_MIN_VERSION = version.parse(HELM_MIN_VERSION_STR)
 STERN_MIN_VERSION_STR = '1.11.0'
 STERN_MIN_VERSION = version.parse(STERN_MIN_VERSION_STR)
@@ -1259,14 +1259,16 @@ def helm_version_challenge():
 
 
 def download_helm():
-    platform_ = tell_platform()
-    machine = tell_machine()
-    # download directly from https://github.com/helm/helm/releases/ if you
-    # have a better internet connection
-    url = f'https://mirrors.huaweicloud.com/helm/{HELM_MIN_VERSION_STR}/helm-{HELM_MIN_VERSION_STR}-{platform_}-{machine}.tar.gz'
-    return download_binary(
-        url, join(LAIN_EXBIN_PREFIX, 'helm'), extract=f'{platform_}-{machine}/helm'
-    )
+    error(f'you should install helm >= {HELM_MIN_VERSION}, for example:')
+    platform = tell_platform()
+    if platform == 'windows':
+        error('choco install kubernetes-helm', exit=True)
+
+    if platform == 'darwin':
+        error('brew install helm', exit=True)
+
+    if platform == 'linux':
+        error('download from https://github.com/helm/helm/releases/', exit=True)
 
 
 def helm(*args, check=True, exit=False, **kwargs):

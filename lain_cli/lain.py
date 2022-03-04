@@ -497,14 +497,17 @@ def lint(ctx, simple):
 
     options = tell_helm_options((), deduce_image=False)
     helm('lint', f'./{CHART_DIR_NAME}', *options, capture_output=True)
-    res = helm(
-        'template', *options, f'./{CHART_DIR_NAME}', capture_output=True
-    )
+    res = helm('template', *options, f'./{CHART_DIR_NAME}', capture_output=True)
     if not ensure_str(res.stdout).strip():
         error('helm template render result is empty, this is probably due to:')
         url = lain_docs('app.html#helm-values')
-        error(f'* ./{CHART_DIR_NAME}/values.yaml is empty, 📖 learn about values.yaml at {url}')
-        error('* helm chart is not complete (fix using lain init --template-only --commit)', exit=1)
+        error(
+            f'* ./{CHART_DIR_NAME}/values.yaml is empty, 📖 learn about values.yaml at {url}'
+        )
+        error(
+            '* helm chart is not complete (fix using lain init --template-only --commit)',
+            exit=1,
+        )
 
     # check chart version
     chart_yaml = f'./{CHART_DIR_NAME}/Chart.yaml'
@@ -1232,7 +1235,8 @@ def template(ctx, pairs, debug):
     res = helm(
         'template', *options, release_name, f'./{CHART_DIR_NAME}', capture_output=True
     )
-    echo(res.stdout)  # make sure content is printed by main python process, pytest needs this
+    # make sure content is printed by main python process, pytest needs this
+    echo(res.stdout)
 
 
 @lain.command()
