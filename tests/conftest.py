@@ -68,6 +68,7 @@ with click.Context(click.Command('lain'), obj={}):
     TEST_CLUSTER_CONFIG = tell_cluster_config(TEST_CLUSTER)
 
 DUMMY_URL = f'http://{DUMMY_APPNAME}.{TEST_CLUSTER_CONFIG["domain"]}'
+DUMMY_URL_HTTPS = f'https://{DUMMY_APPNAME}.{TEST_CLUSTER_CONFIG["domain"]}'
 # this url will point to proc.web-dev in example_lain_yaml
 DUMMY_DEV_URL = f'http://{DUMMY_APPNAME}-dev.{TEST_CLUSTER_CONFIG["domain"]}'
 RANDOM_STRING = ''.join([choice(ascii_letters) for n in range(9)])

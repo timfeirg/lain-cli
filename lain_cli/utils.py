@@ -311,25 +311,27 @@ def tell_ingress_urls():
 
     def make_external_url(ing):
         host = ing['host']
-        url = f'http://{host}'
+        host_port = f'{host}'
         ingress_external_port = cc.get('ingress_external_port', 80)
         if ingress_external_port != 80:
-            url += f':{ingress_external_port}'
+            host_port += f':{ingress_external_port}'
 
         for path in ing['paths']:
-            yield url + path
+            yield f'https://{host_port}{path}'
+            yield f'http://{host_port}{path}'
 
     def make_internal_url(ing):
         """internal ingress host can be either full domain or just the first
         part (usually appname)"""
         host = ing['host']
-        url = f'http://{host}' if '.' in host else f'http://{host}{domain_suffix}'
+        host_port = f'{host}' if '.' in host else f'{host}{domain_suffix}'
         ingress_internal_port = cc.get('ingress_internal_port', 80)
         if ingress_internal_port != 80:
-            url += f':{ingress_internal_port}'
+            host_port += f':{ingress_internal_port}'
 
         for path in ing['paths']:
-            yield url + path
+            yield f'https://{host_port}{path}'
+            yield f'http://{host_port}{path}'
 
     part1 = itertools.chain.from_iterable([make_internal_url(i) for i in ingresses])
     externalIngresses = values.get('externalIngresses') or []
@@ -1477,7 +1479,7 @@ def asdf(*args, exit=None, check=True, **kwargs):
 
 def has_asdf():
     try:
-        res = asdf('--version', check=False)
+        res = asdf('--version', check=False, capture_output=True)
     except FileNotFoundError:
         if tell_platform() != 'windows':
             warn(
