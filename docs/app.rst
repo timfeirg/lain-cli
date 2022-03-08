@@ -251,17 +251,19 @@ ENV (环境变量) 管理
 日志和监控
 ----------
 
-:code:`lain logs` 会调用 kubectl (或者更易用的 stern) 来为你实时地打印日志, 但若你想看历史日志, 那就需要你的集群搭建日志收集系统了. 在 :ref:`集群配置 <cluster-values>` 里声明 kibana, lain 就会在合适的时候, 提示用户使用 kibana 来看日志了.
+:code:`lain logs` 会调用 kubectl (或者更易用的 stern) 来为你实时地打印日志, 但若你想看历史日志, 那就需要你的集群搭建日志收集系统了. 在 :ref:`集群配置 <cluster-values>` 里声明 kibana, lain 就会在合适的时候, 提示用户使用 Kibana 来看日志了.
 
-* :code:`lain status -s` 会附上看日志的 kibana url (注意! 一定要完整复制 url, 不要漏了最后的括号, kibana 的链接很奇怪)
-* 对于 job 或者 cronjob 进程, :code:`lain logs` 可能没那么好用了, job 容器转瞬即逝, 而 :code:`lain logs` 是实时日志, 运行的时候, 很可能容器早就回收了. 这种情况你只好去看 kibana (或者你们自己的日志收集系统) 了.
+* :code:`lain status -s` 除了会一次性打印应用状态, 还会附上看日志的 Kibana URL (注意完整复制 URL, 不要漏了最后的括号)
+* 对于 job 或者 cronjob 进程, :code:`lain logs` 可能没那么好用了, job 容器转瞬即逝, 而 :code:`lain logs` 是实时日志, 运行的时候, 很可能容器早就回收了. 这种情况你只好去看 Kibana 了.
 * 在容器启动失败的情况下, stern 未必能获取到容器日志, 因为此时容器 stdout 还没来得及 attach 吧, 这种情况必须用 :code:`kubectl logs` 才能顺利获取日志了. 这也是为什么 :code:`lain logs` 默认调用的是 kubectl.
 
-至于监控, lain 本身并不是监控系统, 能做的事情都是利用已有的监控功能. 比如 Prometheus 系列功能, 就需要你在 :ref:`集群配置 <cluster-values>` 下写好对应的 API url. 总而言之, 在监控方面, lain 做了这些事:
+至于监控, lain 与 Prometheus 进行了强大的整合:
 
+* 如果集群部署了 Prometheus (并且 SA 做好了相应配置), 那么其实所有应用都"免费赠送"了监控, 不需要你特意做什么设置, 平台就会有容器基础指标的告警(比如容器 OOM, Crash), 以及流量入口的告警(比如大量 HTTP 5xx)
+* 如果集群支持, 你可以用 :code:`lain status -s` 打印出 Grafana URL, 点击查看容器的基础指标监控图
 * :code:`lain status` 里调用了 :code:`kubectl top pod`, 打印出容器的资源占用.
 * :code:`lain lint` 会帮你查询 Prometheus, 用实际资源占用, 对比你在 :code:`chart/values.yaml` 里写的资源声明, 给出合适的修改建议. 详见 :ref:`lain-resource-design`.
-* 如果你想让 Prometheus 来抓取你的应用自己的 metrics, 可以在 :ref:`podAnnotations <helm-values>`, 里做相应的配置声明. 当然啦, 这需要集群里已经部署好 Prometheus, 并且启用 `Service Discovery <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config>`_).
+* 如果免费赠送的监控满足不了你的应用, 那么可以在应用空间实现 metrics API, 让 Prometheus 来抓取. 为了让 Prometheus 来抓取你的应用自己的 metrics, 需要在 :ref:`podAnnotations <helm-values>`, 里做相应的配置声明, 具体就是 :code:`prometheus.io/scrape`, :code:`prometheus.io/port` 两个字段, 参考示范进行填写吧.
 * 如果你是管理员, lain 和监控系统的集成能让你完成许多集群维护管理工作, 比如 :code:`lain admin list-waste` 能查出哪些应用在浪费集群资源, 详见 :ref:`lain-admin-list-waste`.
 
 回滚
