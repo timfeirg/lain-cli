@@ -33,6 +33,7 @@ from lain_cli.utils import (
 )
 from tests.conftest import (
     DUMMY_URL,
+    DUMMY_URL_HTTPS,
     CHART_DIR_NAME,
     DUMMY_APPNAME,
     DUMMY_JOBS_CLAUSE,
@@ -326,4 +327,4 @@ def test_tell_ingress_urls():
     _, urls = run_under_click_context(
         tell_ingress_urls,
     )
-    assert urls == [f'{DUMMY_URL}/']
+    assert set(urls) == set([f'{DUMMY_URL_HTTPS}/', f'{DUMMY_URL}/'])
