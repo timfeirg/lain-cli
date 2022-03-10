@@ -763,10 +763,16 @@ def logs(ctx, proc, tail, use_stern, use_kibana):
             '-l',
             selector,
             timeout=None,
+            capture_error=True,
             check=False,
         )
         if rc(res):
-            too_much_logs_headsup()
+            stderr = ensure_str(res.stderr)
+            if '(BadRequest)' in stderr:
+                error(f'weird container status: {stderr}')
+                error('try lain status instead')
+            else:
+                too_much_logs_headsup()
 
 
 @lain.command()

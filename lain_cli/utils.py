@@ -354,6 +354,19 @@ def parse_ready(ready_str):
     return True
 
 
+def parse_podline(s):
+    """
+    >>> new = 'dummy-web-8d9c66df6-8wffw   0/1     RunContainerError   1 (18s ago)   39s   172.17.0.4   minikube   <none>           <none>'
+    >>> parse_podline(new)
+    ['dummy-web-8d9c66df6-8wffw', '0/1', 'RunContainerError', '1', '39s', '172.17.0.4', 'minikube', '<none>', '<none>']
+    >>> old = 'dummy-web-8d9c66df6-8wffw   0/1     RunContainerError   1   39s   172.17.0.4   minikube   <none>           <none>'
+    >>> parse_podline(old)
+    ['dummy-web-8d9c66df6-8wffw', '0/1', 'RunContainerError', '1', '39s', '172.17.0.4', 'minikube', '<none>', '<none>']
+    """
+    parentheses_removed = re.sub(r'\([^()]*\)', '', s)
+    return parentheses_removed.split()
+
+
 def get_pods(
     appname=None, selector=None, headers=False, show_only_bad_pods=None, check=False
 ):
@@ -535,7 +548,7 @@ def tell_kibana_url(release_name=None, proc=None):
     return url
 
 
-too_much_logs_headsup_str = '''doesn't work for you, here's some tips:
+too_much_logs_headsup_str = '''lain logs didn't work, here's some tips:
     * use stern instead of kubectl logs, lain logs --stern
 {%- if kibana %}
     * use kibana: {{ kibana_url }}

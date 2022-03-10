@@ -15,6 +15,7 @@ from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 
 from lain_cli.utils import (
+    parse_podline,
     context,
     ensure_str,
     get_pods,
@@ -50,7 +51,7 @@ async def refresh_events_text():
         return
     cmd = []
     for podline in bad_pods[1:]:
-        pod_name, ready_str, status, restarts, age, *_ = podline.split()
+        pod_name, ready_str, status, restarts, age, *_ = parse_podline(podline)
         if status == 'Completed':
             continue
         if status == 'Pending':
