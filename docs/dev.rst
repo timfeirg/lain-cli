@@ -117,3 +117,21 @@ lain 的开发非常考虑普适性, 通用性, 你一定希望能获取到 lain
 如果你的定制部分不涉及代码变更, 那么 rebase 是不太容易产生冲突的. 但若你对代码做了修改, 那想必你也熟悉代码仓库, 知道如何进行适配.
 
 做好 rebase 以后, 你肯定担心会引入 bug, 或者破坏原有的功能. 这时候如果你能自己运行下 lain 的测试, 甚至根据自己团队的情况, 进行定制化测试, 那将会大大提高维护的简易度和自信心. lain 有着还算全面的端到端测试, 欢迎参考.
+
+本地运行 lain 的测试
+--------------------
+
+参考 `lain 的 CircleCI <https://github.com/timfeirg/lain-cli/blob/master/.circleci/config.yml>`_ 不难发现, lain 的 E2E 测试就是用 minikube 拉起来一个本地集群, 然后在上边用 `dummy <https://github.com/timfeirg/dummy>`_ 作为测试应用, 来对各种关键流程做正确性验证. 本地运行这个测试也很简单, 介绍下大致步骤:
+
+.. code-block:: bash
+
+  # 运行测试之前, 如果执行过 lain use, 那就需要先删掉 kubeconfig, 否则 minikube 会篡改 link 对应的源文件
+  rm ~/.kube/config
+  # 安装好 minikube 以后, 拉起一个集群
+  minikube start
+  # 安装好 minikube 以后, 默认的 kubeconfig 文件内容就被修改成本地的 minikube 集群了, 因此我们把他改成 lain 默认的 kubeconfig-test
+  mv ~/.kube/config ~/.kube/kubeconfig-test
+  # 运行 lain use, 让 lain 来管理本地 minikube 集群
+  lain use test
+  # 接下来就可以在本地运行各种 E2E 测试啦
+  pytest --pdb tests/test_workflow.py::test_workflow
