@@ -44,9 +44,9 @@ from humanfriendly import (
 from humanfriendly.text import tokenize
 from jinja2 import Environment, FileSystemLoader
 from marshmallow import INCLUDE, Schema, ValidationError, post_load, validates
-from marshmallow.fields import Dict, Function, Int, List, Nested, Raw, Str, Field
-from marshmallow.validate import OneOf, NoneOf
+from marshmallow.fields import Dict, Field, Function, Int, List, Nested, Raw, Str
 from marshmallow.schema import SchemaMeta
+from marshmallow.validate import NoneOf, OneOf
 from packaging import version
 from pip._internal.index.collector import LinkCollector
 from pip._internal.index.package_finder import PackageFinder
@@ -510,11 +510,16 @@ def delete_pod(selector, graceful=False):
         wait_for_pod_up(selector=selector)
 
 
-def deploy_toast(canary=False):
+def deploy_toast(canary=False, re_creation_headsup=False):
     ctx = context()
     ctx.obj.update(tell_cluster_config())
     if canary:
         template = template_env.get_template('canary-toast.txt.j2')
+    elif re_creation_headsup:
+        warn(
+            'container is not re-created, if you want to force re-creation, use lain restart [--graceful]'
+        )
+        return
     else:
         ctx.obj['kibana_url'] = tell_kibana_url()
         template = template_env.get_template('deploy-toast.txt.j2')
@@ -1711,6 +1716,24 @@ def wait_for_svc_up(tries=20):
     return False
 
 
+def get_youngest_pod_ages(selector=None):
+    res = kubectl(
+        'get',
+        'po',
+        '-l',
+        selector,
+        '--no-headers=true',
+        capture_output=True,
+    )
+    ages = []
+    podlines = ensure_str(res.stdout).splitlines()
+    for podline in podlines:
+        _, _, _, _, age, *_ = parse_podline(podline)
+        ages.append(parse_multi_timespan(age))
+
+    return min(ages)
+
+
 def wait_for_pod_up(selector=None, tries=40):
     if not selector:
         ctx = context()
@@ -2896,30 +2919,6 @@ def tell_cluster_config(cluster=None, is_current=None):
                         error(f'you should add this to /etc/hosts: {ip} {name}')
 
     return cc
-
-
-def must_override_appname_when_cluster_specific_build():
-    ctx = context()
-    cluster = ctx.obj['cluster']
-    cluster_values_file = tell_cluster_values_file(cluster=cluster)
-    values = {}
-    override_values_file = ''
-    if cluster_values_file:
-        override_values_file = cluster_values_file
-        values = yalo(cluster_values_file)
-
-    extra_values_file = ctx.obj.get('extra_values_file')
-    if extra_values_file:
-        override_values_file += f' / {extra_values_file}'
-        recursive_update(values, yalo(extra_values_file))
-
-    if 'build' in values:
-        appname = ctx.obj['appname']
-        if appname != values.get('appname'):
-            error(
-                f'you are using cluster-specific build, you must override appname in {override_values_file}',
-                exit=1,
-            )
 
 
 def tell_all_clusters():
