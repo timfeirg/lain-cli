@@ -78,15 +78,11 @@ template_env = Environment(
 CHART_DIR_NAME = 'chart'
 CHART_VERSION = version.parse('0.1.11')
 LOOKOUT_ENV = {'http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY'}
-LAIN_EXBIN_PREFIX = (
-    ENV.get('LAIN_EXBIN_PREFIX') or ENV.get('HOMEBREW_PREFIX') or '/usr/local/bin'
-)
 KUBECONFIG_DIR = expanduser('~/.kube')
 HELM_MIN_VERSION_STR = 'v3.8.0'
 HELM_MIN_VERSION = version.parse(HELM_MIN_VERSION_STR)
 STERN_MIN_VERSION_STR = '1.11.0'
 STERN_MIN_VERSION = version.parse(STERN_MIN_VERSION_STR)
-ENV['PATH'] = f'{LAIN_EXBIN_PREFIX}:{ENV["PATH"]}'
 TIMESTAMP_PATTERN = re.compile(r'\d+')
 LAIN_META_PATTERN = re.compile(r'\d{10,}-\w{40}$')
 KUBERNETES_MIN_MEMORY = parse_size('4MiB', binary=True)
@@ -1511,10 +1507,6 @@ def has_asdf():
     try:
         res = asdf('--version', check=False, capture_output=True)
     except FileNotFoundError:
-        if tell_platform() != 'windows':
-            warn(
-                'strongly encourage you to use asdf to manage kubectl, otherwise you\'ll have to manually download multiple versions of kubectl'
-            )
         return False
     if rc(res):
         error(f'weird asdf error: {res.stderr}')
@@ -1602,29 +1594,11 @@ def try_to_cleanup_job(job_name=None):
 def fix_kubectl(cv=None, sv=None):
     if has_asdf():
         return asdf_global('kubectl', str(sv))
-    if sv:
-        kubectl_path = join(LAIN_EXBIN_PREFIX, f'kubectl-{sv.major}.{sv.minor}')
-    else:
-        candidates = glob(join(LAIN_EXBIN_PREFIX, 'kubectl-*'))
-        if not candidates:
-            error(
-                f'no kubectl found in {LAIN_EXBIN_PREFIX}, please install and save them as {LAIN_EXBIN_PREFIX}/kubectl-x.x, see https://kubernetes.io/docs/tasks/tools/#kubectl',
-                exit=1,
-            )
-
-        kubectl_path = candidates[-1]
-
-    if isfile(kubectl_path):
-        dest = join(LAIN_EXBIN_PREFIX, 'kubectl')
-        ensure_absent(dest)
-        os.symlink(kubectl_path, dest)
-        echo(
-            f'fixed kubectl link to match server version: ln -s -f {kubectl_path} {dest}'
-        )
-    else:
-        error(f'unsupported kubectl {cv} for server version {sv}')
-        error(f'you should download kubectl for {sv}, and put it in {kubectl_path}')
-        error('see https://kubernetes.io/docs/tasks/tools/#kubectl')
+    error(
+        f'you should not use kubectl {cv} for server version {sv}, this may cause problems, see https://kubernetes.io/docs/tasks/tools/#kubectl'
+    )
+    if tell_platform() != 'windows':
+        warn('use asdf to manage kubectl: https://asdf-vm.com/')
 
 
 @lru_cache(maxsize=None)
