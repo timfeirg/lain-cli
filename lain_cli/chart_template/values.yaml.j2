@@ -257,14 +257,16 @@ labels: {}
 # 一般没有人需要写这里的, 但本着模板精神, 还是放一个入口
 # serviceAnnotations: {}
 
-# ingressAnnotations / externalIngressAnnotations 里可以声明一些额外的 nginx 配置
-# 具体可以配置的项目见 https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#annotations
+# ingressAnnotations / externalIngressAnnotations 里可以声明各种额外的 nginx 配置, 比方说强制 https 跳转
+# 详见 https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#annotations
 # ingressAnnotations:
-#   nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: 1
-#   nginx.ingress.kubernetes.io/proxy-next-upstream-tries: 1
+#   nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 # externalIngressAnnotations:
-#   nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: 1
-#   nginx.ingress.kubernetes.io/proxy-next-upstream-tries: 1
+#   nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#   nginx.ingress.kubernetes.io/server-snippet: |
+#     location /api/internal {
+#         return 404;
+#     }
 
 # # 如果你需要用到金丝雀, 则需要自己定义好金丝雀组
 # # 详见 https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#canary
