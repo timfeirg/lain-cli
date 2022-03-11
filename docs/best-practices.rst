@@ -116,6 +116,19 @@
     set -e
     exec python -m http.server
 
+虽说 exec command 是最佳实践, 但似乎这种写法会破坏某些特殊情况下的信号转发机制, 比方说, 如果你要在容器中使用 `xvfb-run <http://manpages.ubuntu.com/manpages/trusty/man1/xvfb-run.1.html>`_, 那你可能需要再外包一层 `Tini <https://github.com/krallin/tini>`_, 否则可能出现 `吞信号导致无法启动 <https://unix.stackexchange.com/questions/244470/xvfb-not-sending-sigusr1-breaking-xvfb-run>`_ 的问题. 示范如下:
+
+.. code-block:: yaml
+
+  command:
+    - tini
+    - --
+    - xvfb-run
+    - pm2-runtime
+    - conf/pm2/config.json
+    - --env
+    - dev
+
 开发前后端分离的应用 (前后端对接)
 ---------------------------------
 
