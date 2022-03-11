@@ -469,11 +469,13 @@ Auto Migration
 在 :code:`values-[CLUSTER].yaml` 里超载 :code:`appname`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-操作和上一小节非常类似, 但此法用于: 在不同集群使用不同的 :code:`appname`, 隔离镜像的命名空间, 便于在不同集群上线定制镜像.
+小团队往往是一个 registry 用于好几个不同的集群, 然而对于一个应用, 在不同集群可能会采用不同的构建流程(也就是定制构建, cluster-specific build).
 
-为啥要来这一出? 因为 lain 默认在不同集群, 使用同一个镜像仓库, 这也满足我们团队大部分后端应用的场景. 如果你的应用有集群定制构建, 推荐你按照本节要求来实践.
+那么问题就来了: :code:`lain build` 产生的镜像 tag, 并不区分集群. 因此 lain 鼓励通过 appname 来区别镜像名, 以此来在不同集群上线不同镜像.
 
-做法非常简单, 在 :code:`values-[CLUSTER].yaml` 里超载一下 :code:`appname` 就行了, 以假想的 A / B 集群为例:
+如果你不愿意超载 appname, 那么 lain 就不允许你使用 :code:`lain deploy --build`. 因为这个命令的特性是 **如果镜像存在, 就省略再次构建**. 因此你只能使用 :code:`lain build --deploy`.
+
+那么超载 appname 是怎么一回事呢, 请看示范:
 
 .. code-block:: yaml
 
@@ -484,27 +486,11 @@ Auto Migration
         - echo building for a ...
 
     # values-b.yaml
+    # 超载 appname 以后, 在 b 集群构建出来的镜像, 仅存入了 dummy-b 这个命名空间, 避免与 a 集群的版本混淆
     appname: dummy-b
     build:
       script:
         - echo building for b ...
-
-效果如下:
-
-.. code-block:: bash
-
-    lain use a
-    # 用 values.yaml 中的流程构建上线
-    lain deploy --build
-    lain use b
-    # 由于在 b 集群超载了 appname, lain 用该 appname 去查询 registry api, 肯定是查不到的
-    # 因此在 lain 看来, b 集群下并未构建镜像, 因此会重新 build
-    # 这样上线的, 就是 b 集群定制化构建的镜像了
-    lain deploy --build
-
-有人就好奇, 我硬要在不同集群都用同一个 :code:`appname`, 然后每次切换集群都用 :code:`lain build --deploy` 现场构建上线, 会有问题吗?
-
-其实如果保证操作规范, 问题的确也不大. 但怕的就是误操作, 将 a 集群的镜像上线到了 b, 这种事情往往都要一大顿排查, 才能修复问题, 因此强烈建议有类似需求的各位, 用本节介绍的方法来做镜像隔离.
 
 在 values 里超载 :code:`releaseName`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

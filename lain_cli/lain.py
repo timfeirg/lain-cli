@@ -7,7 +7,7 @@ from copy import deepcopy
 from functools import partial
 from os import getcwd as cwd
 from os.path import basename, dirname, expanduser, isfile, join
-from time import sleep
+from time import sleep, time
 
 import click
 import packaging
@@ -34,6 +34,7 @@ from lain_cli.prompt import (
 from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
+    check_correct_override,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
@@ -65,6 +66,7 @@ from lain_cli.utils import (
     find,
     get_pod_rc,
     get_pods,
+    get_youngest_pod_ages,
     git,
     goodjob,
     helm,
@@ -84,7 +86,6 @@ from lain_cli.utils import (
     make_canary_name,
     make_image_str,
     make_job_name,
-    must_override_appname_when_cluster_specific_build,
     open_kibana_url,
     parse_kubernetes_cpu,
     pick_pod,
@@ -95,6 +96,7 @@ from lain_cli.utils import (
     tell_cherry,
     tell_cluster,
     tell_cluster_config,
+    tell_cluster_values_file,
     tell_grafana_url,
     tell_helm_options,
     tell_image,
@@ -521,7 +523,6 @@ def lint(ctx, simple):
             exit=True,
         )
 
-    must_override_appname_when_cluster_specific_build()
     if simple:
         ctx.exit(0)
 
@@ -1425,12 +1426,31 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
                 exit=1,
             )
 
+    appname = ctx.obj['appname']
+    if build:
+        headsup = False
+        if not check_correct_override(appname, ctx.obj.get('cluster_values')):
+            headsup = True
+            cluster_values_file = tell_cluster_values_file()
+            error(f'you have overridden build in {cluster_values_file}')
+
+        if not check_correct_override(appname, ctx.obj.get('extra_values')):
+            headsup = True
+            extra_values_file = ctx.obj['extra_values_file']
+            error(f'you have overridden build in {extra_values_file}')
+
+        if headsup:
+            error(
+                'you should not run lain deploy --build, instead, use lain build --deploy'
+            )
+            url = lain_docs('best-practices.html#values-cluster-yaml-appname')
+            error(f'📖 learn more at {url}', exit=1)
+
     # no big deal, just using this line to initialized env first
     # otherwise this deploy may fail because envFrom is referencing a
     # non-existent secret
     tell_secret(ctx.obj['env_name'])
     ensure_resource_initiated(chart=True, secret=True)
-    appname = ctx.obj['appname']
     canary_name = make_canary_name(appname)
     if canary:
         if appname != tell_release_name():
@@ -1463,16 +1483,18 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
 
     ctx.obj['build_jit'] = build
     options = tell_helm_options(pairs, extra='--install', canary=canary)
+    new_image_tag = ctx.obj['image_tag']
     headsup = '''
     While being deployed, you can check the status of you app:
         lain status
         lain logs
     '''
     release_name = tell_release_name()
-    tell_release_image(release_name, silent=True)
+    old_image_tag = tell_release_image(release_name, silent=True)
     previous_revision = ctx.obj.get('git_revision')
     echo(headsup, err=True)
     timeout = tell_job_timeout()
+    deploy_ts = time()
     res = helm(
         'upgrade',
         f'--timeout={timeout}s',
@@ -1494,17 +1516,28 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
         ctx.exit(code)
 
     webhook and webhook.send_deploy_message(previous_revision=previous_revision)
+
+    re_creation_headsup = False
+    if new_image_tag == old_image_tag:
+        # when deploying same version, check for container re-creation
+        lain_('wait')
+        selector = f'app.kubernetes.io/name={appname}'
+        age = get_youngest_pod_ages(selector)
+        deploy_duration = time() - deploy_ts
+        if age > deploy_duration:
+            re_creation_headsup = True
+
     tests = ctx.obj['values'].get('tests')
     if tests:
         lain_('wait')
         # sometimes test pods are cleaned up prematurely, and this command will fail
         helm('test', '--logs', release_name, check=False)
-    else:
+    elif not re_creation_headsup:
         isatty = sys.stdout.isatty()
         if isatty and called_by_sh() and not delete_after and not canary and not wait:
             lain_('status')
 
-    deploy_toast(canary=canary)
+    deploy_toast(canary=canary, re_creation_headsup=re_creation_headsup)
     try_to_print_job_logs()
     if delete_after:
         lain_('delete', f'--after={delete_after}')
