@@ -925,6 +925,17 @@ def tell_job_timeout():
     return max(timeouts)
 
 
+def check_correct_override(appname, partial_values):
+    """if cluster-specific build is used, you should also override appname"""
+    if not partial_values:
+        return True
+    if 'build' in partial_values:
+        if appname == partial_values.get('appname'):
+            return True
+        return False
+    return True
+
+
 def tell_helm_options(kvpairs=None, deduce_image=True, canary=False, extra=()):
     """Sure you can override helm values, but I might not approve it"""
     kvdic = dict(kvpairs or ())
@@ -2315,6 +2326,7 @@ def update_extra_values(values, cluster=None, ignore_extra=False):
         )
 
     cluster_values_file = tell_cluster_values_file(cluster=cluster)
+    ctx = context(silent=True)
     if cluster_values_file:
         dic = yalo(open(cluster_values_file))
         if not isinstance(dic, dict):
@@ -2329,6 +2341,9 @@ def update_extra_values(values, cluster=None, ignore_extra=False):
                     exit=1,
                 )
 
+        if ctx:
+            ctx.obj['cluster_values'] = dic
+
         try:
             recursive_update(
                 values, dic, ignore_extra=ignore_extra, prevent_duplication=True
@@ -2338,10 +2353,12 @@ def update_extra_values(values, cluster=None, ignore_extra=False):
             error(f'{e}')
             error('you must eliminate all duplications before proceed', exit=1)
 
-    ctx = context(silent=True)
     extra_values_file = ctx and ctx.obj.get('extra_values_file')
     if extra_values_file:
-        recursive_update(values, yalo(extra_values_file), ignore_extra=ignore_extra)
+        extra_values = yalo(extra_values_file)
+        recursive_update(values, extra_values, ignore_extra=ignore_extra)
+        if ctx:
+            ctx.obj['extra_values'] = extra_values
 
 
 def load_helm_values(values_yaml=f'./{CHART_DIR_NAME}/values.yaml'):

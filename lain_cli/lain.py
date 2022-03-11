@@ -34,7 +34,7 @@ from lain_cli.prompt import (
 from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
-    get_youngest_pod_ages,
+    check_correct_override,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
@@ -66,6 +66,7 @@ from lain_cli.utils import (
     find,
     get_pod_rc,
     get_pods,
+    get_youngest_pod_ages,
     git,
     goodjob,
     helm,
@@ -95,6 +96,7 @@ from lain_cli.utils import (
     tell_cherry,
     tell_cluster,
     tell_cluster_config,
+    tell_cluster_values_file,
     tell_grafana_url,
     tell_helm_options,
     tell_image,
@@ -1424,12 +1426,31 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
                 exit=1,
             )
 
+    appname = ctx.obj['appname']
+    if build:
+        headsup = False
+        if not check_correct_override(appname, ctx.obj.get('cluster_values')):
+            headsup = True
+            cluster_values_file = tell_cluster_values_file()
+            error(f'you have overridden build in {cluster_values_file}')
+
+        if not check_correct_override(appname, ctx.obj.get('extra_values')):
+            headsup = True
+            extra_values_file = ctx.obj['extra_values_file']
+            error(f'you have overridden build in {extra_values_file}')
+
+        if headsup:
+            error(
+                'you should not run lain deploy --build, instead, use lain build --deploy'
+            )
+            url = lain_docs('best-practices.html#values-cluster-yaml-appname')
+            error(f'📖 learn more at {url}', exit=1)
+
     # no big deal, just using this line to initialized env first
     # otherwise this deploy may fail because envFrom is referencing a
     # non-existent secret
     tell_secret(ctx.obj['env_name'])
     ensure_resource_initiated(chart=True, secret=True)
-    appname = ctx.obj['appname']
     canary_name = make_canary_name(appname)
     if canary:
         if appname != tell_release_name():
