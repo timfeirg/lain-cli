@@ -9,10 +9,8 @@ import platform
 import re
 import shlex
 import shutil
-import stat
 import subprocess
 import sys
-import tarfile
 from collections import defaultdict
 from collections.abc import Mapping
 from contextlib import contextmanager, suppress
@@ -1252,12 +1250,15 @@ def stern_version_challenge():
 
 
 def download_stern():
-    platform_ = tell_platform()
-    machine = tell_machine()
-    # download directly from https://github.com/wercker/stern/releases if you
-    # have a better internet connection
-    url = f'https://ghproxy.com/https://github.com/wercker/stern/releases/download/{STERN_MIN_VERSION_STR}/stern_{platform_}_{machine}'
-    return download_binary(url, join(LAIN_EXBIN_PREFIX, 'stern'))
+    platform = tell_platform()
+    if platform == 'windows':
+        error('choco install stern', exit=True)
+
+    if platform == 'darwin':
+        error('brew install stern', exit=True)
+
+    if platform == 'linux':
+        error('see https://github.com/wercker/stern', exit=True)
 
 
 def stern(*args, check=True, **kwargs):
@@ -1299,7 +1300,7 @@ def download_helm():
         error('brew install helm', exit=True)
 
     if platform == 'linux':
-        error('download from https://github.com/helm/helm/releases/', exit=True)
+        error('see https://github.com/helm/helm', exit=True)
 
 
 def helm(*args, check=True, exit=False, **kwargs):
@@ -1852,43 +1853,6 @@ def tell_platform():
     raise ValueError(
         f'Sorry, never seen this platform: {platform_}. Use a Mac / Linux / Windows for lain'
     )
-
-
-def download_binary(url, dest, extract=None):
-    headsup = f'''Don\'t mind me, just gonna download {url} into {dest}.
-    If you want to use different path other than {dest}, export LAIN_EXBIN_PREFIX to customize.
-    Or you can simply install them yourself (for example using homebrew).
-    '''
-    click.echo(headsup, err=True)
-    if extract:
-        download_path = f'/tmp/{basename(url)}'
-    else:
-        download_path = dest
-
-    try:
-        with requests.get(url, stream=True) as res:
-            with open(download_path, 'wb') as f:
-                shutil.copyfileobj(res.raw, f)
-            if res.status_code > 400:
-                error(f'download {url} failed: {res.status_code}, {res.text}', exit=1)
-
-    except KeyboardInterrupt:
-        ensure_absent(download_path)
-        error(f'Download did not complete, {download_path} is cleaned up', exit=1)
-
-    if extract:
-        with tarfile.open(download_path) as tarf:
-            for member in tarf.getmembers():
-                if member.name == extract:
-                    binary_name = basename(dest)
-                    member.name = binary_name
-                    tarf.extract(member, path=dirname(dest))
-
-        ensure_absent(download_path)
-
-    # do a `chmod +x` on this thing
-    st = os.stat(dest)
-    os.chmod(dest, st.st_mode | stat.S_IEXEC)
 
 
 def ensure_absent(path):
