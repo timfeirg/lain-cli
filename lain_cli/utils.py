@@ -513,6 +513,8 @@ def deploy_toast(canary=False, re_creation_headsup=False):
         warn(
             'container is not re-created, if you want to force re-creation, use lain restart [--graceful]'
         )
+        url = lain_docs('errors.html#id4')
+        warn(f'📖 learn more at {url}')
         return
     else:
         ctx.obj['kibana_url'] = tell_kibana_url()
