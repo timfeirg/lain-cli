@@ -133,6 +133,8 @@ lain 如何工作?
 * :code:`lain deploy` 背后的实现是 :code:`helm upgrade --install`, lain 会以 subprocess 的方式进行这个调用, 如果缺少可执行文件或者版本不符合要求, 将会从 CDN 上下载.
 * 容器管理等功能由 kubectl 来实现, 比如 :code:`lain logs; lain status`, 如果你有需要, 完全可以直接使用 Kubectl / Helm 来进行 lain 没有覆盖到的特殊操作.
 
+.. _reading-list:
+
 我不熟悉 Kubernetes / Helm / Docker, 怎么办?
 --------------------------------------------
 
