@@ -146,8 +146,16 @@ Eviction 容器其实就是 Kubernetes 在"收拾自己的抽屉", 而 Evicted P
 我的应用无法访问, 如何排查?
 ---------------------------
 
-请求失败/超时的排查是个大话题, 各种技术框架下排查的操作都有所不同. Kubernetes 下的排查尤为复杂, 有兴趣可以详读 `A visual guide on troubleshooting Kubernetes deployments <https://learnk8s.io/troubleshooting-deployments>`_. 此处仅罗列一些 lain 下常见的不易排查的问题:
+如果你的应用无法访问, 比如 502, 证书错误, 或者干脆直接超时, 请遵循以下路径进行排查:
 
-* 用 :code:`lain x` 钻进容器里, 直接对服务端口进行 curl 请求, 能正常响应吗? 如果在容器里都无法访问, 那摆明是应用空间的问题了
+* 同一个集群下的其他服务, 能正常访问吗? 如果大家都挂了, 那多半就是流量入口本身挂了, 找 SA 解决
+* 用 :code:`lain [status|logs]` 对应用状态进行一次全面确认, 看看有无异常
+* 特别注意, :code:`lain status` 会同时显示 http / https 的请求状态, 如果二者请求状态不一致, 请参考以下排查要点进行甄别:
+
+  * https 正常访问, http 请求失败: 有些应用在 web server 内做了强制 https 转发 (force-ssl-redirect), 劝你别这么做, 万一配置错误还会导致 http 状态下请求异常 (因为被 rewrite 到了错误的 url). 总而言之, 应用空间只处理 http 就好, 把 TLS 截断交给 ingress controller 去做
+  * http 正常访问, https 请求失败: 如果你的应用是首次上线新的域名, cert-manager 需要一些时间去申请签发证书, 如果超过五分钟还提示证书错误, 那就找 SA 去处理证书错误问题
+* 检查一下 :code:`values.yaml` 里声明的 :code:`containerPort`, 是不是写错了? 真的是进程实际监听的端口吗? 有些人声明了 :code:`containerPort: 9000`, 结果 web server 实际在监听 :code:`8000`, 这就怪不得会发生 Connection refused 了
+* 如果你不确定应用到底在监听哪个端口, 可以用 :code:`lain x` 钻进容器里, 在容器内测试请求, 能正常响应吗? 如果在容器里都无法访问, 那就是 web server 本身有问题了, 请你继续在应用空间进行排查
 * 如果你认为 web server 的配置和启动都正常, 不妨先检查下资源声明: 如果 CPU / Memory limits 太小, 进程拿不到足够的资源, 可能会响应非常慢, 造成超时
-* :code:`values.yaml` 里声明的 :code:`containerPort`, 是不是写错了? 真的是进程实际监听的端口吗? 有些人声明了 :code:`containerPort: 9000`, 结果 web server 实际在监听 :code:`8000`, 这就怪不得会发生 Connection refused 了
+
+不过说到底, 请求失败/超时的排查是个大话题, 各种技术框架下排查的操作都有所不同. Kubernetes 下的排查尤为复杂, 有兴趣可以详读 `A visual guide on troubleshooting Kubernetes deployments <https://learnk8s.io/troubleshooting-deployments>`_.
