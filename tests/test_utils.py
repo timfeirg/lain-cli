@@ -1,5 +1,5 @@
 import shutil
-from os.path import basename, join
+from os.path import basename, exists, join
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -14,7 +14,9 @@ from lain_cli.utils import (
     banyun,
     change_dir,
     context,
+    ensure_absent,
     ensure_str,
+    find,
     lain_meta,
     load_helm_values,
     make_docker_ignore,
@@ -25,21 +27,21 @@ from lain_cli.utils import (
     tell_cluster_config,
     tell_git_ignore,
     tell_helm_options,
+    tell_ingress_urls,
     tell_job_names,
     tell_release_name,
-    tell_ingress_urls,
     yadu,
     yalo,
 )
 from tests.conftest import (
-    DUMMY_URL,
-    DUMMY_URL_HTTPS,
     CHART_DIR_NAME,
     DUMMY_APPNAME,
     DUMMY_JOBS_CLAUSE,
     DUMMY_OVERRIDE_RELEASE_NAME,
     DUMMY_REPO,
     DUMMY_TESTS_CLAUSE,
+    DUMMY_URL,
+    DUMMY_URL_HTTPS,
     RANDOM_STRING,
     TEST_CLUSTER,
     run_under_click_context,
@@ -52,6 +54,17 @@ BULLSHIT = '不过我倒不在乎做什么工作,只要没人认识我,我也不
 def test_make_job_name():
     _, res = run_under_click_context(make_job_name, args=[''])
     assert res == 'dummy-5562bd9d33e0c6ce'  # this is a stable hash value
+
+
+@pytest.mark.usefixtures('dummy_helm_chart')
+def test_ensure_absent():
+    values_j2 = f'{CHART_DIR_NAME}/values.yaml.j2'
+    Path(values_j2).touch()
+    ensure_absent(CHART_DIR_NAME, preserve=[values_j2, f'{CHART_DIR_NAME}/not-here'])
+    left_over = find(CHART_DIR_NAME)
+    assert list(left_over) == [basename(values_j2)]
+    ensure_absent(CHART_DIR_NAME)
+    assert not exists(CHART_DIR_NAME)
 
 
 def test_ya():

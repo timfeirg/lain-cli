@@ -4,7 +4,27 @@ import pytest
 
 from lain_cli.lain import lain
 from lain_cli.utils import CLI_DIR, docker_save_name, ensure_absent, lain_meta, yalo
-from tests.conftest import DUMMY_APPNAME, run, run_under_click_context
+from tests.conftest import (
+    CHART_DIR_NAME,
+    DUMMY_APPNAME,
+    DUMMY_VALUES_PATH,
+    run,
+    run_under_click_context,
+)
+
+
+@pytest.mark.usefixtures('dummy_helm_chart')
+def test_lain_init_with_values_j2():
+    values_j2 = f'{CHART_DIR_NAME}/values.yaml.j2'
+    j2 = 'appname: {{ appname }}'
+    with open(values_j2, 'w') as f:
+        f.write(j2)
+
+    res = run(lain, args=['init'], returncode=1)
+    assert 'already exists' in res.output
+    run(lain, args=['--ignore-lint', 'init', '-f'])
+    values = yalo(DUMMY_VALUES_PATH)
+    assert values == {'appname': DUMMY_APPNAME}
 
 
 @pytest.mark.last  # this test cannot run in parallel with other e2e tests

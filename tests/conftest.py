@@ -48,7 +48,6 @@ def run(*args, returncode=0, obj=None, **kwargs):
     """run cli command in a click context"""
     runner = CliRunner()
     env = environ.copy()
-    env['LAIN_IGNORE_LINT'] = 'false'
     obj = obj or {}
     res = runner.invoke(*args, obj=obj, env=env, **kwargs)
     if returncode is not None:

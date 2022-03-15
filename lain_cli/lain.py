@@ -6,13 +6,14 @@ import sys
 from copy import deepcopy
 from functools import partial
 from os import getcwd as cwd
-from os.path import basename, dirname, expanduser, isfile, join
+from os.path import basename, dirname, exists, expanduser, isfile, join
 from time import sleep, time
 
 import click
 import packaging
 from click import BadParameter
 from humanfriendly import InvalidTimespan, parse_size, parse_timespan
+from jinja2 import Template
 
 from lain_cli import __version__
 from lain_cli.kibana import Kibana
@@ -34,7 +35,6 @@ from lain_cli.prompt import (
 from lain_cli.scm import tell_scm
 from lain_cli.tencent import TencentClient
 from lain_cli.utils import (
-    check_correct_override,
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
@@ -48,6 +48,7 @@ from lain_cli.utils import (
     KVPairType,
     banyun,
     called_by_sh,
+    check_correct_override,
     clean_canary_ingress_annotations,
     click_parse_timespan,
     debug,
@@ -634,22 +635,25 @@ def assign_mr(project, mr_id):
 def init(ctx, appname, force, template_only, commit):
     """generate a helm chart for your app."""
     ctx.obj['appname'] = appname
+    values_j2 = f'{CHART_DIR_NAME}/values.yaml.j2'
     if force:
-        ensure_absent(CHART_DIR_NAME)
+        ensure_absent(CHART_DIR_NAME, preserve=values_j2)
 
     try:
         os.mkdir(CHART_DIR_NAME)
     except FileExistsError:
-        if not template_only:
-            err = f'''Cannot render helm chart because Directory ./{CHART_DIR_NAME} already exists.
-            If you really wanna do this again, use the -f option'''
-            error(err)
-            ctx.exit(1)
+        pass
 
     for f in find(CHART_TEMPLATE_DIR):
         if is_values_file(f) and template_only:
             continue
         render_dest = join(CHART_DIR_NAME, f.replace('.j2', '', 1))
+        if exists(render_dest):
+            error(
+                f'cannot render helm chart because {render_dest} already exists, try again with -f',
+                exit=1,
+            )
+
         if f.endswith('.j2'):
             template = template_env.get_template(basename(f))
             with open(render_dest, 'w') as f:
@@ -659,10 +663,19 @@ def init(ctx, appname, force, template_only, commit):
             os.makedirs(dirname(render_dest), exist_ok=True)
             shutil.copyfile(src, render_dest)
 
+    if exists(values_j2):
+        with open(values_j2) as f:
+            template = Template(f.read())
+
+        with open(f'{CHART_DIR_NAME}/values.yaml', 'w') as f:
+            f.write(template.render(**ctx.obj))
+
     if commit:
         git('add', 'chart')
         git('restore', '--staged', 'chart/values*.yaml')
         git('commit', '-m', f'[skip ci] upgrade helm chart to {CHART_VERSION}')
+    else:
+        warn('please use --commit, otherwise you\'ll have to git add / commit by hand')
 
     if not ctx.obj['ignore_lint']:
         lain_('lint', '--simple')
