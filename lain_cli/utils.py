@@ -208,6 +208,8 @@ def ensure_str(s):
 
 
 def echo(s, fg=None, exit=None, err=False, mark_error=False, clean=True):
+    if s is None:
+        return
     s = ensure_str(s)
     if clean:
         s = cleandoc(s)
