@@ -25,7 +25,7 @@ appname: {{ appname }}
 # 如果你的项目并不需要额外的自定义挂载, 那么 volumes 可以留空
 # 不过在这里留空, 并不表示你的应用没有任何 volumes, 因为 lain 默认会赠送你 lain secret 的 volume, 写死在 helm chart 内了
 
-# 比方说, 如果你要挂载 juicefs, 那就需要先声明出 volume:
+# 比方说, 如果你要挂载 JuiceFS, 那就需要先声明出 volumes, 然后让 SA 帮你把目录提前做好 mkdir + chown
 # volumes:
 #   - name: jfs-backup-dir
 #     hostPath:
