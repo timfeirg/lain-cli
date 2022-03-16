@@ -23,8 +23,8 @@ from io import BytesIO
 from numbers import Number
 from os import fdopen
 from os import getcwd as cwd
-from os import getppid, readlink, remove, unlink
-from os.path import abspath, basename, dirname, expanduser, isdir, isfile, join
+from os import getppid, makedirs, readlink, remove, unlink
+from os.path import abspath, basename, dirname, exists, expanduser, isdir, isfile, join
 from tempfile import TemporaryDirectory, mkstemp
 from time import sleep, time
 
@@ -1833,25 +1833,46 @@ def tell_platform():
     )
 
 
-def ensure_absent(path):
+def ensure_absent(path, preserve=None):
+    """delete files, can optionally ignore some files using preserve"""
     if not isinstance(path, str):
         for p in path:
-            ensure_absent(p)
+            ensure_absent(p, preserve=preserve)
 
         return
+
+    if isinstance(preserve, str):
+        preserve = [preserve]
+
+    if preserve:
+        d = TemporaryDirectory()
+        for p in preserve:
+            if not exists(p):
+                continue
+            temp_path = join(d.name, p)
+            makedirs(dirname(temp_path))
+            shutil.move(p, temp_path)
 
     if isdir(path):
         try:
             shutil.rmtree(path)
-            return True
         except FileNotFoundError:
             pass
     else:
         try:
             remove(path)
-            return True
         except FileNotFoundError:
             pass
+
+    if preserve:
+        for p in preserve:
+            temp_path = join(d.name, p)
+            if not exists(temp_path):
+                continue
+            makedirs(dirname(p))
+            shutil.move(temp_path, p)
+
+        d.cleanup()
 
 
 def find(path):
