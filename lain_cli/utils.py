@@ -1065,17 +1065,17 @@ def tell_image_tag(image_tag=None):
 
 def lain_(*args, exit=None, **kwargs):
     ctx = context()
-    extra_values_file = ctx.obj['extra_values_file']
+    extra_values_file = ctx.obj.get('extra_values_file')
     if extra_values_file:
         args = ['--values', extra_values_file.name, *args]
 
     cmd = ['lain', *args]
     kwargs.setdefault('check', True)
     kwargs.setdefault('env', ENV)
-    if ctx.obj['ignore_lint']:
+    if ctx.obj.get('ignore_lint'):
         kwargs['env']['LAIN_IGNORE_LINT'] = 'true'
 
-    if ctx.obj['remote_docker']:
+    if ctx.obj.get('remote_docker'):
         kwargs['env']['LAIN_REMOTE_DOCKER'] = 'true'
 
     completed = subprocess_run(cmd, **kwargs)
