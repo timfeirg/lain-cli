@@ -168,8 +168,9 @@ deployments:
 #     ttlSecondsAfterFinished: 86400  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
 #     activeDeadlineSeconds: 3600  # 超时时间, https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
 #     backoffLimit: 0  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#pod-backoff-failure-policy
-#     # 以下 annotation 能保证 helm 在 upgrade 之前运行该 job, 不成功不继续进行 deploy
 #     annotations:
+#       # 一般来说, job 都会搭配 hooks 一起使用, 比方说 pre-upgrade 能保证 helm 在 upgrade 之前运行该 job, 不成功不继续进行部署
+#       # 更多请见 https://helm.sh/docs/topics/charts_hooks/#the-available-hooks
 #       "helm.sh/hook": post-install,pre-upgrade
 #       "helm.sh/hook-delete-policy": before-hook-creation
 #     command:
