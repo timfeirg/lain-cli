@@ -1798,7 +1798,7 @@ def build(ctx, push, deploy, publish, keep_dockerfile):
         lain_('push', *opts)
 
     if deploy:
-        lain_('deploy', exit=True)
+        lain_('deploy', '--wait', exit=True)
 
 
 @lain.command()
