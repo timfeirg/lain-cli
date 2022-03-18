@@ -15,15 +15,17 @@ from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 
 from lain_cli.utils import (
-    parse_podline,
+    DEFAULT_BACKEND_RESPONSE,
     context,
     ensure_str,
     get_pods,
     kubectl,
     parse_kubernetes_cpu,
     parse_multi_timespan,
+    parse_podline,
     parse_ready,
     rc,
+    tell_screen_height,
     tell_pod_deploy_name,
     tell_pods_count,
     template_env,
@@ -186,7 +188,9 @@ def test_url(url):
 
 
 ingress_text_str = '''{% for res in results %}
+{% if res.status is defined %}
 {{ res.url }}   {{ res.status }}   {{ res.text | brief }}
+{% endif %}
 {% endfor %}
 '''
 ingress_text_template = template_env.from_string(ingress_text_str)
@@ -223,7 +227,7 @@ def ingress_text():
                 }
             )
         else:
-            raise ValueError(f'never seen this request result: {re}')
+            raise ValueError(f'cannot process this request result: {re}')
         return report
 
     # why use ThreadPoolExecutor?
@@ -361,21 +365,85 @@ async def refresh_bad_pod_text():
     set_content('pod_text', '\n'.join(pods) or ensure_str(res.stderr))
 
 
-async def refresh_bad_node_text():
+def bad_node_text():
     ctx = context()
-    cmd = ctx.obj['watch_node_command'] = ['get', 'node']
+    cmd = ctx.obj['watch_node_command'] = ['get', 'node', '--no-headers']
     res = kubectl(*cmd, timeout=2, capture_output=True, check=False)
     if rc(res):
-        return set_content('node_text', ensure_str(res.stderr))
+        return ensure_str(res.stderr)
     all_nodes = ensure_str(res.stdout)
     bad_nodes = [line for line in all_nodes.splitlines() if ' Ready ' not in line]
-    report = '\n'.join(bad_nodes)
-    set_content('node_text', report)
+    return '\n'.join(bad_nodes)
+
+
+async def refresh_bad_node_text():
+    set_content('node_text', bad_node_text())
+
+
+async def refresh_global_ingress_text():
+    set_content('ingress_text', global_ingress_text())
+
+
+def global_ingress_text():
+    ctx = context()
+    global_urls = ctx.obj['global_urls']
+    if not global_urls:
+        return ''
+    rl = []
+    results = []
+
+    def tidy_report(re):
+        if not re.request:
+            return ''
+        report = {'url': re.request.url}
+        if isinstance(re, requests.Response):
+            code = re.status_code
+            if code >= 502 or (
+                code == 404 and re.text.strip() == DEFAULT_BACKEND_RESPONSE
+            ):
+                report.update(
+                    {
+                        'status': re.status_code,
+                        'text': re.text,
+                    }
+                )
+        elif isinstance(re, requests.exceptions.RequestException):
+            report.update(
+                {
+                    'status': re.__class__.__name__,
+                    'text': str(re),
+                }
+            )
+        else:
+            raise ValueError(f'cannot process this request result: {re}')
+        return report
+
+    simple = ctx.obj.get('simple')
+    with ThreadPoolExecutor(max_workers=len(global_urls)) as executor:
+        for url in global_urls:
+            rl.append(executor.submit(test_url, url))
+
+        for future in as_completed(rl):
+            single_report = tidy_report(future.result())
+            if not single_report or not single_report.get('status'):
+                continue
+            if simple or len(results) < tell_screen_height(0.4):
+                results.append(single_report)
+
+    render_ctx = {'results': sorted(results, key=itemgetter('url'))}
+    res = ingress_text_template.render(**render_ctx)
+    return res
 
 
 async def refresh_admin_content():
     while True:
-        await asyncio.wait([refresh_bad_pod_text(), refresh_bad_node_text()])
+        await asyncio.wait(
+            [
+                refresh_bad_pod_text(),
+                refresh_bad_node_text(),
+                refresh_global_ingress_text(),
+            ]
+        )
         get_app().invalidate()
         await asyncio.sleep(0.1)
 
@@ -413,6 +481,21 @@ def build_cluster_status():
         ]
     )
     parts = [bad_pod_container, bad_node_container]
+    global_urls = ctx.obj.get('global_urls')
+    if global_urls:
+        ingress_text_control = FormattedTextControl(
+            text=lambda: CONTENT_VENDERER['ingress_text']
+        )
+        ingress_window = Win(
+            content=ingress_text_control, height=lambda: tell_screen_height(0.4)
+        )
+        ingress_container = HSplit(
+            [
+                Win(height=1, content=Title('bad url requests')),
+                ingress_window,
+            ]
+        )
+        parts.append(ingress_container)
 
     # building root container
     root_container = HSplit(parts)

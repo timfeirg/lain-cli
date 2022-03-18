@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import itertools
 import os
 import shutil
 import sys
@@ -25,8 +26,11 @@ from lain_cli.lint import (
 )
 from lain_cli.prometheus import Alertmanager, Prometheus
 from lain_cli.prompt import (
+    build_cluster_status_command,
     build_app_status_command,
     display_app_status,
+    global_ingress_text,
+    bad_node_text,
     display_cluster_status,
     ingress_text,
     pod_text,
@@ -85,6 +89,7 @@ from lain_cli.utils import (
     lain_docs,
     lain_meta,
     make_canary_name,
+    make_external_url,
     make_image_str,
     make_job_name,
     open_kibana_url,
@@ -255,9 +260,41 @@ def list_images(ctx):
 
 
 @admin.command()
+@click.option(
+    '--simple',
+    '-s',
+    is_flag=True,
+    help='print static status, rather than display in prompt app',
+)
 @click.pass_context
-def status(ctx):
+def status(ctx, simple):
     ctx.obj['silent'] = True
+    ctx.obj['simple'] = simple
+    host_list = ensure_str(
+        kubectl(
+            'get',
+            'ing',
+            '--all-namespaces',
+            '--no-headers',
+            r'-o=custom-columns=HOST:..rules[*].host',
+            capture_output=True,
+        ).stdout
+    ).splitlines()
+    cc = tell_cluster_config()
+    ingress_external_port = cc.get('ingress_external_port', 80)
+    urls = itertools.chain.from_iterable(
+        make_external_url(host, port=ingress_external_port) for host in host_list
+    )
+    ctx.obj['global_urls'] = set(urls)
+    if simple:
+        build_cluster_status_command()
+        res, pods = get_pods(headers=True, show_only_bad_pods=True)
+        report = ['\n'.join(pods) or ensure_str(res.stderr)]
+        report.extend(['bad nodes', bad_node_text()])
+        report.extend(['bad url requests', global_ingress_text()])
+        echo('\n'.join(report))
+        ctx.exit(0)
+
     display_cluster_status()
 
 
@@ -687,7 +724,12 @@ def init(ctx, appname, force, template_only, commit):
 
 
 @lain.command()
-@click.option('--simple', '-s', is_flag=True, help='the brief version')
+@click.option(
+    '--simple',
+    '-s',
+    is_flag=True,
+    help='print static status, rather than display in prompt app',
+)
 @click.pass_context
 def status(ctx, simple):
     """view app status"""

@@ -103,6 +103,7 @@ INGRESS_CANARY_ANNOTATIONS = {
     'nginx.ingress.kubernetes.io/canary-by-cookie',
     'nginx.ingress.kubernetes.io/canary-weight',
 }
+DEFAULT_BACKEND_RESPONSE = 'default backend - 404'
 
 
 def parse_multi_timespan(s):
@@ -296,6 +297,30 @@ def tell_domain_suffix(cc):
     return domain_suffix
 
 
+def make_external_url(host, paths=None, port=80):
+    host_port = f'{host}'
+    if port != 80:
+        host_port += f':{port}'
+
+    paths = paths or ['/']
+    for path in paths:
+        yield f'https://{host_port}{path}'
+        yield f'http://{host_port}{path}'
+
+
+def make_internal_url(host, paths=None, port=80, domain_suffix=None):
+    """internal ingress host can be either full domain or just the first
+    part (usually appname)"""
+    host_port = f'{host}' if '.' in host else f'{host}{domain_suffix}'
+    if port != 80:
+        host_port += f':{port}'
+
+    paths = paths or ['/']
+    for path in paths:
+        yield f'https://{host_port}{path}'
+        yield f'http://{host_port}{path}'
+
+
 def tell_ingress_urls():
     ctx = context()
     values = ctx.obj['values']
@@ -304,35 +329,23 @@ def tell_ingress_urls():
     if not cc:
         return
     domain_suffix = tell_domain_suffix(cc)
-
-    def make_external_url(ing):
-        host = ing['host']
-        host_port = f'{host}'
-        ingress_external_port = cc.get('ingress_external_port', 80)
-        if ingress_external_port != 80:
-            host_port += f':{ingress_external_port}'
-
-        for path in ing['paths']:
-            yield f'https://{host_port}{path}'
-            yield f'http://{host_port}{path}'
-
-    def make_internal_url(ing):
-        """internal ingress host can be either full domain or just the first
-        part (usually appname)"""
-        host = ing['host']
-        host_port = f'{host}' if '.' in host else f'{host}{domain_suffix}'
-        ingress_internal_port = cc.get('ingress_internal_port', 80)
-        if ingress_internal_port != 80:
-            host_port += f':{ingress_internal_port}'
-
-        for path in ing['paths']:
-            yield f'https://{host_port}{path}'
-            yield f'http://{host_port}{path}'
-
-    part1 = itertools.chain.from_iterable([make_internal_url(i) for i in ingresses])
+    ingress_internal_port = cc.get('ingress_internal_port', 80)
+    ingress_external_port = cc.get('ingress_external_port', 80)
+    part1 = itertools.chain.from_iterable(
+        [
+            make_internal_url(
+                i['host'],
+                paths=i['paths'],
+                port=ingress_internal_port,
+                domain_suffix=domain_suffix,
+            )
+            for i in ingresses
+        ]
+    )
     externalIngresses = values.get('externalIngresses') or []
     part2 = itertools.chain.from_iterable(
-        make_external_url(i) for i in externalIngresses
+        make_external_url(i['host'], paths=i['paths'], port=ingress_external_port)
+        for i in externalIngresses
     )
     return list(part1) + list(part2)
 
@@ -1940,11 +1953,18 @@ def jalo(s):
         raise ValueError(f'cannot decode: {ensure_str(s)}') from e
 
 
+def tell_screen_height(scale):
+    lines = shutil.get_terminal_size().lines
+    return int(lines * scale)
+
+
+def tell_screen_width(scale):
+    cols = shutil.get_terminal_size().columns
+    return max([88, int(cols * scale)])
+
+
 def brief(s):
     r"""
-    >>> a = 'a' * 89
-    >>> brief(a)
-    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...'
     >>> a = '''
     ... foo
     ... bar
@@ -1953,12 +1973,14 @@ def brief(s):
     '\\nfoo\\nbar\\n'
     """
     try:
-        single_line = s.replace('\n', '\\n')
+        single_line = s.encode('unicode_escape')
     except AttributeError:
         return single_line
-    if len(single_line) > 88:
-        return single_line[:88] + '...'
-    return single_line
+    width = tell_screen_width(0.5)
+    if len(single_line) > width:
+        single_line = single_line[:width] + b'...'
+
+    return single_line.decode('utf-8')
 
 
 RESERVED_WORDS = set()
