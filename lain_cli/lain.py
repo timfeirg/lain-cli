@@ -12,6 +12,7 @@ from time import sleep, time
 
 import click
 import packaging
+import requests
 from click import BadParameter
 from humanfriendly import InvalidTimespan, parse_size, parse_timespan
 from jinja2 import Template
@@ -26,12 +27,12 @@ from lain_cli.lint import (
 )
 from lain_cli.prometheus import Alertmanager, Prometheus
 from lain_cli.prompt import (
-    build_cluster_status_command,
-    build_app_status_command,
-    display_app_status,
-    global_ingress_text,
     bad_node_text,
+    build_app_status_command,
+    build_cluster_status_command,
+    display_app_status,
     display_cluster_status,
+    global_ingress_text,
     ingress_text,
     pod_text,
     top_text,
@@ -43,6 +44,7 @@ from lain_cli.utils import (
     CHART_TEMPLATE_DIR,
     CHART_VERSION,
     CLUSTERS,
+    DEFAULT_BACKEND_RESPONSE,
     DOCKER_COMPOSE_FILE_PATH,
     ENV,
     HELM_STUCK_STATE,
@@ -51,6 +53,7 @@ from lain_cli.utils import (
     ClusterConfigSchema,
     KVPairType,
     banyun,
+    brief,
     called_by_sh,
     check_correct_override,
     clean_canary_ingress_annotations,
@@ -188,6 +191,59 @@ def lain(ctx, silent, verbose, ignore_lint, remote_docker, values, use, auto_pil
 @lain.group()
 def admin():
     """admin functionalities, stay away"""
+
+
+@admin.command()
+@click.option(
+    '--dry-run',
+    is_flag=True,
+)
+@click.pass_context
+def delete_bad_ing(ctx, dry_run):
+    ctx.obj['silent'] = True
+    ing_list = ensure_str(
+        kubectl(
+            'get',
+            'ing',
+            '--no-headers',
+            r'-o=custom-columns=NAME:.metadata.name,HOST:..rules[*].host',
+            capture_output=True,
+        ).stdout
+    ).splitlines()
+
+    def delete_loose_ing(ing_name, dry_run=True):
+        son = kubectl(
+            'get',
+            'ing',
+            '-ojson',
+            ing_name,
+            capture_output=True,
+        ).stdout
+        ing = jalo(son)
+        annotations = ing['metadata'].get('annotations') or {}
+        helm_release = annotations.get('meta.helm.sh/release-name')
+        if helm_release:
+            warn(f'{ing_name} is not a loose ing, if you want to delete, use helm:')
+            echo(f'helm delete {helm_release}')
+        else:
+            kubectl('delete', 'ing', ing_name, dry_run=dry_run)
+
+    for line in ing_list:
+        ing_name, host = line.split()
+        url = next(make_external_url(host))
+        try:
+            res = requests.get(url, timeout=2)
+        except requests.exceptions.RequestException as e:
+            debug(f'skip {ing_name} due to {brief(e)}')
+            continue
+        if res.status_code == 404 and res.text.strip() == DEFAULT_BACKEND_RESPONSE:
+            debug(f'ok to delete {ing_name}, {url}')
+            delete_loose_ing(ing_name, dry_run=dry_run)
+        if res.status_code == 503:
+            debug(f'want to delete {ing_name}, {url}')
+            delete_loose_ing(ing_name, dry_run=True)
+        else:
+            debug(f'skip {ing_name}: {res.status_code}, {brief(res.text)}')
 
 
 @admin.command()

@@ -304,8 +304,8 @@ def make_external_url(host, paths=None, port=80):
 
     paths = paths or ['/']
     for path in paths:
-        yield f'https://{host_port}{path}'
         yield f'http://{host_port}{path}'
+        yield f'https://{host_port}{path}'
 
 
 def make_internal_url(host, paths=None, port=80, domain_suffix=None):
@@ -317,8 +317,8 @@ def make_internal_url(host, paths=None, port=80, domain_suffix=None):
 
     paths = paths or ['/']
     for path in paths:
-        yield f'https://{host_port}{path}'
         yield f'http://{host_port}{path}'
+        yield f'https://{host_port}{path}'
 
 
 def tell_ingress_urls():
@@ -1975,7 +1975,7 @@ def brief(s):
     try:
         single_line = s.encode('unicode_escape')
     except AttributeError:
-        return single_line
+        return s
     width = tell_screen_width(0.5)
     if len(single_line) > width:
         single_line = single_line[:width] + b'...'
