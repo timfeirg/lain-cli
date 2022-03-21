@@ -181,7 +181,7 @@ def top_text(too_many_pods=None):
 
 def test_url(url):
     try:
-        res = requests.get(url, timeout=1)
+        res = requests.get(url, timeout=2)
     except Exception as e:
         return e
     return res

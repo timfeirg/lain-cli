@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import itertools
 import os
 import shutil
 import sys
@@ -206,7 +205,7 @@ def delete_bad_ing(ctx, dry_run):
             'get',
             'ing',
             '--no-headers',
-            r'-o=custom-columns=NAME:.metadata.name,HOST:..rules[*].host',
+            r'-o=custom-columns=NAME:.metadata.name,HOST:..rules[*].host,PATHS:..rules[*]..path',
             capture_output=True,
         ).stdout
     ).splitlines()
@@ -229,21 +228,21 @@ def delete_bad_ing(ctx, dry_run):
             kubectl('delete', 'ing', ing_name, dry_run=dry_run)
 
     for line in ing_list:
-        ing_name, host = line.split()
-        url = next(make_external_url(host))
+        ing_name, host, paths = line.split()
+        url = next(make_external_url(host, paths=paths.split(',')))
         try:
             res = requests.get(url, timeout=2)
         except requests.exceptions.RequestException as e:
-            debug(f'skip {ing_name} due to {brief(e)}')
+            debug(f'skip {ing_name} / {url} due to {brief(e)}')
             continue
         if res.status_code == 404 and res.text.strip() == DEFAULT_BACKEND_RESPONSE:
-            debug(f'ok to delete {ing_name}, {url}')
+            debug(f'ok to delete {ing_name} / {url}')
             delete_loose_ing(ing_name, dry_run=dry_run)
         if res.status_code == 503:
-            debug(f'want to delete {ing_name}, {url}')
+            debug(f'want to delete {ing_name} / {url}')
             delete_loose_ing(ing_name, dry_run=True)
         else:
-            debug(f'skip {ing_name}: {res.status_code}, {brief(res.text)}')
+            debug(f'skip {ing_name} / {url}: {res.status_code}, {brief(res.text)}')
 
 
 @admin.command()
@@ -326,21 +325,26 @@ def list_images(ctx):
 def status(ctx, simple):
     ctx.obj['silent'] = True
     ctx.obj['simple'] = simple
-    host_list = ensure_str(
+    ing_list = ensure_str(
         kubectl(
             'get',
             'ing',
             '--all-namespaces',
             '--no-headers',
-            r'-o=custom-columns=HOST:..rules[*].host',
+            r'-o=custom-columns=HOST:..rules[*].host,PATHS:..rules[*]..path',
             capture_output=True,
         ).stdout
     ).splitlines()
     cc = tell_cluster_config()
     ingress_external_port = cc.get('ingress_external_port', 80)
-    urls = itertools.chain.from_iterable(
-        make_external_url(host, port=ingress_external_port) for host in host_list
-    )
+    urls = []
+    for ing in ing_list:
+        host, paths = ing.split()
+        for url in make_external_url(
+            host, paths=paths.split(','), port=ingress_external_port
+        ):
+            urls.append(url)
+
     ctx.obj['global_urls'] = set(urls)
     if simple:
         build_cluster_status_command()
