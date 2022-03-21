@@ -224,7 +224,7 @@ def delete_bad_ing(ctx, dry_run):
         helm_release = annotations.get('meta.helm.sh/release-name')
         if helm_release:
             warn(f'{ing_name} is not a loose ing, if you want to delete, use helm:')
-            echo(f'helm delete {helm_release}')
+            echo(f' helm delete {helm_release}', clean=False)
         else:
             kubectl('delete', 'ing', ing_name, dry_run=dry_run)
 
@@ -242,8 +242,6 @@ def delete_bad_ing(ctx, dry_run):
         if res.status_code == 503:
             debug(f'want to delete {ing_name} / {url}')
             delete_loose_ing(ing_name, dry_run=True)
-        else:
-            debug(f'skip {ing_name} / {url}: {res.status_code}, {brief(res.text)}')
 
 
 @admin.command()
