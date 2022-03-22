@@ -264,7 +264,6 @@ ENV (环境变量) 管理
 * :code:`lain status` 里调用了 :code:`kubectl top pod`, 打印出容器的资源占用.
 * :code:`lain lint` 会帮你查询 Prometheus, 用实际资源占用, 对比你在 :code:`chart/values.yaml` 里写的资源声明, 给出合适的修改建议. 详见 :ref:`lain-resource-design`.
 * 如果免费赠送的监控满足不了你的应用, 那么可以在应用空间实现 metrics API, 让 Prometheus 来抓取. 为了让 Prometheus 来抓取你的应用自己的 metrics, 需要在 :ref:`podAnnotations <helm-values>`, 里做相应的配置声明, 具体就是 :code:`prometheus.io/scrape`, :code:`prometheus.io/port` 两个字段, 参考示范进行填写吧.
-* 如果你是管理员, lain 和监控系统的集成能让你完成许多集群维护管理工作, 比如 :code:`lain admin list-waste` 能查出哪些应用在浪费集群资源, 详见 :ref:`lain-admin-list-waste`.
 
 回滚
 ----
