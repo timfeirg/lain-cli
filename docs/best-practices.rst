@@ -134,7 +134,82 @@
 
 千言万语汇成一句话, 就是集群内应用间互相访问, 建议别用域名, 而是直接走 `Kubernetes Service <https://kubernetes.io/zh/docs/concepts/services-networking/connect-applications-service/>`_ . 以 :ref:`dummy <helm-values>` 为例, 如果你的应用和 dummy 共处一个集群, 那么就可以通过 :code:`dummy-web` 这个域名直接访问. 最好不要通过域名访问, 不仅网络开销大, 有时候还会因为各种安全策略, 导致压根无法访问. 当然啦, 如果有特殊需要的话, 忽略本提示.
 
-上述建议要写成 Nginx 配置, 大概就是 :code:`proxy_pass http://dummy-web/;`, 注意 scheme 必须设定为 http, 毕竟 Service 层面没有 TLS 截断.
+上述建议要写成 Nginx 配置, 大概就是 :code:`proxy_pass http://dummy-web/;`, 注意 scheme 必须设定为 http, 毕竟 service 层面没有 TLS 截断.
+
+特别地, 我们喜爱的 Django, 也 `建议将静态文件与 web server 分开部署 <https://docs.djangoproject.com/en/4.0/howto/static-files/deployment/#serving-static-files-from-a-dedicated-server>`_, 因此在这里贴一下示范以供参考:
+
+.. code-block:: yaml
+  
+  # chart/values.yaml
+  appname: mydjango
+
+  deployments:
+    web:
+      replicaCount: 1
+      resources:
+        limits:
+          cpu: 1
+          memory: 256Mi
+        requests:
+          cpu: 10m
+          memory: 256Mi
+      command:
+        - bash
+        - -c
+        - |
+          set -xe
+          exec gunicorn -c conf/gunicorn/prod.py mydjango.wsgi
+      containerPort: 8000
+    static:
+      replicaCount: 1
+      podSecurityContext: { "runAsUser": 0 }
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 256Mi
+        requests:
+          cpu: 10m
+          memory: 100Mi
+      command: ["/usr/sbin/nginx", "-g", "daemon off;"]
+      containerPort: 8000
+
+  ingresses:
+    - host: mydjango
+      deployName: static
+      paths:
+        - /static
+    - host: mydjango
+      deployName: web
+      paths:
+        - /
+
+  build:
+    base: python:3.9
+    prepare:
+      script:
+        - apt-get update
+        - apt-get install -y nginx
+        - pip3 install -r requirements.txt
+    script:
+      - pip3 install -r requirements.txt
+      - python3 manage.py collectstatic --noinput
+      # 容器里不建议拷贝, 若情况合适, 一切拷贝都应改为软链
+      - ln -s -f /lain/app/conf/static.conf /etc/nginx/conf.d/static.conf
+
+上方的 values.yaml, 正是按照 Django 官方文档所推荐的那样, 用一个独立的 Nginx 来处理所有静态文件请求. 配置起来简单直白, 就不过多解释了, 直接照抄即可. 另外附上对应的 Nginx 配置文件:
+
+.. code-block:: nginx
+
+  # conf/static.conf
+  server {
+      listen      8000;
+      server_name _;
+      charset     utf-8;
+      client_max_body_size 999M;
+      location /static  {
+          alias /lain/app/static;
+      }
+  }
 
 标准化操作流程 (SOP)
 --------------------
