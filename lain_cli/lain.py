@@ -742,14 +742,15 @@ def init(ctx, appname, force, template_only, commit):
         pass
 
     for f in find(CHART_TEMPLATE_DIR):
-        if is_values_file(f) and template_only:
-            continue
         render_dest = join(CHART_DIR_NAME, f.replace('.j2', '', 1))
-        if exists(render_dest):
-            error(
-                f'cannot render helm chart because {render_dest} already exists, try again with -f',
-                exit=1,
-            )
+        if is_values_file(f):
+            if template_only:
+                continue
+            if exists(render_dest):
+                error(
+                    f'cannot render helm chart because {render_dest} already exists, try again with -f',
+                    exit=1,
+                )
 
         if f.endswith('.j2'):
             template = template_env.get_template(basename(f))
@@ -1598,7 +1599,7 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
 
     ctx.obj['build_jit'] = build
     options = tell_helm_options(pairs, extra='--install', canary=canary)
-    new_image_tag = ctx.obj['image_tag']
+    new_image_tag = ctx.obj.get('image_tag')
     headsup = '''
     While being deployed, you can check the status of you app:
         lain status

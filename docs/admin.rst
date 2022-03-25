@@ -6,7 +6,7 @@ lain 对 Kubernetes 做了如此多的封装, 以至于很多 SA 工作都可以
 查看集群状态
 ------------
 
-:code:`lain admin status` 的功能类似 :code:`lain status`, 可以打印出整个集群的异常容器, 节点, 以及异常的 Ingress URL. 
+:code:`lain admin status` 的功能类似 :code:`lain status`, 可以打印出整个集群的异常容器, 节点, 以及异常的 Ingress URL.
 
 推荐你将这个命令整合入 SA 的标准操作流程里, 比方说, 如果集群要进行某些运维操作, 例如升级/重启节点, 操作前先打开 :code:`lain admin status`, 确认一切无恙. 操作结束以后, 也用这个命令作为"绿灯", 看到大盘没有异常情况, 才宣告操作结束.
 
