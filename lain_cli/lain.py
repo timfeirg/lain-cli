@@ -1600,15 +1600,10 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
     ctx.obj['build_jit'] = build
     options = tell_helm_options(pairs, extra='--install', canary=canary)
     new_image_tag = ctx.obj.get('image_tag')
-    headsup = '''
-    While being deployed, you can check the status of you app:
-        lain status
-        lain logs
-    '''
     release_name = tell_release_name()
     old_image_tag = tell_release_image(release_name, silent=True)
     previous_revision = ctx.obj.get('git_revision')
-    echo(headsup, err=True)
+    echo('🕢 if this command gets stuck, check lain [status|logs]', err=True)
     timeout = tell_job_timeout()
     deploy_ts = time()
     res = helm(
