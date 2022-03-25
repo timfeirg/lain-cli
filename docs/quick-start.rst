@@ -54,6 +54,17 @@ Mac OS
     # 你也可以用你自己喜欢的方式将 lain 暴露出来, 比如修改 PATH
     # 但无论如何, 千万不要用 alias 来调用 lain, 目前 lain 会 subprocess 地调用自身, alias 会破坏这个过程
 
+如果你是管理员(负责 lain 的内部分支维护工作), 或者仅仅是希望尝鲜, 你可能更希望直接用代码仓库进行安装, 上游 lain 并非每一次迭代都会更新版本号, 如果要时刻拿到最新的代码, 只好直接 clone git repo:
+
+.. code-block:: bash
+
+  # 启用 lain 的团队, 都会维护一个内部分支
+  # 所以下边的地址需要改成你团队内部的 scm url
+  git clone https://github.com/timfeirg/lain-cli
+  cd lain-cli
+  pip install -e .[all]
+  # 注意, 用 git repo 进行安装, 一样需要做 virtualenv 与软链, 参考更上方的安装步骤.
+
 安装完毕以后, 就可以开始使用了, 你可以参考下面的步骤, 来把一个应用上线到 lain 集群.
 
 用 lain 上线一个 APP

@@ -139,7 +139,7 @@
 特别地, 我们喜爱的 Django, 也 `建议将静态文件与 web server 分开部署 <https://docs.djangoproject.com/en/4.0/howto/static-files/deployment/#serving-static-files-from-a-dedicated-server>`_, 因此在这里贴一下示范以供参考:
 
 .. code-block:: yaml
-  
+
   # chart/values.yaml
   appname: mydjango
 
