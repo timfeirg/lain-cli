@@ -86,6 +86,7 @@ from lain_cli.utils import (
     kubectl,
     kubectl_apply,
     kubectl_edit,
+    kubectl_version_challenge,
     lain_,
     lain_build,
     lain_docs,
@@ -1200,6 +1201,8 @@ def use(ctx, cluster, set_context, turn):
             f'--namespace={ns}',
             capture_output=True,
         )
+    else:
+        kubectl_version_challenge(check=False)
 
     if turn and cc.get('instance_ids'):
         echo('wait for cluster up...')

@@ -1532,7 +1532,8 @@ def has_asdf():
 
 
 def asdf_global(bin, v):
-    res = asdf('global', bin, v, check=False, capture_error=True)
+    cmd = ['global', bin, v]
+    res = asdf(*cmd, check=False, capture_error=True)
     code = rc(res)
     if code:
         stderr = ensure_str(res.stderr)
@@ -1540,6 +1541,12 @@ def asdf_global(bin, v):
             asdf('install', bin, v)
             return asdf_global(bin, v)
         error(f'weird asdf error: {stderr}', exit=code)
+
+    if not kubectl_version_challenge(autofix=False):
+        cmd_str = ' '.join(cmd)
+        error(f'kubectl version still do not match after asdf {cmd_str}')
+        bad_bin = shutil.which('kubectl')
+        error(f'you should probably delete {bad_bin}, let asdf manage for you', exit=1)
 
 
 def git(*args, exit=None, check=True, **kwargs):
@@ -1619,7 +1626,7 @@ def fix_kubectl(cv=None, sv=None):
 
 
 @lru_cache(maxsize=None)
-def kubectl_version_challenge(check=True):
+def kubectl_version_challenge(check=True, autofix=True):
     try:
         res = subprocess_run(
             ['kubectl', 'version', '--short'],
@@ -1629,20 +1636,29 @@ def kubectl_version_challenge(check=True):
             check=check,
         )
         if rc(res):
+            err = ensure_str(res.stderr).strip()
+            error('kubectl version check failed:')
+            error(f'{err}')
             return
         # https://kubernetes.io/releases/version-skew-policy/#kubectl
         cr, sr = ensure_str(res.stdout).splitlines()
         cv = version.parse(cr.rsplit(None, 1)[-1])
-        # TKE Kubernetes verions look like v1.18.4-tke.13
+        # looks like v1.18.4-tke.13 / v1.20.4-aliyun.1
         sv = version.parse(sr.rsplit(None, 1)[-1].split('-', 1)[0])
     except FileNotFoundError:
+        error('kubectl not found, trying to fix...')
         fix_kubectl()
         return kubectl_version_challenge()
     except PermissionError:
         error('Bad binary: kubectl, please reinstall', exit=1)
 
     if cv.major != sv.major or abs(sv.minor - cv.minor) >= 2:
-        fix_kubectl(cv, sv)
+        if autofix:
+            fix_kubectl(cv, sv)
+        else:
+            return False
+
+    return True
 
 
 def kubectl(*args, exit=None, check=True, dry_run=False, **kwargs):
