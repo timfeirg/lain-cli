@@ -21,7 +21,7 @@ to tail logs:
 {%- if 'cronjobs' in values and values.cronjobs %}
 to test your cronjob:
     {%- for job_name in values.cronjobs.keys() %}
-    kubectl create job --from=cronjob/{{ appname }}-{{ job_name }} {{ appname }}-{{ job_name }}-test
+    lain create-job {{ job_name }}
     {% if loop.index >= 2 %}
     ...
     {% break %}

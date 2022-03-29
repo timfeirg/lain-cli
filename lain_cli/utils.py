@@ -2899,7 +2899,10 @@ def tell_cluster_config(cluster=None, is_current=None):
     if ctx and 'cluster_config' in ctx.obj:
         return ctx.obj['cluster_config']
     if not cluster:
-        cluster = ctx.obj['cluster']
+        if ctx:
+            cluster = ctx.obj['cluster']
+        else:
+            cluster = tell_cluster()
 
     values_file = tell_cluster_values_file(cluster=cluster, internal=True)
     if not values_file:
