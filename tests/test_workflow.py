@@ -190,13 +190,24 @@ def test_workflow(registry):
     # should fail when using a bad image tag
     res = run(lain, args=['deploy', '--set', 'imageTag=noway'], returncode=1)
     assert 'image not found' in ensure_str(res.output).lower()
+    cronjob_name = 'nothing'
     override_values = {
-        # 随便加一个 job, 目的是为了看第二次部署的时候能否顺利先清理掉这个 job
+        # 随便加一个 job, 为了看下一次部署的时候能否顺利先清理掉这个 job
         'jobs': DUMMY_JOBS_CLAUSE,
+        # 随便加一个 cronjob, 为了测试 lain create-job
+        'cronjobs': {
+            cronjob_name: {
+                'schedule': '0 0 * * *',
+                'command': ['echo', RANDOM_STRING],
+            },
+        },
     }
     yadu(override_values, f'{CHART_DIR_NAME}/values-{TEST_CLUSTER}.yaml')
     # use a built image to deploy
     run(lain, args=['--ignore-lint', 'deploy', '--set', f'imageTag={image_tag}'])
+    res = run(lain, args=['create-job', cronjob_name])
+    create_job_cmd = f'kubectl create job --from=cronjob/{DUMMY_APPNAME}-{cronjob_name} manual-test-{cronjob_name}'
+    assert create_job_cmd in res.output
     # check service is up
     dummy_resp = url_get_json(DUMMY_URL)
     assert dummy_resp['env']['FOO'] == 'BAR'

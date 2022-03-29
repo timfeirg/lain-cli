@@ -196,11 +196,8 @@ deployments:
 #         curl -v {{ appname }}-web
 
 # cronjob 则是 Kubernetes 管理 job 的机制, 如果你的应用需要做定时任务, 则照着这里的示范声明出来
-# 上线成功了以后, 你肯定很想试跑一次进行测试, 这个简单:
-# kubectl create job --from=cronjob/{{ appname }}-[CRONJOB_NAME] test-{{ appname }}-[CRONJOB_NAME]
-# 如果你不确定创建出来的 cronjob 名称叫啥, 你也可以 lain version 罗列出所有的 deployment / cronjob
 # cronjobs:
-#   daily-stats-dag:
+#   daily:
 #     ttlSecondsAfterFinished: 86400  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
 #     activeDeadlineSeconds: 3600  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
 #     successfulJobsHistoryLimit: 1  # 保留多少个成功执行的容器
