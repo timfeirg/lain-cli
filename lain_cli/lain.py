@@ -1136,6 +1136,19 @@ def x(ctx, deploy_and_command):
 
 
 @lain.command()
+@click.argument('cronjob_name')
+@click.pass_context
+def create_job(ctx, cronjob_name):
+    """help you with kubectl create job"""
+    job_name = f'manual-test-{cronjob_name}'
+    try_to_cleanup_job(job_name)
+    release_name = tell_release_name()
+    kubectl('create', 'job', f'--from=cronjob/{release_name}-{cronjob_name}', job_name)
+    pod_name = wait_for_pod_up(selector=f'job-name={job_name}')[0]
+    kubectl('logs', '-f', pod_name)
+
+
+@lain.command()
 @click.argument('cluster', nargs=-1, type=click.Choice(CLUSTERS))
 @click.option('--set-context', is_flag=True, help='set context to configured namespace')
 @click.option('--turn', is_flag=True, help='if shut down, try to boot up this cluster')
