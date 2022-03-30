@@ -31,6 +31,18 @@ lain 在设计上希望尽量把错误以可排查的方式暴露给用户: 能�
 
 * 为了安全性不大推荐, 但你也可以直接用 root 来运行你的应用: :code:`lain build` 产生的镜像, 默认是 :code:`1001` 这个小权限用户, 因此如果你需要的话, 可以换用 :code:`root` 用户来运行, 具体就是修改 :code:`podSecurityContext`, 请在 :ref:`helm-values` 自行搜索学习吧.
 
+构建期间报错
+------------
+
+视镜像不同, :code:`lain build` 可能会出现各式各样的错误, 在这一节里介绍一些典型问题.
+
+Unable to fetch some archives, maybe run apt-get update ...
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+一般来说是源更新了, 但镜像里的地址还是老的, 因此建议在用包管理器安装任何东西前, 都先做一下 update. 比如 :code:`apt-get update` 或者 :code:`yum makecache`.
+
+不过这样做能解决问题的前提是, 你的构建所在地和源没有网络访问问题(翻墙). 因此如果你的团队在国内, 建议按照 :ref:`docker-images` 的实践, 将所有的源都采纳国内镜像.
+
 .. _docker-error:
 
 Docker Error
