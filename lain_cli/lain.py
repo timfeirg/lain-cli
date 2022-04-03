@@ -627,6 +627,7 @@ def lint(ctx, simple):
     if not appname:
         return
     tops = top_procs(appname)
+    has_error = False
     for proc_name, proc in tops.items():
         resources = proc['resources']
         requests, limits = resources['requests'], resources['limits']
@@ -648,6 +649,7 @@ def lint(ctx, simple):
             error(
                 f'{proc_name} cpu requests: current {cpu_requests_str}, suggestion {cpu_requests_suggest_str}'
             )
+            has_error = True
 
         memory_requests_str, memory_limits_str = requests['memory'], limits['memory']
         memory_requests = parse_size(memory_requests_str, binary=True)
@@ -657,6 +659,7 @@ def lint(ctx, simple):
             error(
                 f'{proc_name} memory requests: current {memory_requests_str}, suggestion: {memory_requests_suggest_str}'
             )
+            has_error = True
 
         memory_limits = parse_size(memory_limits_str, binary=True)
         if memory_limits_suggest_str := suggest_memory_limits(
@@ -665,9 +668,9 @@ def lint(ctx, simple):
             error(
                 f'{proc_name} memory limits: current {memory_limits_str}, suggestion {memory_limits_suggest_str}'
             )
+            has_error = True
 
-    last_error = ctx.obj.get('last_error')
-    if last_error:
+    if has_error:
         url = lain_docs('design.html#lain-resource-design')
         echo('')
         error(f'📖 learn about resource management: {url}', exit=1)
@@ -1811,6 +1814,7 @@ def redeploy(ctx):
     else:
         args = ()
 
+    ctx.obj['ignore_lint'] = True
     lain_('deploy', *args)
 
 

@@ -208,7 +208,7 @@ def ensure_str(s):
         return str(s)
 
 
-def echo(s, fg=None, exit=None, err=False, mark_error=False, clean=True):
+def echo(s, fg=None, exit=None, err=False, clean=True):
     if s is None:
         return
     s = ensure_str(s)
@@ -218,9 +218,6 @@ def echo(s, fg=None, exit=None, err=False, mark_error=False, clean=True):
     click.echo(click.style(s, fg=fg), err=err)
     ctx = context(silent=True)
     if ctx:
-        if err and mark_error:
-            ctx.obj['last_error'] = s
-
         if isinstance(exit, bool):
             if exit:
                 ctx.exit(0)
@@ -256,7 +253,7 @@ def error(s, exit=None, **kwargs):
     if exit:
         exit = 1
 
-    return echo(s, fg='red', exit=exit, err=True, mark_error=True, **kwargs)
+    return echo(s, fg='red', exit=exit, err=True, **kwargs)
 
 
 def flatten_list(nested_list):
@@ -2972,7 +2969,7 @@ def tell_all_clusters():
         fname = basename(f)
         cluster_name = fname.split('-', 1)[-1].split('.', 1)[0]
         if cluster_name not in ccs:
-            error(
+            warn(
                 f'~/.kube/kubeconfig-{cluster_name} not found, you should get it from your system administrator'
             )
 
