@@ -115,7 +115,7 @@ def test_values():
     assert env_dic == {
         'LAIN_CLUSTER': TEST_CLUSTER,
         'K8S_NAMESPACE': TEST_CLUSTER_CONFIG.get('namespace', 'default'),
-        'IMAGE_TAG': 'overridden-during-deploy',
+        'IMAGE_TAG': 'UNKNOWN',
         'SOMETHING': 'ELSE',
         'OVERRIDE_BY_PROC': 'new',
     }
@@ -149,19 +149,23 @@ def render_with_override_values(dic):
 def test_values_override():
     fake_registry = 'registry.fake'
     fake_sa = 'fake'
-    cluster_values = {'registry': fake_registry, 'serviceAccountName': fake_sa}
+    cluster_values = {
+        'registry': fake_registry,
+        'serviceAccountName': fake_sa,
+        'imageTag': 'UNKNOWN',
+    }
     k8s_specs = render_with_override_values(cluster_values)
     deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
     sa = deployment['spec']['template']['spec']['serviceAccountName']
     assert sa == fake_sa
     image = tell_deployment_image(deployment)
-    assert image == f'{fake_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
+    assert image == f'{fake_registry}/{DUMMY_APPNAME}:UNKNOWN'
     internal_registry = 'registry.in.fake'
-    cluster_values = {'internalRegistry': internal_registry}
+    cluster_values = {'internalRegistry': internal_registry, 'imageTag': 'UNKNOWN'}
     k8s_specs = render_with_override_values(cluster_values)
     deployment = next(spec for spec in k8s_specs if spec['kind'] == 'Deployment')
     image = tell_deployment_image(deployment)
-    assert image == f'{internal_registry}/{DUMMY_APPNAME}:overridden-during-deploy'
+    assert image == f'{internal_registry}/{DUMMY_APPNAME}:UNKNOWN'
 
 
 @pytest.mark.usefixtures('dummy_helm_chart')

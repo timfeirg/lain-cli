@@ -44,9 +44,9 @@ with change_dir(DUMMY_REPO):
 TEST_CLUSTER = 'test'
 
 
-def run(*args, returncode=0, obj=None, **kwargs):
+def run(*args, returncode=0, obj=None, mix_stderr=True, **kwargs):
     """run cli command in a click context"""
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=mix_stderr)
     env = environ.copy()
     obj = obj or {}
     res = runner.invoke(*args, obj=obj, env=env, **kwargs)
@@ -99,7 +99,7 @@ DUMMY_TESTS_CLAUSE = {
 
 
 def render_k8s_specs():
-    res = run(lain, args=['-s', 'template'])
+    res = run(lain, args=['-s', 'template'], mix_stderr=False)
     return list(yalo(res.stdout, many=True))
 
 

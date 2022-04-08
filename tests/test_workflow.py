@@ -82,7 +82,7 @@ def test_build(registry):
     res = docker_run(prepare_image, ['ls'])
     ls_result = parse_ls(res.stdout)
     # ensure keep clause works as expected
-    assert ls_result == {'foo', 'bar', BUILD_TREASURE_NAME}
+    assert ls_result == {'foo', 'bar', 'chart', BUILD_TREASURE_NAME}
     res = docker_run(prepare_image, ['env'])
     envs = ensure_str(res.stdout).splitlines()
     assert f'prepare_env={BUILD_TREASURE_NAME}' in envs
