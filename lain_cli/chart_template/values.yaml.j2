@@ -295,17 +295,17 @@ hostAliases:
 
 build:
   base: python:latest
-  # # 这里也可以声明 env, 会转化为 Dockerfile 里的 ENV clause, 这样一来, 镜像本身就会携带这些 ENV
+  # # build / prepare 下都可以声明 env, 会转化为 Dockerfile 里的 ENV clause, 这样一来, 镜像本身就会携带这些 ENV
   # env:
   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
   prepare:
-    # env:
-    #   PATH: "/lain/app/node_modules/.bin:${PATH}"
     # prepare 完成以后, 会删除 working directory 下所有的文件, 如果你有舍不得的东西, 记得在 keep 下声明, 才能保留下来
-    # 比如前段项目, 一般会保留 node_modules
+    # 比如前端项目, 一般会保留 node_modules
     keep:
     - treasure.txt
     script:
+    # 凡是用包管理器安装依赖, 建议在 prepare.script 和 build.script 重复书写
+    # 避免依赖文件更新了, 但没来得及重新 lain prepare, 导致依赖文件缺失
     - pip3 install -r requirements.txt
     - echo "treasure" > treasure.txt
   script:
@@ -340,6 +340,3 @@ build:
 #         app.kubernetes.io/name: {{ appname }}
 #     policyTypes:
 #     - Ingress
-
-# 以下字段由 lain deploy 的时候进行超载, 你就不要瞎改了
-imageTag: overridden-during-deploy
