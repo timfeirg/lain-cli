@@ -1797,7 +1797,7 @@ def wait_for_pod_up(selector=None, tries=40):
         continue
     error('job container never got up, here\'s what\'s wrong:')
     kubectl('describe', 'po', pod_name, check=False)
-    kubectl('logs', 'po', pod_name, check=False)
+    kubectl('logs', pod_name, check=False)
 
 
 def wait_for_cluster_up(tries=1):
