@@ -43,3 +43,8 @@ clusterHostAliases:
 # externalIngressClass: lain-external
 # # 这是 cert-manager 配置, 同样出于复用的考虑, 放在 cluster_values 下, 开发者可没精力维护这种基础设施配置
 # clusterIssuer: cert-manager-webhook-dnspod-cluster-issuer
+
+# # 填写 grafana url, 让 lain 在恰当的时候给出监控页面链接
+# grafana_url: https://grafana.example.com/d/xxxxx/container-monitoring
+# # 填写 kibana host, 让 lain 在恰当的时候给出应用日志链接
+# kibana: kibana.behye.cn

@@ -118,8 +118,36 @@ lain 的开发非常考虑普适性, 通用性, 你一定希望能获取到 lain
 
 做好 rebase 以后, 你肯定担心会引入 bug, 或者破坏原有的功能. 这时候如果你能自己运行下 lain 的测试, 甚至根据自己团队的情况, 进行定制化测试, 那将会大大提高维护的简易度和自信心. lain 有着还算全面的端到端测试, 欢迎参考.
 
-本地运行 lain 的测试
---------------------
+搭建配套基础设施
+----------------
+
+lain 的诸多丰富功能都是由各种周边基础设施提供的, 比如 Prometheus, Grafana, Kibana, 这些组件都需要你一一部署, 并且按照 lain 的要求来进行配置. lain 的要求也并不复杂, 在本节进行介绍.
+
+Prometheus
+^^^^^^^^^^
+
+在 Kubernetes 下一般都直接用社区的 `Helm chart <https://github.com/prometheus-community/helm-charts>`_ 来搭建吧, 默认的配置就已经包含了 Kubernetes 下的服务发现, 因此安装 Prometheus 没什么特别的注意事项.
+
+不过为了提供完整功能, 除了必要的 node-exporter, cadvisor, kube-state-metrics 之外, 最好把 `grok-exporter <https://github.com/fstab/grok_exporter>`_ 也一并搭建, 这是为了在宿主机层面做 OOM 监控, 具体可参考 `拿什么拯救 OOM <https://timfeirg.github.io/2022/03/30/oom.html>`_.
+
+Grafana
+^^^^^^^
+
+lain 鼓励开发者自行使用 Grafana, 查看自己的应用的监控. 在看板里给出了应用容器的基础指标, 这也是我们研发团队主要关心的数据:
+
+.. image:: _static/grafana.jpg
+
+图中的 dashboard 可以在 :download:`这里 <_static/grafana-container-monitor.json>` 下载, 导入以后, 将对应的 Grafana URL 填写到集群配置里(参考 :ref:`cluster-values`), 然后就能在 :code:`lain status -s` 里看到打印出来的 Grafana URL 了, 点击这个 URL, 直接就会进入该应用的 Grafana 监控页面.
+
+Kibana
+^^^^^^
+
+我们用 EFK 来搭建 Kubernetes 的容器日志收集系统, 也就是 Elasticsearch + Fluentd + Kibana. 搭建方面没有特殊要求, 遵循社区最佳实践即可.
+
+lain 和 EFK 的关系主要在于 Kibana, 你需要配置好 `Log monitoring <https://www.elastic.co/guide/en/observability/current/monitor-logs.html>`_, 然后将 URL 填写到集群配置里(依然是参考 :ref:`cluster-values`), 然后就能用 :code:`lain logs --kibana` 打开 Kibana 链接, 直接阅读该应用的日志流了.
+
+本地开发与测试
+--------------
 
 参考 `lain 的 CircleCI <https://github.com/timfeirg/lain-cli/blob/master/.circleci/config.yml>`_ 不难发现, lain 的 E2E 测试就是用 minikube 拉起来一个本地集群, 然后在上边用 `dummy <https://github.com/timfeirg/dummy>`_ 作为测试应用, 来对各种关键流程做正确性验证. 本地运行这个测试也很简单, 介绍下大致步骤:
 
