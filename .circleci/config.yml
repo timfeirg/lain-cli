@@ -70,6 +70,16 @@ jobs:
            py.test tests --cov=lain_cli
            coverage xml
 
+      - run:
+         name: "upload"
+         command: |
+           python3 setup.py sdist
+           twine upload -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/* || true
+         filters:
+           branches:
+             only:
+               - master
+
       - codecov/upload
 
 workflows:
