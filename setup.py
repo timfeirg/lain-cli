@@ -31,7 +31,7 @@ tests_requirements = [
 all_requirements = tests_requirements
 
 setup(
-    name='lain_cli',
+    name='lain',
     url='https://github.com/timfeirg/lain-cli',
     python_requires='>=3.8',
     version=__version__,
