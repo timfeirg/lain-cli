@@ -2137,19 +2137,6 @@ class CronjobSchema(LenientSchema):
     resources = Nested(ResourcesSchema, required=False)
     env = env_schema
 
-    @post_load
-    def finalize(self, data, **kwargs):
-        resources = data.get('resources')
-        if resources:
-            limits = resources.get('limits', {})
-            requests = resources.get('requests', {})
-            for n in ['cpu', 'memory']:
-                if limits.get(n) != requests.get(n):
-                    raise ValidationError(
-                        f'for cronjobs, limits and requests must be equal, got: {resources}'
-                    )
-        return data
-
 
 class IngressSchema(LenientSchema):
     host = Str(required=True)
