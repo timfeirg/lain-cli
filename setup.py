@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 from lain_cli import __version__
-from pathlib import Path
 
 requirements = [
     'pip>=22.0',
