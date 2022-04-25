@@ -1195,6 +1195,11 @@ def subprocess_run(
         ctx = context(silent=True)
         silent = ctx and ctx.obj.get('silent')
 
+    if kwargs.get('shell'):
+        if not isinstance(args[0], str):
+            args = list(args)
+            args[0] = ' '.join(args[0])
+
     excall(*args, silent=silent)
     if dry_run:
         return
@@ -1499,8 +1504,7 @@ def docker_save(image, output_dir, retag=None, pull=False, exit=False):
 
     fname = docker_save_name(image)
     output_path = join(output_dir, fname)
-    cmd = f'docker save {image} | gzip -c > {output_path}'
-    res = subprocess_run(cmd, shell=True, check=True)
+    res = docker(f'save {image} | gzip -c > {output_path}', shell=True)
     stderr = ensure_str(res.stderr)
     if stderr:
         error(stderr, exit=True)

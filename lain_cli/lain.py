@@ -4,7 +4,6 @@ import os
 import shutil
 import sys
 from copy import deepcopy
-from functools import partial
 from os import getcwd as cwd
 from os.path import basename, dirname, exists, expanduser, isfile, join
 from time import sleep, time
@@ -2004,7 +2003,7 @@ def run(ctx, proc_name, prepare, user, command):
 
 
 @lain.command()
-@click.argument('images', nargs=-1)
+@click.argument('image', nargs=-1)
 @click.option('--retag', help='use a different tag, or registry')
 @click.option('--pull', is_flag=True, help='pull image before save')
 @click.option(
@@ -2014,8 +2013,8 @@ def run(ctx, proc_name, prepare, user, command):
     help='directory name in which image will be saved to',
 )
 @click.pass_context
-def save(ctx, images, retag, pull, output_dir):
-    """save docker images to [image-tag].tar.gz.
+def save(ctx, image, retag, pull, output_dir):
+    """save docker image to [APPNAME]-[TAG].tar.gz.
 
     \b
     examples:
@@ -2025,21 +2024,21 @@ def save(ctx, images, retag, pull, output_dir):
         lain save alpine:latest --retag ccr.ccs.tencentyun.com/yashi/alpine
         lain save alpine:latest --retag ccr.ccs.tencentyun.com/yashi/alpine:latest
     """
-    save = partial(docker_save, output_dir=output_dir, retag=retag, pull=pull)
-    if images:
-        for image in images:
-            save(image)
-
-        ctx.exit(0)
-
     appname = ctx.obj['appname']
     meta = lain_meta()
-    for image_info in docker_images():
-        if image_info['appname'] == appname and image_info['tag'] == meta:
-            save(image_info['image'])
-            ctx.exit(0)
+    if not image:
+        for image_info in docker_images():
+            if image_info['appname'] == appname and image_info['tag'] == meta:
+                image = image_info['image']
 
-    error(f'image not found for {appname}', exit=True)
+        if not image:
+            error(f'image not found for {appname}', exit=True)
+    else:
+        image = image[0]
+
+    docker_save(image, output_dir=output_dir, retag=retag, pull=pull)
+    echo(image)
+    ctx.exit(0)
 
 
 @lain.command()
