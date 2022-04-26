@@ -2004,8 +2004,12 @@ def run(ctx, proc_name, prepare, user, command):
 
 @lain.command()
 @click.argument('image', nargs=-1)
-@click.option('--retag', help='use a different tag, or registry')
+@click.option(
+    '--retag',
+    help='change tag before save, supports: cluster name, registry, full image tag',
+)
 @click.option('--pull', is_flag=True, help='pull image before save')
+@click.option('--force', '-f', is_flag=True, help='overwrite if already exists')
 @click.option(
     '--dir',
     'output_dir',
@@ -2013,7 +2017,7 @@ def run(ctx, proc_name, prepare, user, command):
     help='directory name in which image will be saved to',
 )
 @click.pass_context
-def save(ctx, image, retag, pull, output_dir):
+def save(ctx, image, retag, pull, force, output_dir):
     """save docker image to [APPNAME]-[TAG].tar.gz.
 
     \b
@@ -2023,6 +2027,7 @@ def save(ctx, image, retag, pull, output_dir):
         lain save alpine:latest --dir /jfs/backup
         lain save alpine:latest --retag ccr.ccs.tencentyun.com/yashi/alpine
         lain save alpine:latest --retag ccr.ccs.tencentyun.com/yashi/alpine:latest
+        lain save alpine:latest --retag [CLUSTER_NAME]
     """
     appname = ctx.obj['appname']
     meta = lain_meta()
@@ -2036,7 +2041,7 @@ def save(ctx, image, retag, pull, output_dir):
     else:
         image = image[0]
 
-    docker_save(image, output_dir=output_dir, retag=retag, pull=pull)
+    docker_save(image, output_dir=output_dir, retag=retag, force=force, pull=pull)
     echo(image)
     ctx.exit(0)
 

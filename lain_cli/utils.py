@@ -1488,15 +1488,20 @@ def docker_save_name(image):
     return fname
 
 
-def docker_save(image, output_dir, retag=None, pull=False, exit=False):
+def docker_save(image, output_dir, retag=None, force=False, pull=False, exit=False):
     if pull:
         docker('pull', image, capture_output=True)
 
+    repo, tag = parse_image_tag(image)
     if retag:
-        if ':' in retag:
+        if retag in CLUSTERS:
+            retag_cc = CLUSTERS[retag]
+            registry = retag_cc['registry']
+            appname = repo.rsplit('/', 1)[-1]
+            new_image = make_image_str(registry, appname, tag)
+        elif ':' in retag:
             new_image = retag
         else:
-            _, tag = parse_image_tag(image)
             new_image = f'{retag}:{tag}'
 
         docker('tag', image, new_image)
@@ -1504,6 +1509,13 @@ def docker_save(image, output_dir, retag=None, pull=False, exit=False):
 
     fname = docker_save_name(image)
     output_path = join(output_dir, fname)
+    if isfile(output_path):
+        if force:
+            ensure_absent(output_path)
+        else:
+            warn(f'{output_path} already exists, use --force to overwrite')
+            return
+
     res = docker(f'save {image} | gzip -c > {output_path}', shell=True)
     stderr = ensure_str(res.stderr)
     if stderr:
@@ -2696,16 +2708,20 @@ def make_wildcard_domain(d):
 
 
 def make_image_str(registry=None, appname=None, image_tag=None):
-    ctx = context()
-    cc = tell_cluster_config()
     if not registry:
+        cc = tell_cluster_config()
         registry = cc['registry']
 
     if not image_tag:
         image_tag = lain_meta()
 
     if not appname:
+        ctx = context()
         appname = ctx.obj['appname']
+
+    if registry.startswith('docker.io'):
+        # omit default registry
+        registry = registry.replace('docker.io/', '')
 
     image = f'{registry}/{appname}:{image_tag}'
     return image
@@ -2884,10 +2900,10 @@ def tell_cluster_values_file(cluster=None, internal=False):
 
 def tell_cluster_config(cluster=None, is_current=None):
     ctx = context(silent=True)
-    if ctx and 'cluster_config' in ctx.obj:
-        return ctx.obj['cluster_config']
     if not cluster:
         if ctx:
+            if 'cluster_config' in ctx.obj:
+                return ctx.obj['cluster_config']
             cluster = ctx.obj['cluster']
         else:
             cluster = tell_cluster()
