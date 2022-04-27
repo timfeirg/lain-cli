@@ -175,16 +175,16 @@ def lain(ctx, silent, verbose, ignore_lint, remote_docker, values, use, auto_pil
     ctx.obj['remote_docker'] = remote_docker
     ctx.obj['extra_values_file'] = values
     ctx.obj['auto_pilot'] = auto_pilot
-    try:
-        ensure_helm_initiated()
-        version_challenge()
-    except (OSError, KeyError):
-        pass
     if use:
         if use == tell_cluster(silent=True):
             echo(f'you are already here: {use}')
         else:
             lain_('use', use)
+    try:
+        ensure_helm_initiated()
+        version_challenge()
+    except (OSError, KeyError):
+        pass
 
 
 @lain.group()
