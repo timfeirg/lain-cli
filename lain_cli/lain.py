@@ -1181,7 +1181,7 @@ def use(ctx, cluster, set_context, turn):
 
         for c in CLUSTERS:
             if c != cluster:
-                echo(tell_cluster_line(c), clean=False)
+                echo(tell_cluster_line(c), clean=False, err=True)
 
         ctx.exit(0)
 
