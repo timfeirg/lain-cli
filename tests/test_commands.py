@@ -3,21 +3,13 @@ from os.path import isfile, join
 import pytest
 
 from lain_cli.lain import lain
-from lain_cli.utils import (
-    CLI_DIR,
-    docker_save_name,
-    ensure_absent,
-    lain_meta,
-    yalo,
-    make_image_str,
-)
+from lain_cli.utils import CLI_DIR, docker_save_name, ensure_absent, lain_meta, yalo
 from tests.conftest import (
-    TEST_CLUSTER_CONFIG,
-    DUMMY_IMAGE_TAG,
-    TEST_CLUSTER,
     CHART_DIR_NAME,
     DUMMY_APPNAME,
+    DUMMY_IMAGE_TAG,
     DUMMY_VALUES_PATH,
+    TEST_CLUSTER,
     run,
     run_under_click_context,
 )
@@ -57,13 +49,9 @@ def test_secret_env_edit():
 @pytest.mark.last
 @pytest.mark.usefixtures('dummy')
 def test_lain_save():
-    res = run(lain, args=['save', '--retag', TEST_CLUSTER])
-    image = make_image_str(
-        registry=TEST_CLUSTER_CONFIG['registry'],
-        appname=DUMMY_APPNAME,
-        image_tag=DUMMY_IMAGE_TAG,
-    )
-    assert res.output.strip().endswith(image)
+    res = run(lain, args=['save', '--force', '--retag', TEST_CLUSTER])
+    fname = f'{DUMMY_APPNAME}_{DUMMY_IMAGE_TAG}.tar.gz'
+    assert res.output.strip().endswith(fname)
     retag = f'{DUMMY_APPNAME}-again'
     run(lain, args=['save', '--retag', retag])
     _, meta = run_under_click_context(lain_meta)

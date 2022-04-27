@@ -2031,18 +2031,24 @@ def save(ctx, image, retag, pull, force, output_dir):
     """
     appname = ctx.obj['appname']
     meta = lain_meta()
-    if not image:
+    if image:
+        image = image[0]
+    else:
         for image_info in docker_images():
             if image_info['appname'] == appname and image_info['tag'] == meta:
                 image = image_info['image']
 
         if not image:
-            error(f'image not found for {appname}', exit=True)
-    else:
-        image = image[0]
+            tag = tell_image_tag()
+            image = make_image_str(tag=tag)
 
-    docker_save(image, output_dir=output_dir, retag=retag, force=force, pull=pull)
-    echo(image)
+    if not image:
+        error(f'image not found for {appname}', exit=True)
+
+    fname = docker_save(
+        image, output_dir=output_dir, retag=retag, force=force, pull=pull
+    )
+    echo(fname)
     ctx.exit(0)
 
 
