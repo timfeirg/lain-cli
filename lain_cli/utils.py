@@ -1041,7 +1041,7 @@ def tell_image_tag(image_tag=None):
     if image_tag not in existing_tags:
         # when using lain deploy --build without using --set imageTag=xxx, we
         # can build the requested image for the user
-        if ctx.obj['build_jit'] and build_jit_challenge(image_tag):
+        if ctx.obj.get('build_jit') and build_jit_challenge(image_tag):
             lain_('build', '--push')
             return image_tag
 
@@ -1521,7 +1521,7 @@ def docker_save(image, output_dir, retag=None, force=False, pull=False, exit=Fal
     if stderr:
         error(stderr, exit=True)
 
-    return res
+    return output_path
 
 
 def asdf(*args, exit=None, check=True, **kwargs):
