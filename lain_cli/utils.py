@@ -1018,10 +1018,9 @@ def delete_canary_values():
 def tell_image_tag(image_tag=None):
     """really smart method to figure out which image_tag is the right one to deploy:
         1. if image_tag isn't provided, obtain from lain_meta
-        2. check for existence against the specified registry
+        2. check for existence against registry API
         3. if the provided image_tag doesn't exist, print helpful suggestions
         4. if no suggestions at all, give up and return None
-    not applicable in ent clusters.
     """
     ctx = context()
     values = ctx.obj['values']
@@ -1034,7 +1033,7 @@ def tell_image_tag(image_tag=None):
 
     # 如果该集群的 registry 不支持查询, 那就没什么好检查的了
     registry = tell_registry_client()
-    if not registry:
+    if not registry or ctx.obj.get('ignore_lint'):
         return image_tag
     appname = ctx.obj['appname']
     existing_tags = registry.list_tags(appname) or []
