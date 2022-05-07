@@ -1653,7 +1653,8 @@ def kubectl_version_challenge(check=True, autofix=True):
             error(f'{err}')
             return
         # https://kubernetes.io/releases/version-skew-policy/#kubectl
-        cr, sr = ensure_str(res.stdout).splitlines()
+        # output may contain kustomize version, we need to ignore
+        cr, *_, sr = ensure_str(res.stdout).splitlines()
         cv = version.parse(cr.rsplit(None, 1)[-1])
         # looks like v1.18.4-tke.13 / v1.20.4-aliyun.1
         sv = version.parse(sr.rsplit(None, 1)[-1].split('-', 1)[0])
