@@ -41,14 +41,15 @@ Docker Error
 Unable to fetch some archives, maybe run apt-get update ...
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-一般来说是源更新了, 但镜像里的地址还是老的, 因此建议在用包管理器安装任何东西前, 都先做一下 update. 比如:
+一般来说是源更新了, 但镜像里的地址还是老的, 因此建议在用系统包管理器安装任何东西前, 都先做一下 update. 比如:
 
 .. code-block:: yaml
 
   build:
-    script:
-      - apt-get update  # or yum makecache
-      - apt-get install ...
+    prepare:
+      script:
+        - apt-get update  # or yum makecache
+        - apt-get install ...
 
 不过这样做能解决问题的前提是, 你的构建所在地和源没有网络访问问题(翻墙). 因此如果你的团队在国内, 建议按照 :ref:`docker-images` 的实践, 将所有的源都采纳国内镜像.
 
