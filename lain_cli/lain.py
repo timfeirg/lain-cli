@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
 import os
 import shutil
 import sys
@@ -310,6 +311,36 @@ def list_images(ctx):
     images = registry.list_images()
     for image in images:
         echo(image)
+
+
+@admin.command()
+@click.pass_context
+def list_singletons(ctx):
+    ctx.obj['silent'] = True
+    res = kubectl(
+        'get',
+        'deploy',
+        '--no-headers',
+        r'-o=custom-columns=NAME:.metadata.name,HELM_RELEASE:.metadata.annotations.meta\.helm\.sh/release-name,REPLICAS:.spec.replicas',
+        capture_output=True,
+    )
+    ignore_words = ['consumer', 'worker', 'sentry', 'gitlab']
+    ignore_pattern = re.compile('|'.join(ignore_words))
+    for line in ensure_str(res.stdout).splitlines():
+        deploy_name, release_name, replicas = line.split()
+        if int(replicas) == 1:
+            if ignore_pattern.search(deploy_name):
+                continue
+            res = helm(
+                'get',
+                'values',
+                release_name,
+                '--output=json',
+                capture_output=True,
+            )
+            values_dic = jalo(res.stdout)
+            user = values_dic.get('user') if values_dic else None
+            echo(f'{deploy_name} from {release_name}, user: {user}')
 
 
 @admin.command()
