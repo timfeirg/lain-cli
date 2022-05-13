@@ -1017,10 +1017,10 @@ def delete_canary_values():
 
 def tell_image_tag(image_tag=None):
     """really smart method to figure out which image_tag is the right one to deploy:
-        1. if image_tag isn't provided, obtain from lain_meta
-        2. check for existence against registry API
-        3. if the provided image_tag doesn't exist, print helpful suggestions
-        4. if no suggestions at all, give up and return None
+    1. if image_tag isn't provided, obtain from lain_meta
+    2. check for existence against registry API
+    3. if the provided image_tag doesn't exist, print helpful suggestions
+    4. if no suggestions at all, give up and return None
     """
     ctx = context()
     values = ctx.obj['values']
