@@ -20,6 +20,7 @@ from lain_cli.utils import (
     lain_meta,
     load_helm_values,
     make_docker_ignore,
+    make_image_str,
     make_job_name,
     subprocess_run,
     tell_all_clusters,
@@ -341,3 +342,12 @@ def test_tell_ingress_urls():
         tell_ingress_urls,
     )
     assert set(urls) == set([f'{DUMMY_URL_HTTPS}/', f'{DUMMY_URL}/'])
+
+
+@pytest.mark.usefixtures('dummy_helm_chart')
+def test_make_image_str():
+    image_tag = '1.0'
+    _, image = run_under_click_context(
+        make_image_str, kwargs={'registry': 'private.com', 'image_tag': image_tag}
+    )
+    assert image == f'private.com/{DUMMY_APPNAME}:1.0'
