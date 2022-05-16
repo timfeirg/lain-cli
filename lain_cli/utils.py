@@ -1437,6 +1437,13 @@ def parse_image_tag(image):
     return repo, tag
 
 
+def docker_tag(old, new):
+    if '@' in new:
+        new = new.split('@', 1)[0]
+
+    return docker('tag', old, new)
+
+
 def banyun(image, registry=None, overwrite_latest_tag=False, pull=False, exit=None):
     """搬运镜像到别人家里"""
     if registry and not isinstance(registry, str):
@@ -1467,11 +1474,11 @@ def banyun(image, registry=None, overwrite_latest_tag=False, pull=False, exit=No
     if pull:
         docker('pull', image)
 
-    docker('tag', image, new_image)
+    docker_tag(image, new_image)
     docker('push', new_image, exit=exit)
     if overwrite_latest_tag:
         latest_image = make_image_str(registry, appname, 'latest')
-        docker('tag', image, latest_image)
+        docker_tag(image, latest_image)
         docker('push', latest_image, exit=exit)
 
     if tag != 'prepare':
@@ -1503,7 +1510,7 @@ def docker_save(image, output_dir, retag=None, force=False, pull=False, exit=Fal
         else:
             new_image = f'{retag}:{tag}'
 
-        docker('tag', image, new_image)
+        docker_tag(image, new_image)
         image = new_image
 
     fname = docker_save_name(image)
