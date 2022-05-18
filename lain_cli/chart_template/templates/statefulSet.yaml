@@ -176,5 +176,10 @@ spec:
         - name: secret
           secret:
             secretName: {{ $.Values.appname }}-secret
+        {{- range $pvcName, $pvc := $.Values.persistentVolumeClaims }}
+        - name: {{ $pvcName }}
+          persistentVolumeClaim:
+            claimName: {{ $.Release.Name }}-{{ $pvcName }}
+        {{- end }}
 
 {{- end }}
