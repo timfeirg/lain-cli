@@ -1441,7 +1441,8 @@ def docker_tag(old, new):
     if '@' in new:
         new = new.split('@', 1)[0]
 
-    return docker('tag', old, new)
+    docker('tag', old, new)
+    return new
 
 
 def banyun(image, registry=None, overwrite_latest_tag=False, pull=False, exit=None):
@@ -1474,7 +1475,7 @@ def banyun(image, registry=None, overwrite_latest_tag=False, pull=False, exit=No
     if pull:
         docker('pull', image)
 
-    docker_tag(image, new_image)
+    new_image = docker_tag(image, new_image)
     docker('push', new_image, exit=exit)
     if overwrite_latest_tag:
         latest_image = make_image_str(registry, appname, 'latest')
@@ -1510,8 +1511,7 @@ def docker_save(image, output_dir, retag=None, force=False, pull=False, exit=Fal
         else:
             new_image = f'{retag}:{tag}'
 
-        docker_tag(image, new_image)
-        image = new_image
+        image = docker_tag(image, new_image)
 
     fname = docker_save_name(image)
     output_path = join(output_dir, fname)
