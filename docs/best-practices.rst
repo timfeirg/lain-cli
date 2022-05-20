@@ -134,9 +134,44 @@
 开发前后端分离的应用 (前后端对接)
 ---------------------------------
 
-千言万语汇成一句话, 就是集群内应用间互相访问, 建议别用域名, 而是直接走 `Kubernetes Service <https://kubernetes.io/zh/docs/concepts/services-networking/connect-applications-service/>`_ . 以 :ref:`dummy <helm-values>` 为例, 如果你的应用和 dummy 共处一个集群, 那么就可以通过 :code:`dummy-web` 这个域名直接访问. 最好不要通过域名访问, 不仅网络开销大, 有时候还会因为各种安全策略, 导致压根无法访问. 当然啦, 如果有特殊需要的话, 忽略本提示.
+对于前后端分离的应用, 前端部分的注意事项比较多, 在这里进行收录总结.
 
-上述建议要写成 Nginx 配置, 大概就是 :code:`proxy_pass http://dummy-web/;`, 注意 scheme 必须设定为 http, 毕竟 service 层面没有 TLS 截断.
+正确处理 HTTPS 重定向 (force-ssl-redirect)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+本小节内容以 Ingress Controller 进行 TLS 截断为前提, 流量到达容器的时候一律是 HTTP, 如果你的集群网络架构不同, 那么实践势必也会有所不同.
+
+如果你的应用需要彻底禁用 HTTP 访问, 仅支持 HTTPS, 那么首先你需要给 Ingress 挂上对应的设置, 具体可以在 :ref:`示范 <helm-values>` 里搜索 :code:`force-ssl-redirect`. 这样一来, HTTP 流量在没有到达容器前, 就首先被 Ingress Controller 重定向了. 看起来似乎很美好, 但要注意应用自身在进行跳转的时候(最常见的就是, 探测到用户未登录, 给重定向到登录页面), 一定要返回 HTTPS 的 URL, 而非很多情况下默认的 HTTP, 否则就有可能出现 Too Many Redirects Error.
+
+总结就是, 应用虽然接受 HTTP 流量, 但发起跳转时, 一定要返回 HTTPS URL, 否则便会与 :code:`force-ssl-redirect` 规则打架.
+
+以 Nginx 为例, 配置文件类似下方示范, 重点就是禁用掉 :code:`absolute_redirect`:
+
+.. code-block:: nginx
+
+  server {
+      listen 80;
+      server_name _;
+
+      # 容器内的 Nginx 永远和 HTTP 流量打交道
+      # 如果不禁用此选项, 那么在重定向的时候, 也会默认重定向到 HTTP URL
+      absolute_redirect off;
+
+      root /lain/app/;
+      location / {
+          index index.html index.htm;
+          try_files $uri $uri/ /index.html$args;
+      }
+  }
+
+当然了, Nginx 还有很多种办法进行跳转, 比如 :code:`rewrite` 和 :code:`return`, 无论是什么方式, 按照其对应的办法保证跳转到 HTTPS 即可.
+
+集群内用 Service 来互相访问, 不要走域名
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+集群内应用间互相访问, 别用域名, 而是直接走 `Kubernetes Service <https://kubernetes.io/zh/docs/concepts/services-networking/connect-applications-service/>`_ . 以 :ref:`dummy <helm-values>` 为例, 如果你的应用和 dummy 共处一个集群, 那么就可以通过 :code:`dummy-web` 这个集群内 hostname 直接访问. 之所以不建议通过 Ingress 域名访问, 是因为不仅网络开销大, 有时候还会因为各种安全策略, 导致压根无法访问.
+
+上述建议要写成 Nginx 配置, 大概就是 :code:`proxy_pass http://dummy-web/;`, 注意 scheme 必须设定为 http, TLS 截断已经在流量过 Ingress Controller 的时候就做好了, 集群内都是 HTTP 流量.
 
 特别地, 我们喜爱的 Django, 也 `建议将静态文件与 web server 分开部署 <https://docs.djangoproject.com/en/4.0/howto/static-files/deployment/#serving-static-files-from-a-dedicated-server>`_, 因此在这里贴一下示范以供参考:
 
