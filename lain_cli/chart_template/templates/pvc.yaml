@@ -1,0 +1,10 @@
+{{- range $pvcName, $pvc := .Values.persistentVolumeClaims }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $.Release.Name }}-{{ $pvcName }}
+spec:
+  {{- toYaml $pvc | nindent 2 }}
+
+{{- end }}
