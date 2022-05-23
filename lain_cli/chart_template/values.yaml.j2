@@ -212,6 +212,8 @@ deployments:
 #     concurrencyPolicy: Replace
 #     # 重试次数, 默认不做任何重试, 如果你的应用能保证不因为资源问题失败, 可以加上宽容的重试
 #     backoffLimit: 0
+#     # 与其他资源类型不同, cronjobs 默认不重复拉取镜像, 这也是为了减少开销
+#     imagePullPolicy: IfNotPresent
 #     resources:
 #       limits:
 #         cpu: 1000m
