@@ -3,7 +3,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-from lain_cli import __version__
+from lain_cli import __version__, package_name
 
 requirements = [
     'pip>=22.0',
@@ -34,7 +34,7 @@ all_requirements = tests_requirements
 this_directory = Path(__file__).parent
 long_description = (this_directory / 'README.md').read_text()
 setup(
-    name='lain',
+    name=package_name,
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/timfeirg/lain-cli',
