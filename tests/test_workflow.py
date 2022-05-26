@@ -206,7 +206,7 @@ def test_workflow(registry):
     # use a built image to deploy
     run(lain, args=['--ignore-lint', 'deploy', '--set', f'imageTag={image_tag}'])
     res = run(lain, args=['create-job', cronjob_name])
-    create_job_cmd = f'kubectl create job --from=cronjob/{DUMMY_APPNAME}-{cronjob_name} manual-test-{cronjob_name}'
+    create_job_cmd = f'kubectl create job --from=cronjob/{DUMMY_APPNAME}-{cronjob_name} manual-test-{DUMMY_APPNAME}-{cronjob_name}'
     assert create_job_cmd in res.output
     # check service is up
     dummy_resp = url_get_json(DUMMY_URL)

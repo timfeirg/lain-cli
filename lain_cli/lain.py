@@ -1173,9 +1173,9 @@ def x(ctx, deploy_and_command):
 @click.pass_context
 def create_job(ctx, cronjob_name):
     """help you with kubectl create job"""
-    job_name = f'manual-test-{cronjob_name}'
-    try_to_cleanup_job(job_name)
     release_name = tell_release_name()
+    job_name = f'manual-test-{release_name}-{cronjob_name}'
+    try_to_cleanup_job(job_name)
     kubectl('create', 'job', f'--from=cronjob/{release_name}-{cronjob_name}', job_name)
     pod_name = wait_for_pod_up(selector=f'job-name={job_name}')[0]
     kubectl('logs', '-f', pod_name)
