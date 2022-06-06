@@ -216,6 +216,7 @@ deployments:
 # cronjob 则是 Kubernetes 管理 job 的机制, 如果你的应用需要做定时任务, 则照着这里的示范声明出来
 # cronjobs:
 #   daily:
+#     suspend: false  # 暂停该 cronjob
 #     ttlSecondsAfterFinished: 86400  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#clean-up-finished-jobs-automatically
 #     activeDeadlineSeconds: 3600  # https://kubernetes.io/docs/concepts/workloads/controllers/job/#job-termination-and-cleanup
 #     successfulJobsHistoryLimit: 1  # 保留多少个成功执行的容器

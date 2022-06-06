@@ -8,6 +8,7 @@ metadata:
     {{- include "chart.labels" $ | nindent 4 }}
 spec:
   schedule: {{ $cronjob.schedule | quote }}
+  suspend: {{ default false $cronjob.suspend }}
   concurrencyPolicy: {{ default "Replace" $cronjob.concurrencyPolicy }}
   successfulJobsHistoryLimit: {{ default 1 $cronjob.successfulJobsHistoryLimit }}
   failedJobsHistoryLimit: {{ default 1 $cronjob.failedJobsHistoryLimit }}
