@@ -516,6 +516,41 @@ def delete_pod(selector, graceful=False):
         wait_for_pod_up(selector=selector)
 
 
+def update_canary_annotations(release_name, canary_group_name=None):
+    """when calling with empty canary_group_name, will set canary-weight to 0%"""
+    ctx = context()
+    canary_groups = ctx.obj['values']['canaryGroups']
+    if not canary_groups:
+        error('canaryGroups not defined in values', exit=1)
+
+    if canary_group_name:
+        if canary_group_name not in canary_groups:
+            error(
+                f'choose canary_group_name from {list(canary_groups)}, got {canary_group_name}',
+                exit=1,
+            )
+
+        canary_dic = canary_groups[canary_group_name]
+    else:
+        canary_dic = {'nginx.ingress.kubernetes.io/canary-weight': '0'}
+
+    ings_res = kubectl(
+        'get',
+        'ing',
+        '-ojson',
+        '-l',
+        f'helm.sh/chart={release_name}',
+        capture_output=True,
+    )
+    ings = jalo(ings_res.stdout)
+    for ing in ings['items']:
+        annotations = ing['metadata']['annotations']
+        clean_canary_ingress_annotations(annotations)
+        annotations.update(canary_dic)
+
+    kubectl_apply(ings, validate=False)
+
+
 def deploy_toast(canary=False, re_creation_headsup=False):
     ctx = context()
     ctx.obj.update(tell_cluster_config())
