@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re
 import os
+import re
 import shutil
 import sys
 from copy import deepcopy
@@ -55,7 +55,6 @@ from lain_cli.utils import (
     brief,
     called_by_sh,
     check_correct_override,
-    clean_canary_ingress_annotations,
     click_parse_timespan,
     debug,
     delete_pod,
@@ -126,6 +125,7 @@ from lain_cli.utils import (
     try_to_label_nodes,
     try_to_print_job_logs,
     user_challenge,
+    update_canary_annotations,
     validate_proc_name,
     version_challenge,
     wait_for_cluster_up,
@@ -1753,6 +1753,7 @@ def set_canary_group(ctx, canary_group_name, abort, final):
         helm('upgrade', *options, appname, f'./{CHART_DIR_NAME}')
         selector = f'app.kubernetes.io/name={appname}'
         wait_for_pod_up(selector)
+        update_canary_annotations(canary_name)
         delete_res = helm('delete', canary_name)
         webhook = tell_webhook_client()
         webhook and webhook.send_deploy_message()
@@ -1763,32 +1764,7 @@ def set_canary_group(ctx, canary_group_name, abort, final):
     else:
         error(f'must provide single canary_group_name, got {canary_group_name}', exit=1)
 
-    canary_groups = ctx.obj['values']['canaryGroups']
-    if not canary_groups:
-        error('canaryGroups not defined in values', exit=1)
-
-    if canary_group_name not in canary_groups:
-        error(
-            f'choose canary_group_name from {list(canary_groups)}, got {canary_group_name}',
-            exit=1,
-        )
-
-    canary_dic = canary_groups[canary_group_name]
-    ings_res = kubectl(
-        'get',
-        'ing',
-        '-ojson',
-        '-l',
-        f'helm.sh/chart={canary_name}',
-        capture_output=True,
-    )
-    ings = jalo(ings_res.stdout)
-    for ing in ings['items']:
-        annotations = ing['metadata']['annotations']
-        clean_canary_ingress_annotations(annotations)
-        annotations.update(canary_dic)
-
-    kubectl_apply(ings, validate=False)
+    update_canary_annotations(canary_name, canary_group_name)
 
 
 @lain.command()
