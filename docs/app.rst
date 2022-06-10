@@ -395,7 +395,7 @@ lain 镜像构建好了, 接下来需要在 GitLab CI Runner 配置里执行成�
       stage: deploy
       script:
         - lain use test
-        - lain deploy --build
+        - lain --auto-pilot deploy
 
     prepare_job:
       # 依赖发生修改的时候, 重新 prepare, 为之后的构建做缓存
