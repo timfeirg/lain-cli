@@ -2165,12 +2165,24 @@ class ResourcesSchema(Schema):
 env_schema = Dict(keys=Str(), values=Str(), allow_none=True)
 
 
-class InitContainerSchema(LenientSchema):
+class ProcSchema(LenientSchema):
     env = env_schema
+    resources = Nested(ResourcesSchema, required=False)
+    command = List(Str, required=True)
+
+    @validates('command')
+    def validate_command(self, value):
+        executable = value[0]
+        if ' ' in executable:
+            # in principle, this check is 'wrong', linux executable name can
+            # contain spaces. but in reality nobody does that, so lets add this
+            # check to prevent dumb mistakes
+            raise ValidationError(
+                f'executable name should not contain space, use list instead, got: {executable}'
+            )
 
 
-class DeploymentSchema(LenientSchema):
-    env = env_schema
+class DeploymentSchema(ProcSchema):
     hpa = Nested(HPASchema, required=False)
     containerPort = Int(required=False)
     readinessProbe = Raw(load_default={})
@@ -2186,14 +2198,12 @@ class DeploymentSchema(LenientSchema):
         return data
 
 
-class JobSchema(LenientSchema):
-    env = env_schema
-    initContainers = List(Nested(InitContainerSchema))
+class JobSchema(ProcSchema):
+    initContainers = List(Nested(ProcSchema))
 
 
-class CronjobSchema(LenientSchema):
-    resources = Nested(ResourcesSchema, required=False)
-    env = env_schema
+class CronjobSchema(ProcSchema):
+    pass
 
 
 class IngressSchema(LenientSchema):
