@@ -1814,7 +1814,7 @@ def wait_for_pod_up(selector=None, tries=40):
         appname = ctx.obj['appname']
         selector = f'app.kubernetes.io/name={appname}'
 
-    bad_state = frozenset(('imagepullbackoff',))
+    bad_state = frozenset(('imagepullbackoff', 'crashloopbackoff', 'error'))
     waiting_state = frozenset(
         ('pending', 'containercreating', 'notready', 'terminating')
     )
