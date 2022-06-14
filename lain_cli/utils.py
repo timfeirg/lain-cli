@@ -516,6 +516,19 @@ def delete_pod(selector, graceful=False):
         wait_for_pod_up(selector=selector)
 
 
+def storage_class_can_reattach(sc_name):
+    """this is an over-simplified check, if pvc name is not random, the
+    generated pv is deemed as re-attachable"""
+    res = kubectl('get', 'sc', '-ojson', sc_name, capture_output=True)
+    spec = jalo(res.stdout)
+    if spec.get('reclaimPolicy') != 'Retain':
+        return False
+    parameters = spec['parameters']
+    if 'pathPattern' in parameters:
+        return True
+    return False
+
+
 def update_canary_annotations(release_name, canary_group_name=None):
     """when calling with empty canary_group_name, will set canary-weight to 0%"""
     ctx = context()

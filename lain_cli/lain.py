@@ -99,6 +99,7 @@ from lain_cli.utils import (
     pick_pod,
     rc,
     stern,
+    storage_class_can_reattach,
     tell_best_deploy,
     tell_change_from_kubectl_output,
     tell_cherry,
@@ -124,8 +125,8 @@ from lain_cli.utils import (
     try_to_cleanup_job,
     try_to_label_nodes,
     try_to_print_job_logs,
-    user_challenge,
     update_canary_annotations,
+    user_challenge,
     validate_proc_name,
     version_challenge,
     wait_for_cluster_up,
@@ -1826,6 +1827,11 @@ def redeploy(ctx):
 
 @lain.command()
 @click.option(
+    '--force',
+    is_flag=True,
+    help='delete, no matter what',
+)
+@click.option(
     '--purge',
     is_flag=True,
     help='also deletes env and secrets, everything will be gone, please don\'t use this',
@@ -1837,7 +1843,7 @@ def redeploy(ctx):
 )
 @click.argument('appname', nargs=-1)
 @click.pass_context
-def delete(ctx, purge, after, appname):
+def delete(ctx, force, purge, after, appname):
     """delete this app."""
     if appname:
         if len(appname) > 1:
@@ -1847,6 +1853,16 @@ def delete(ctx, purge, after, appname):
     else:
         appname = ctx.obj['appname']
         release_name = tell_release_name()
+
+    persistentVolumeClaims = ctx.obj['values'].get('persistentVolumeClaims') or {}
+    for pvc in persistentVolumeClaims.values():
+        sc_name = pvc['storageClassName']
+        if not storage_class_can_reattach(sc_name) and not force:
+            error(f'{sc_name} pv doesn\'t seem re-attachable')
+            error(
+                'if you delete this app, you may not be able to claim this pv if deployed again'
+            )
+            error('use --force to continue', exit=1)
 
     job_name = f'{release_name}-delete-job'
     try_to_cleanup_job(job_name)
