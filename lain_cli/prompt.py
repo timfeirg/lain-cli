@@ -6,6 +6,7 @@ from operator import itemgetter
 from subprocess import list2cmdline
 
 import requests
+from cachetools import TTLCache
 from humanfriendly import parse_size
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
@@ -25,34 +26,43 @@ from lain_cli.utils import (
     parse_podline,
     parse_ready,
     rc,
-    tell_screen_height,
     tell_pod_deploy_name,
     tell_pods_count,
+    tell_screen_height,
     template_env,
 )
 
+DEFAULT_POD_TEXT = 'no weird pods found'
 CONTENT_VENDERER = {
-    'event_text': '',
+    'podinfo_text': '',
     'ingress_text': '',
     'pod_text': '',
     'top_text': '',
-    'bad_pods': [],
+    'pods': [],
     'node_text': '',
 }
+POD_WITH_EMPTY_LOG = TTLCache(ttl=20, maxsize=1024)
+POD_WITH_GOOD_EVENTS = TTLCache(ttl=20, maxsize=1024)
 
 
 def set_content(k, v):
     CONTENT_VENDERER[k] = v
 
 
-async def refresh_events_text():
-    """display events for weird pods"""
-    bad_pods = CONTENT_VENDERER['bad_pods']
-    if not bad_pods:
-        CONTENT_VENDERER['event_text'] = 'no weird pods found'
+async def refresh_podinfo_text():
+    """podinfo can be either pod events or logs, will pick the information
+    that's most likely to answer for the pod's bad state.
+
+    e.g.
+    * if events are good, show logs
+    * if logs are empty, show events
+    """
+    pods = CONTENT_VENDERER['pods']
+    if not pods:
+        CONTENT_VENDERER['podinfo_text'] = DEFAULT_POD_TEXT
         return
     cmd = []
-    for podline in bad_pods[1:]:
+    for podline in pods[1:]:
         pod_name, ready_str, status, restarts, age, *_ = parse_podline(podline)
         if status == 'Completed':
             continue
@@ -65,25 +75,46 @@ async def refresh_events_text():
             ]
             break
         age = parse_multi_timespan(age)
+        event_cmd = [
+            'get',
+            'events',
+            f'--field-selector=involvedObject.name={pod_name}',
+        ]
+        log_cmd = ['logs', '--tail=50', f'{pod_name}']
         if status == 'ContainerCreating' and age > 30:
-            cmd = ['get', 'events', f'--field-selector=involvedObject.name={pod_name}']
+            cmd = event_cmd
             break
         if (
             status == 'CrashLoopBackOff'
             or not parse_ready(ready_str)
             or int(restarts) > 0
         ):
-            cmd = ['logs', '--tail=50', f'{pod_name}']
+            if pod_name in POD_WITH_GOOD_EVENTS:
+                cmd = log_cmd
+            elif pod_name in POD_WITH_EMPTY_LOG:
+                cmd = event_cmd
+            else:
+                cmd = log_cmd
             break
 
     if cmd:
         res = kubectl(*cmd, capture_output=True, check=False)
-        CONTENT_VENDERER['event_text'] = ensure_str(res.stdout) or ensure_str(
-            res.stderr
-        )
+        info = (ensure_str(res.stdout) or ensure_str(res.stderr)).strip()
+        CONTENT_VENDERER['podinfo_text'] = info
+        if cmd[1] == 'logs':
+            if not info:
+                POD_WITH_EMPTY_LOG[pod_name] = 1
+
+        elif cmd[1] == 'events':
+            latest_event = info.splitlines()[-1]
+            # 101s        Normal   Started pod/xxx Started container xxx
+            _, level, state, *_ = latest_event.split()
+            if level == 'Normal' and state == 'Started':
+                POD_WITH_GOOD_EVENTS[pod_name] = 1
+
         return
 
-    CONTENT_VENDERER['event_text'] = 'no weird pods found'
+    CONTENT_VENDERER['podinfo_text'] = DEFAULT_POD_TEXT
 
 
 def build_app_status_command():
@@ -126,7 +157,7 @@ def pod_text(too_many_pods=None):
     )
     if rc(res):
         return ensure_str(res.stderr)
-    CONTENT_VENDERER['bad_pods'] = pods
+    CONTENT_VENDERER['pods'] = pods
     report = '\n'.join(pods)
     return report
 
@@ -259,7 +290,7 @@ async def refresh_content():
             [
                 refresh_pod_text(),
                 refresh_ingress_text(),
-                refresh_events_text(),
+                refresh_podinfo_text(),
                 refresh_top_text(),
             ]
         )
@@ -296,21 +327,21 @@ def build_app_status():
             top_win,
         ]
     )
-    # building events container
-    events_text_control = FormattedTextControl(
-        text=lambda: CONTENT_VENDERER['event_text']
+    # building podinfo container
+    podinfo_text_control = FormattedTextControl(
+        text=lambda: CONTENT_VENDERER['podinfo_text']
     )
-    events_window = Win(content=events_text_control)
-    events_container = HSplit(
+    podinfo_window = Win(content=podinfo_text_control)
+    podinfo_container = HSplit(
         [
             Win(
                 height=1,
-                content=Title('events and messages for pods in weird states'),
+                content=Title('events or logs for pod in weird states'),
             ),
-            events_window,
+            podinfo_window,
         ]
     )
-    parts = [pod_container, top_container, events_container]
+    parts = [pod_container, top_container, podinfo_container]
     # building ingress container
     urls = ctx.obj.get('urls')
     if urls:

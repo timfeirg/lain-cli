@@ -22,6 +22,7 @@ requirements = [
     'python-gitlab>=2.4.0',
     'sentry-sdk>=1.0.0',
     'psutil>=5.8.0',
+    'cachetools>=5.2.0',
 ]
 tests_requirements = [
     'pytest>=5.2.4',
