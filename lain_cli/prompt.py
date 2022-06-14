@@ -66,14 +66,6 @@ async def refresh_podinfo_text():
         pod_name, ready_str, status, restarts, age, *_ = parse_podline(podline)
         if status == 'Completed':
             continue
-        if status == 'Pending':
-            cmd = [
-                'get',
-                'pod',
-                f'{pod_name}',
-                '-ojsonpath={.status.containerStatuses..message}',
-            ]
-            break
         age = parse_multi_timespan(age)
         event_cmd = [
             'get',
@@ -81,7 +73,7 @@ async def refresh_podinfo_text():
             f'--field-selector=involvedObject.name={pod_name}',
         ]
         log_cmd = ['logs', '--tail=50', f'{pod_name}']
-        if status == 'ContainerCreating' and age > 30:
+        if status in {'Pending', 'ContainerCreating'} and age > 30:
             cmd = event_cmd
             break
         if (
