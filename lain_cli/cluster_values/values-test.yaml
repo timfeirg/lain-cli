@@ -10,6 +10,8 @@
 
 # 镜像仓库
 registry: docker.io/timfeirg
+# 默认使用 http 访问 registry ，可以配置为使用 https
+# registry_endpoint_use_https: yes
 
 # 有一些 PaaS 提供内网镜像加速, 集群内外用的镜像 tag 不一样
 # internalRegistry: registry.in.example.com
@@ -24,6 +26,10 @@ secrets_env:
   # 调用 registry 接口的认证信息, 用途就是从 registry api 获取可供使用的镜像列表
   dockerhub_username: DOCKERHUB_USERNAME
   dockerhub_password: DOCKERHUB_PASSWORD
+
+# 或者提供获取访问 registry api 需要的 access token 的获取命令。如 AWS ECR ，可以这样配置：
+# registry_token_fetch_cmd: "aws ecr get-authorization-token --output text --query 'authorizationData[].authorizationToken'"
+# registry_token_type: "Basic"
 
 extra_docs: |
   在这里书写额外的欢迎信息

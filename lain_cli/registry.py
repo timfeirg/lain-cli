@@ -3,7 +3,12 @@ from json.decoder import JSONDecodeError
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from lain_cli.utils import RegistryUtils, RequestClientMixin, tell_cluster_config
+from lain_cli.utils import (
+    RegistryUtils,
+    RequestClientMixin,
+    subprocess_run,
+    tell_cluster_config,
+)
 
 
 class Registry(RequestClientMixin, RegistryUtils):
@@ -25,27 +30,45 @@ class Registry(RequestClientMixin, RegistryUtils):
             api_host = 'index.docker.io'
             self.endpoint = f'http://{api_host}'
         else:
-            self.endpoint = f'http://{registry}'
+            https = kwargs.get('registry_endpoint_use_https', False)
+            protocol = 'https' if https else 'http'
+            self.endpoint = f'{protocol}://{registry}'
 
         self.dockerhub_password = kwargs.get('dockerhub_password')
         self.dockerhub_username = kwargs.get('dockerhub_username')
 
+        self.token_fetch_cmd = kwargs.get('registry_token_fetch_cmd')
+        self.token_type = kwargs.get('registry_token_type', 'Bearer')
+
     def prepare_token(self, scope):
-        if not all([self.dockerhub_password, self.dockerhub_username]):
-            return
-        res = requests.post(
-            'https://auth.docker.io/token',
-            data={
-                'grant_type': 'password',
-                'service': 'registry.docker.io',
-                'scope': scope,
-                'client_id': 'dockerengine',
-                'username': self.dockerhub_username,
-                'password': self.dockerhub_password,
-            },
-        )
-        access_token = res.json()['access_token']
-        self.headers['Authorization'] = f'Bearer {access_token}'
+        if self.token_fetch_cmd:
+            res = subprocess_run(
+                self.token_fetch_cmd,
+                shell=True,
+                check=True,
+                capture_output=True,
+            )
+            token = res.stdout.decode().strip()
+
+        elif all([self.dockerhub_password, self.dockerhub_username]):
+            res = requests.post(
+                'https://auth.docker.io/token',
+                data={
+                    'grant_type': 'password',
+                    'service': 'registry.docker.io',
+                    'scope': scope,
+                    'client_id': 'dockerengine',
+                    'username': self.dockerhub_username,
+                    'password': self.dockerhub_password,
+                },
+            )
+            token = res.json()['access_token']
+
+        else:
+            token = None
+
+        if token:
+            self.headers['Authorization'] = f'{self.token_type} {token}'
 
     def request(self, *args, **kwargs):
         res = super().request(*args, **kwargs)
@@ -79,7 +102,7 @@ class Registry(RequestClientMixin, RegistryUtils):
         repo = f'{self.namespace}/{repo_name}' if self.namespace else repo_name
         path = f'/v2/{repo}/tags/list'
         self.prepare_token(scope=f'repository:{repo}:pull,push')
-        responson = self.get(path, params={'n': 99999}, timeout=timeout).json()
+        responson = self.get(path, params={'n': 1000}, timeout=timeout).json()
         if 'tags' not in responson:
             return []
         tags = self.sort_and_filter(responson.get('tags') or [], n=n)
