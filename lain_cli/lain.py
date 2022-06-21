@@ -1592,6 +1592,15 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
 
     appname = ctx.obj['appname']
     if build:
+        if ctx.obj.get('ignore_lint'):
+            error(
+                'must not use --ignore-lint with --build, the former will bypass image check, rendering --build useless'
+            )
+            error(
+                'consider lain --ignore-lint build --deploy if you must --ignore-lint',
+                exit=1,
+            )
+
         headsup = False
         if not check_correct_override(appname, ctx.obj.get('cluster_values')):
             headsup = True
