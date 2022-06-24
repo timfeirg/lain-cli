@@ -2297,13 +2297,13 @@ class ClusterConfigSchema(LenientSchema):
                     hint = env['hint']
                     required = env.get('required', True)
 
-                if env_name not in ENV and required:
+                if env_name in ENV:
+                    data[dest] = ENV[env_name]
+                elif required:
                     error(
                         f'environment variable {env_name} is missing, hint: {hint}',
                         exit=1,
                     )
-                else:
-                    data[dest] = ENV[env_name]
 
         return data
 
