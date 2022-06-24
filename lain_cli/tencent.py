@@ -9,7 +9,7 @@ from tencentcloud.tcr.v20190924 import models as tcr_models
 from tencentcloud.tcr.v20190924.tcr_client import TcrClient
 
 from lain_cli.utils import (
-    RegistryUtils,
+    PaaSUtils,
     debug,
     error,
     jalo,
@@ -18,7 +18,7 @@ from lain_cli.utils import (
 )
 
 
-class TencentClient(RegistryUtils):
+class TencentPaaS(PaaSUtils):
 
     """https://cloud.tencent.com/document/product/1141/41605"""
 
@@ -120,4 +120,4 @@ class TencentClient(RegistryUtils):
                 error(f'weird state {state}, choose from {self.VM_STATES}', exit=True)
 
 
-TencentRegistry = TencentClient
+TencentRegistry = TencentPaaS

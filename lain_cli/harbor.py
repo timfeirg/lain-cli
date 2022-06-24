@@ -1,12 +1,12 @@
 from lain_cli.utils import (
-    RegistryUtils,
+    PaaSUtils,
     RequestClientMixin,
     flatten_list,
     tell_cluster_config,
 )
 
 
-class HarborRegistry(RequestClientMixin, RegistryUtils):
+class HarborRegistry(RequestClientMixin, PaaSUtils):
     def __init__(self, registry=None, harbor_token=None, **kwargs):
         if not all([registry, harbor_token]):
             cc = tell_cluster_config()
