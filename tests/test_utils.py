@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import pytest
 from ruamel.yaml.scalarstring import LiteralScalarString
 
-from lain_cli.aliyun import AliyunRegistry
+from lain_cli.aliyun import AliyunPaaS
 from lain_cli.harbor import HarborRegistry
 from lain_cli.utils import (
     CLUSTER_VALUES_DIR,
@@ -222,7 +222,7 @@ def test_registry():
     region_id = 'cn-hangzhou'
     repo_ns = 'big-company'
     registry = f'registry.{region_id}.aliyuncs.com/{repo_ns}'
-    aliyun_registry = AliyunRegistry(
+    aliyun_registry = AliyunPaaS(
         access_key_id='hh',
         access_key_secret='hh',
         registry=registry,

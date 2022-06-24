@@ -32,6 +32,8 @@ import click
 import psutil
 import requests
 from click import BadParameter
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from humanfriendly import (
     CombinedUnit,
     SizeUnit,
@@ -681,7 +683,7 @@ class RequestClientMixin:
         return self.request('HEAD', path, **kwargs)
 
 
-class RegistryUtils:
+class PaaSUtils:
     registry = 'registry.fake/dev'
 
     @staticmethod
@@ -729,6 +731,32 @@ class RegistryUtils:
 
         return images
 
+    @staticmethod
+    def tell_certificate_upload_name(crt):
+        cert = x509.load_pem_x509_certificate(crt.encode('utf-8'), default_backend())
+        cn_string = cert.subject.rfc4514_string()
+        expire_date = cert.not_valid_after
+        name = f'{cn_string},expire={expire_date.date()}'
+        return name
+
+
+def tell_paas_client():
+    cc = deepcopy(tell_cluster_config())
+    paas_type = cc.get('paas_type')
+    if cc.get('registry_type') != paas_type:
+        # a PaaS Kubernetes cluster doesn't necessarily use PaaS registry
+        cc.pop('registry')
+
+    if paas_type == 'aliyun':
+        from lain_cli.aliyun import AliyunPaaS
+
+        return AliyunPaaS(**cc)
+    if paas_type == 'tencent':
+        from lain_cli.tencent import TencentPaaS
+
+        return TencentPaaS(**cc)
+    error(f'unsupported paas type: {paas_type}', exit=1)
+
 
 def tell_registry_client(cc=None):
     if not cc:
@@ -740,9 +768,9 @@ def tell_registry_client(cc=None):
 
         return Registry(**cc)
     if registry_type == 'aliyun':
-        from lain_cli.aliyun import AliyunRegistry
+        from lain_cli.aliyun import AliyunPaaS
 
-        return AliyunRegistry(**cc)
+        return AliyunPaaS(**cc)
     if registry_type == 'harbor':
         from lain_cli.harbor import HarborRegistry
 
@@ -751,7 +779,7 @@ def tell_registry_client(cc=None):
         from lain_cli.tencent import TencentRegistry
 
         return TencentRegistry(**cc)
-    warn(f'unsupported registry type: {registry_type}')
+    error(f'unsupported registry type: {registry_type}', exit=1)
 
 
 def clean_kubernetes_manifests(yml):
@@ -787,10 +815,10 @@ def tell_secret(secret_name, init='env'):
     )
     if code := rc(res):
         stderr = ensure_str(res.stderr)
-        if 'not found' in stderr:
+        if 'not found' in stderr and init:
             init_kubernetes_secret(secret_name, init=init)
             return tell_secret(secret_name, init=init)
-        error(f'weird error: {stderr}', exit=code)
+        error(f'get secret error: {stderr}', exit=code)
 
     dic = yalo(res.stdout)
     clean_kubernetes_manifests(dic)
@@ -1092,7 +1120,7 @@ def tell_image_tag(image_tag=None):
             lain_('build', '--push')
             return image_tag
 
-        recent_tags = RegistryUtils.sort_and_filter(existing_tags)[:RECENT_TAGS_COUNT]
+        recent_tags = PaaSUtils.sort_and_filter(existing_tags)[:RECENT_TAGS_COUNT]
         if not recent_tags:
             warn(f'no recent tags found in existing_tags: {existing_tags}')
             return image_tag
@@ -2260,14 +2288,17 @@ class ClusterConfigSchema(LenientSchema):
             # only read secrets env when dealing with the current cluster
             secrets_env = data.pop('secrets_env', None) or {}
             for dest, env in secrets_env.items():
+                # env clause can either be a str or dict
                 if isinstance(env, str):
                     env_name = env
                     hint = ''
+                    required = True
                 else:
                     env_name = env['env_name']
                     hint = env['hint']
+                    required = env.get('required', True)
 
-                if env_name not in ENV:
+                if env_name not in ENV and required:
                     error(
                         f'environment variable {env_name} is missing, hint: {hint}',
                         exit=1,

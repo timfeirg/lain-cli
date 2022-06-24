@@ -3,10 +3,10 @@ from json.decoder import JSONDecodeError
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from lain_cli.utils import RegistryUtils, RequestClientMixin, tell_cluster_config
+from lain_cli.utils import PaaSUtils, RequestClientMixin, tell_cluster_config
 
 
-class Registry(RequestClientMixin, RegistryUtils):
+class Registry(RequestClientMixin, PaaSUtils):
     headers = {'Accept': 'application/vnd.docker.distribution.manifest.v2+json'}
 
     def __init__(self, registry=None, **kwargs):

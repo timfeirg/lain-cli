@@ -37,7 +37,7 @@ from lain_cli.prompt import (
     top_text,
 )
 from lain_cli.scm import tell_scm
-from lain_cli.tencent import TencentClient
+from lain_cli.tencent import TencentPaaS
 from lain_cli.utils import (
     CHART_DIR_NAME,
     CHART_TEMPLATE_DIR,
@@ -114,6 +114,7 @@ from lain_cli.utils import (
     tell_kibana_url,
     tell_pod_deploy_name,
     tell_registry_client,
+    tell_paas_client,
     tell_release_image,
     tell_release_name,
     tell_secret,
@@ -432,19 +433,19 @@ def x(ctx, command):
 @admin.command()
 @click.argument('instance_ids', nargs=-1)
 def stop_cvm(instance_ids):
-    client = TencentClient()
+    client = TencentPaaS()
     client.turn_(InstanceIds=instance_ids, state='off')
 
 
 @admin.command()
 @click.argument('instance_ids', nargs=-1)
 def start_cvm(instance_ids):
-    client = TencentClient()
+    client = TencentPaaS()
     client.turn_(InstanceIds=instance_ids)
 
 
 @admin.command()
-@click.argument('state', nargs=1, type=click.Choice(TencentClient.VM_STATES))
+@click.argument('state', nargs=1, type=click.Choice(TencentPaaS.VM_STATES))
 @click.pass_context
 def turn(ctx, state):
     """\b
@@ -452,7 +453,7 @@ def turn(ctx, state):
     current_state = wait_for_cluster_up()
     if current_state != state:
         cluster = ctx.obj['cluster']
-        client = TencentClient()
+        client = TencentPaaS()
         client.turn_(cluster=cluster, state=state)
 
     if state == 'on':
@@ -1511,6 +1512,18 @@ def get(ctx, resource, annotations):
 def post_alerts(ctx, labels):
     am = Alertmanager()
     am.post_alerts(labels)
+
+
+@admin.command()
+@click.argument('secret_name', nargs=1)
+@click.pass_context
+def upload_paas_tls_certificate(ctx, secret_name):
+    secret_dic = tell_secret(secret_name)
+    data = secret_dic['data']
+    crt = data['tls.crt']
+    key = data['tls.key']
+    paas = tell_paas_client()
+    paas.upload_tls_certificate(crt, key)
 
 
 @lain.command()
