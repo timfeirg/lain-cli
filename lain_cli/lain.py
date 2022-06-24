@@ -1567,7 +1567,11 @@ def get_values(release_name):
 @click.option(
     '--delete-after', type=str, help='same as the --after option in lain delete --help'
 )
-@click.option('--build', is_flag=True, help='run lain build if image does\'t exist')
+@click.option(
+    '--build',
+    is_flag=True,
+    help='run lain build if image does\'t exist, this flag is assumed when using --auto-pilot',
+)
 @click.option('--canary', is_flag=True, help='deploy as canary version')
 @click.option(
     '--wait',
@@ -1604,6 +1608,10 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
             )
 
     appname = ctx.obj['appname']
+    auto_pilot = ctx.obj.get('auto_pilot')
+    if auto_pilot:
+        build = True
+
     if build:
         if ctx.obj.get('ignore_lint'):
             error(
@@ -1632,10 +1640,8 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
             url = lain_docs('best-practices.html#values-cluster-yaml-appname')
             error(f'📖 learn more at {url}', exit=1)
 
-    # no big deal, just using this line to initialized env first
-    # otherwise this deploy may fail because envFrom is referencing a
-    # non-existent secret
-    tell_secret(ctx.obj['env_name'])
+    ctx.obj['build_jit'] = build
+    tell_secret(ctx.obj['env_name'], init='env')
     ensure_resource_initiated(chart=True, secret=True)
     canary_name = make_canary_name(appname)
     if canary:
@@ -1647,7 +1653,6 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
         error('cannot proceed due to on-going canary deploy', exit=1)
 
     status_dic = helm_status(appname)
-    auto_pilot = ctx.obj.get('auto_pilot')
     if status_dic:
         status = status_dic['info']['status']
         if status in HELM_STUCK_STATE:
@@ -1664,10 +1669,6 @@ def deploy(ctx, pairs, delete_after, build, canary, wait):
 
     try_to_cleanup_job()
     try_to_label_nodes()
-    if auto_pilot:
-        build = True
-
-    ctx.obj['build_jit'] = build
     options = tell_helm_options(pairs, extra='--install', canary=canary)
     new_image_tag = ctx.obj.get('image_tag')
     release_name = tell_release_name()

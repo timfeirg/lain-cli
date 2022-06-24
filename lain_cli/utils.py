@@ -806,9 +806,9 @@ def dump_secret(secret_name, init='env'):
     return name
 
 
-def tell_secret(secret_name, init='env'):
-    """return Kubernetes secret object in python dict, all b64decoded.
-    If secret doesn't exist, create one first, and with some example content"""
+def tell_secret(secret_name, init=None):
+    """return k8s secret object in python dict, all b64decoded.
+    can optionally initialize a secret by providing the init argument"""
 
     res = kubectl(
         'get', 'secret', '-oyaml', secret_name, capture_output=True, check=False
@@ -845,7 +845,7 @@ def init_kubernetes_secret(secret_name, init='env'):
 
         init_clause = f'--from-file={example_file_path}'
     else:
-        raise ValueError(f'init style: env, secret. dont\'t know what this is: {init}')
+        raise ValueError(f'init msut be env / secret. got: {init}')
     kubectl(
         'create',
         'secret',
@@ -1234,8 +1234,7 @@ def ensure_resource_initiated(chart=False, secret=False):
                 '''
                 error(err, exit=code)
         else:
-            # don't mind me, just using this function to initiate a dummy secret
-            tell_secret(secret_name)
+            tell_secret(secret_name, init='env')
 
     return True
 
