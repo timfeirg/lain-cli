@@ -18,6 +18,8 @@ RUN apt-get update && \
     sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8 && \
+    curl -L https://github.com/getsentry/sentry-cli/releases/download/2.3.0/sentry-cli-Linux-x86_64 --output /usr/local/bin/sentry-cli && \
+    chmod +x /usr/local/bin/sentry-cli && \
     curl -LO https://github.com/aquasecurity/trivy/releases/download/v$TRIVY_VERSION/trivy_${TRIVY_VERSION}_Linux-64bit.deb && \
     dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb && \
     curl -LO https://mirrors.huaweicloud.com/helm/v${HELM_VERSION}/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
