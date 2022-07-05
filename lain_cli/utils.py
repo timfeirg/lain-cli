@@ -2109,6 +2109,10 @@ class ReserveWord(SchemaMeta):
 
 
 ReservedWord = NoneOf(RESERVED_WORDS, error='this is a reserved word, please change')
+# env 的 key, value 必须是字符串, 否则 helm 会转为科学记数法
+# https://github.com/helm/helm/issues/6867
+env_schema = Dict(keys=Str(), values=Str(), allow_none=True)
+env_arg_pattern = re.compile(r'\${(\w*)}')
 
 
 class LenientSchema(Schema, metaclass=ReserveWord):
@@ -2117,6 +2121,7 @@ class LenientSchema(Schema, metaclass=ReserveWord):
 
 
 class PrepareSchema(LenientSchema):
+    env = env_schema
     script = List(Str, required=True)
     keep = List(Str, load_default=[])
 
@@ -2136,6 +2141,7 @@ class PrepareSchema(LenientSchema):
 
 class BuildSchema(LenientSchema):
     base = Str(required=True)
+    env = env_schema
     prepare = Nested(PrepareSchema, required=False, allow_none=True)
     script = List(Str, load_default=[])
     workdir = Str(load_default=DEFAULT_WORKDIR, allow_none=False)
@@ -2198,11 +2204,6 @@ class ResourceSchema(Schema):
 class ResourcesSchema(Schema):
     requests = Nested(ResourceSchema, required=True)
     limits = Nested(ResourceSchema, required=True)
-
-
-# env 的 key, value 必须是字符串, 否则 helm 会转为科学记数法
-# https://github.com/helm/helm/issues/6867
-env_schema = Dict(keys=Str(), values=Str(), allow_none=True)
 
 
 class ProcSchema(LenientSchema):
@@ -2391,12 +2392,33 @@ class HelmValuesSchema(LenientSchema):
             raise ValidationError(
                 f'proc names should not duplicate: {duplicated_names}'
             )
-        release_clause = data.get('release')
+        release_clause = data.get('release') or {}
+        build_clause = data.get('build')
         if release_clause:
-            build_clause = data.get('build')
             if not build_clause:
                 raise ValidationError('release defined, but not build')
             release_clause.setdefault('dest_base', build_clause['base'])
+
+        prepare_clause = build_clause.get('prepare') or {}
+        # dockerfile cannot directly use system env
+        # so we scan all env values and extract empty variables as args
+        build_env = build_clause.get('env') or {}
+        prepare_env = prepare_clause.get('env') or {}
+        release_env = release_clause.get('env') or {}
+        seen = set(build_env | prepare_env | release_env)
+        data.setdefault('build_args', set())
+
+        def extract_build_args(env_map):
+            for k, v in env_map.items():
+                env_args = re.findall(env_arg_pattern, v)
+                for a in env_args:
+                    if a not in seen:
+                        data['build_args'].add(a)
+                    elif a == k:
+                        data['build_args'].add(a)
+
+        for dic in [build_env, prepare_env, release_env]:
+            extract_build_args(dic)
 
         return data
 
@@ -2731,7 +2753,7 @@ def make_docker_ignore():
 
 def lain_build(stage='build', push=True, keep_dockerfile=False):
     ctx = context()
-    ctx.obj['current_build_stage'] = stage
+    ctx.obj['build_stage'] = stage
     values = ctx.obj['values']
     if 'build' not in values:
         warn('build not defined in {CHART_DIR_NAME}/values.yaml', exit=0)
@@ -2760,12 +2782,15 @@ def lain_build(stage='build', push=True, keep_dockerfile=False):
     with open(DOCKERFILE_NAME, 'w') as f:
         f.write(template.render(**ctx.obj))
 
+    build_args = ctx.obj['values']['build_args']
+    build_args_list = flatten_list([('--build-arg', a) for a in build_args])
     try:
         docker(
             'build',
             '--pull',
             '-t',
             image,
+            *build_args_list,
             '--target',
             stage,
             '-f',
