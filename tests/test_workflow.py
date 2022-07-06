@@ -8,6 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from lain_cli.lain import lain
 from lain_cli.utils import (
+    ENV,
     DEFAULT_WORKDIR,
     KUBECONFIG_DIR,
     context,
@@ -93,8 +94,9 @@ def test_build(registry):
     def _build_without_prepare():
         obj = context().obj
         values = obj['values']
+        values['build_args'] = {'EDITOR'}
         build_clause = values['build']
-        build_clause['env'] = {'build_env': BUILD_TREASURE_NAME}
+        build_clause['env'] = {'build_env': BUILD_TREASURE_NAME, 'EDITOR': '${EDITOR}'}
         del build_clause['prepare']
         lain_build(stage=stage, push=False)
 
@@ -106,7 +108,10 @@ def test_build(registry):
     assert 'run.py' in ls_result
     assert BUILD_TREASURE_NAME not in ls_result
     res = docker_run(build_image, ['env'])
-    assert f'build_env={BUILD_TREASURE_NAME}' in ensure_str(res.stdout)
+    env_output = ensure_str(res.stdout)
+    assert f'build_env={BUILD_TREASURE_NAME}' in env_output
+    # this ensures system env is passed to docker build
+    assert f'EDITOR={ENV["EDITOR"]}' in env_output
 
     def _build():
         obj = context().obj

@@ -1,7 +1,13 @@
-{% if values.build.prepare and current_build_stage == 'prepare' %}
+{% if values.build.prepare and build_stage == 'prepare' %}
 FROM {{ values.build.base }} AS prepare
 WORKDIR {{ values.build.workdir }}
 ADD --chown=1001:1001 . {{ values.build.workdir }}
+
+{% if values.build_args %}
+{% for a in values.build_args %}
+ARG {{ a }}
+{% endfor %}
+{% endif %}
 
 {% if values.build.prepare.env %}
 ENV {% for k, v in values.build.prepare.env.items() %}{{ k }}={{ v | to_json }} {% endfor %}
@@ -20,6 +26,13 @@ FROM {{ cluster_config.registry }}/{{ appname }}:prepare AS build
 FROM {{ values.build.base }} AS build
 {% endif %}
 WORKDIR {{ values.build.workdir }}
+
+{% if values.build_args %}
+{% for a in values.build_args %}
+ARG {{ a }}
+{% endfor %}
+{% endif %}
+
 {% if values.build.env %}
 ENV {% for k, v in values.build.env.items() %}{{ k }}={{ v | to_json }} {% endfor %}
 {% endif %}

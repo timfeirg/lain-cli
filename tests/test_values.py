@@ -195,6 +195,8 @@ def test_reserved_words():
 @pytest.mark.usefixtures('dummy_helm_chart')
 def test_schemas():
     bare_values = load_dummy_values()
+    build = bare_values['build']
+    build['env'] = {'EDITOR': '${EDITOR}', 'foo': '${BAR}', 'no': '${{no}}'}
     web_proc = bare_values['deployments']['web']
     # deploy is an alias for deployments
     bare_values['deploy'] = {'web': web_proc, 'another': web_proc}
@@ -204,6 +206,7 @@ def test_schemas():
     assert values['cronjobs'] == {}
     build = values['build']
     assert build['prepare']['keep'] == [f'./{BUILD_TREASURE_NAME}']
+    assert values['build_args'] == {'BAR', 'EDITOR'}
 
     bare_values['volumeMounts'][0]['subPath'] = 'foo/bar'  # should be basename
     with pytest.raises(ValidationError) as e:

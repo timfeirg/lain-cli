@@ -317,6 +317,7 @@ hostAliases:
 build:
   base: python:latest
   # # build / prepare 下都可以声明 env, 会转化为 Dockerfile 里的 ENV clause, 这样一来, 镜像本身就会携带这些 ENV
+  # # 可以在 value 中直接引用系统 env, lain 会进行解析, 传入 docker build 命令
   # env:
   #   PATH: "/lain/app/node_modules/.bin:${PATH}"
   prepare:
