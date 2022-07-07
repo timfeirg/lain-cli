@@ -27,7 +27,7 @@ Windows
 
   choco install git
   choco install kubernetes-helm
-  # client / server 最好版本匹配
+  # client / server 版本需匹配
   choco install kubernetes-cli --version=1.20.4
 
 Mac OS
@@ -42,12 +42,13 @@ Mac OS
 
 .. code-block:: bash
 
-    # 首先需要安装 virtualenvwrapper, 如果你不熟悉, 可以直接参考官网的快速上手: https://virtualenvwrapper.readthedocs.io/en/latest/
-
-    # lain 必须安装在自己专用的 virtualenv 下, 没办法, 依赖太杂乱了, 怕搞坏你的环境
-    mkvirtualenv lain-cli --python=[abs path for python>=3.8]
-    workon lain-cli
-    pip install -U lain_cli -i https://gitlab.example.com/api/v4/projects/9/packages/pypi/simple --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple/
+    # 首先需要安装 virtualenvwrapper: https://virtualenvwrapper.readthedocs.io/en/latest/
+    # 这样就能为 lain 创建自己专用的 virtualenv 了
+    mkvirtualenv lain --python=[abs path for python>=3.9]
+    workon lain
+    # lain 推荐的用法是自行维护 internal fork, 你需要从内部 PyPI 上下载
+    # 但你也可以直接安装开源版本, 来先行评估一番, 不过开源版本需要自行书写集群配置, 请参考 github 项目 README
+    pip install -U lain
 
     # 安装完毕以后, 我们还需要把 lain 软链到外边, 让你不需要激活 venv 也能顺利使用
     ln -s -f /Users/$USER/.virtualenvs/lain-cli/bin/lain /usr/local/bin/lain
@@ -136,13 +137,15 @@ Mac OS
 lain 如何工作?
 --------------
 
-这里对 lain 做一番最为基本的介绍, 如果你刚接触 lain, 请务必阅读参考.
+lain 的定位是"胶水", 以最大提升效率和易用性的方式来粘合 Kubernetes / Helm / Docker / Prometheus, 以及各种其他 DevOps 基础设施, 例如 GitLab CI, Kibana, 甚至是你正在用的 PaaS. 以最关键的几个功能为例, 解释下 lain 是如何运作的:
 
-* :code:`lain use [cluster]` 其实仅仅是给 :code:`~/.kube/config` 做个软链, 指向对应集群的 :code:`kubeconfig`. 如果你为此觉得困惑, 请阅读 :ref:`lain-use-design`.
-* :code:`lain build` 算是对 :code:`docker build` 的易用性封装, 你只须在 :code:`values.yaml` 里书写 build 相关的配置块, lain 便会帮你进行 Dockerfile 的渲染, 和镜像的构建. 具体请阅读 :ref:`lain-build`.
-* lain 支持各种不同的方式对应用进行配置管理, 既可以直接书写在 :code:`values.yaml`, 也可以使用 :code:`lain [env|secret]`, 将应用配置写进 Kubernetes 集群内. 详细请阅读 :ref:`lain-env`, :ref:`lain-secret`.
-* :code:`lain deploy` 背后的实现是 :code:`helm upgrade --install`, lain 会以 subprocess 的方式进行这个调用, 如果缺少可执行文件或者版本不符合要求, 将会从 CDN 上下载.
-* 容器管理等功能由 kubectl 来实现, 比如 :code:`lain logs; lain status`, 如果你有需要, 完全可以直接使用 Kubectl / Helm 来进行 lain 没有覆盖到的特殊操作.
+* :code:`lain use [cluster]` 其实仅仅是给 :code:`~/.kube/config` 做个软链, 指向对应集群的 :code:`kubeconfig`. 可详读设计要点 :ref:`lain-use-design`.
+* :code:`lain build` 算是对 :code:`docker build` 的易用性封装, 你只须在 :code:`values.yaml` 里书写 build 相关的配置块, lain 便会帮你进行 Dockerfile 的渲染和镜像构建. 具体请阅读 :ref:`lain-build`.
+* lain 支持若干不同方式对应用进行配置管理, 既可以直接书写在 :code:`values.yaml`, 也可以使用 :code:`lain [env|secret]`, 将应用配置存入 Kubernetes Secret. 可详读 :ref:`lain-env`, :ref:`lain-secret`.
+* :code:`lain deploy` 最终会以 subprocess 的方式调用 :code:`helm upgrade --install ...`, 如果你并未安装 helm 或者版本不符合要求, lain 会贴心打断并提示.
+* 容器管理等直接和 Kubernetes 资源打交道的功能, 则由 kubectl 来实现, 比如 :code:`lain logs; lain status`.
+
+lain 尽量做好"粘合剂"的工作, 但也鼓励你直接用底层工具去解决 lain 没有覆盖或无法实现的功能, 比方说, 一个 lain APP 本身就是一个合法的 Helm APP, 你完全可以脱离 lain 而直接用 helm 执行相关操作. lain 在做好整合的前提下, 力求达到解耦, "不断后路"的效果, 决不妨碍用户直接用 kubectl / helm / docker 来自行解决问题.
 
 .. _reading-list:
 
