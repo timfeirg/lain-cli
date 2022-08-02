@@ -2916,7 +2916,6 @@ def version_challenge():
     finder = PackageFinder.create(
         link_collector=link_collector,
         selection_prefs=selection_prefs,
-        use_deprecated_html5lib=False,
     )
     best_candidate = finder.find_best_candidate(package_name).best_candidate
     debug(f'best candidate: {best_candidate}')
