@@ -67,16 +67,18 @@ spec:
               volumeMounts:
                 {{- range $volumeMount := $.Values.volumeMounts }}
                 - name: {{ default "secret" $volumeMount.name }}
-                  mountPath: {{ $volumeMount.mountPath }}
-                  {{- if hasKey $volumeMount "subPath" }}
-                  subPath: {{ $volumeMount.subPath }}
+                  {{- range $k, $v := $volumeMount}}
+                  {{- if ne $k "name"}}
+                  {{ $k }}: {{ $v | quote }}
+                  {{- end }}
                   {{- end }}
                 {{- end }}
                 {{- range $volumeMount := $initJob.volumeMounts }}
                 - name: {{ default "secret" $volumeMount.name }}
-                  mountPath: {{ $volumeMount.mountPath }}
-                  {{- if hasKey $volumeMount "subPath" }}
-                  subPath: {{ $volumeMount.subPath }}
+                  {{- range $k, $v := $volumeMount}}
+                  {{- if ne $k "name"}}
+                  {{ $k }}: {{ $v | quote }}
+                  {{- end }}
                   {{- end }}
                 {{- end }}
               resources:
@@ -121,18 +123,20 @@ spec:
               resources:
                 {{- toYaml $cronjob.resources | nindent 16 }}
               volumeMounts:
-                {{- range $volumeMount := $.Values.volumeMounts  }}
+                {{- range $volumeMount := $.Values.volumeMounts }}
                 - name: {{ default "secret" $volumeMount.name }}
-                  mountPath: {{ $volumeMount.mountPath }}
-                  {{- if hasKey $volumeMount "subPath" }}
-                  subPath: {{ $volumeMount.subPath }}
+                  {{- range $k, $v := $volumeMount}}
+                  {{- if ne $k "name"}}
+                  {{ $k }}: {{ $v | quote }}
+                  {{- end }}
                   {{- end }}
                 {{- end }}
                 {{- range $volumeMount := $cronjob.volumeMounts }}
                 - name: {{ default "secret" $volumeMount.name }}
-                  mountPath: {{ $volumeMount.mountPath }}
-                  {{- if hasKey $volumeMount "subPath" }}
-                  subPath: {{ $volumeMount.subPath }}
+                  {{- range $k, $v := $volumeMount}}
+                  {{- if ne $k "name"}}
+                  {{ $k }}: {{ $v | quote }}
+                  {{- end }}
                   {{- end }}
                 {{- end }}
           volumes:
