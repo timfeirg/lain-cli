@@ -40,7 +40,7 @@ spec:
         - name: {{ default "secret" $volumeMount.name }}
           {{- range $k, $v := $volumeMount}}
           {{- if ne $k "name"}}
-          {{ $k }}: {{ $v | quote }}
+          {{ $k }}: {{ $v }}
           {{- end }}
           {{- end }}
         {{- end }}
@@ -48,7 +48,7 @@ spec:
         - name: {{ default "secret" $volumeMount.name }}
           {{- range $k, $v := $volumeMount}}
           {{- if ne $k "name"}}
-          {{ $k }}: {{ $v | quote }}
+          {{ $k }}: {{ $v }}
           {{- end }}
           {{- end }}
         {{- end }}
