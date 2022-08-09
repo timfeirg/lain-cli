@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 from lain_cli import __version__, package_name
 
 requirements = [
-    'pip>=22.1',
+    'pip>=22.2',
     'ruamel.yaml>=0.17.10',
     'requests',
     'humanfriendly>=4.16.1',
